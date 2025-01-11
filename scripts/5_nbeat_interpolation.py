@@ -146,7 +146,7 @@ def predict_between_dates(start_date, end_date, df, model, num_steps=5):
         new_timestamp = current_timestamp + timedelta(hours=predicted_time_diff)
 
         # Append the new entry to the data with the correct number of columns
-        new_data.append([93, new_timestamp.strftime('%m/%d/%y %H:%M'), last_row['Longitude'], last_row['Latitude'],
+        new_data.append([current_animal, new_timestamp.strftime('%m/%d/%y %H:%M'), last_row['Longitude'], last_row['Latitude'],
                          last_row['Time Difference (hours)'], last_row['Prev Time Difference (hours)']])
 
         # Update current_timestamp and last_row for the next iteration
@@ -155,17 +155,55 @@ def predict_between_dates(start_date, end_date, df, model, num_steps=5):
 
     return pd.DataFrame(new_data, columns=['ID', 'Timestamp', 'Longitude', 'Latitude', 'Time Difference (hours)', 'Prev Time Difference (hours)'])
 
+def find_min_max_dates():
+    """
+    Reads a CSV file and identifies the earliest and latest dates in the 'Datetime' column.
+
+    Args:
+        file_path (str): Path to the CSV file.
+
+    Returns:
+        tuple: A tuple containing the earliest and latest dates.
+    """
+    # Load the CSV file without assuming a header
+    data = pd.read_csv(f'map_{current_animal}.csv', header=None)
+
+    # Rename columns for clarity (modify as per actual column names)
+    data.columns = ['ID', 'Datetime', 'Longitude', 'Latitude']
+
+    # Display the first few rows of the 'Datetime' column for validation
+    print("Sample of 'Datetime' column:")
+    print(data['Datetime'].head())
+
+    # Convert the 'Datetime' column to datetime format
+    data['Datetime'] = pd.to_datetime(data['Datetime'], format='%m/%d/%y %H:%M', errors='coerce')
+
+    # Check for rows with invalid or missing dates
+    invalid_dates = data[data['Datetime'].isna()]
+    if not invalid_dates.empty:
+        print("Warning: Some rows have invalid or missing dates:")
+        print(invalid_dates)
+
+    # Drop rows with invalid dates
+    data = data.dropna(subset=['Datetime'])
+
+    # Find the minimum and maximum dates
+    min_date = data['Datetime'].min().strftime('%m/%d/%y %H:%M')
+    max_date = data['Datetime'].max().strftime('%m/%d/%y %H:%M')
+
+    return min_date, max_date
 # Define start and end dates
 
 #start_date_str = '3/18/14 4:02'
 #end_date_str = '3/19/14 4:02'
-
-start_date_str = '3/13/14 4:02'
-end_date_str = '3/17/14 4:02'
+start_date_str, end_date_str = find_min_max_dates()
+print(start_date_str, end_date_str)
+#start_date_str = '3/13/14 4:02'
+#end_date_str = '3/17/14 4:02'
 
 start_date = pd.to_datetime( start_date_str, format='%m/%d/%y %H:%M')
 end_date = pd.to_datetime(end_date_str, format='%m/%d/%y %H:%M')
-
+print(start_date, end_date)
 # Call the function to predict data between the given dates
 predicted_df = predict_between_dates(start_date, end_date, df, model)
 
