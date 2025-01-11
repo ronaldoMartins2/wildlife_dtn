@@ -21,10 +21,12 @@ def merge_and_interpolate():
 
     # Junta os dois DataFrames em um único DataFrame, ignorando os índices originais.
     combined_data = pd.concat([data1, data2], ignore_index=True)
-    # Ordena o DataFrame combinado pela coluna 'Datetime' em ordem crescente.
-    combined_data = combined_data.sort_values(by='Datetime')
+
     # Converte a coluna 'Datetime' de volta para o formato de string.
     combined_data['Datetime'] = combined_data['Datetime'].dt.strftime('%m/%d/%y %H:%M')
+
+    # Ordena o DataFrame combinado pela coluna 'Datetime' em ordem crescente.
+    combined_data = combined_data.sort_values(by='Datetime')    
     
     # Salva o DataFrame combinado em um novo arquivo CSV. O nome do arquivo é definido dinamicamente.
     combined_data.to_csv(f'map_{sys.argv[1]}_interpolation_merged.csv', index=False, header=None)
@@ -32,3 +34,4 @@ def merge_and_interpolate():
 # Código executado se o script estiver sendo rodado diretamente, e não importado como módulo.
 if __name__ == "__main__":
     merge_and_interpolate()
+
