@@ -34,4 +34,3 @@ def merge_and_interpolate():
 # Código executado se o script estiver sendo rodado diretamente, e não importado como módulo.
 if __name__ == "__main__":
     merge_and_interpolate()
-
