@@ -2,6 +2,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from datetime import timedelta
+import sys
 
 # Define the NBeatsBlock with a residual connection fix
 class NBeatsBlock(nn.Module):
@@ -42,6 +43,7 @@ class NBeats(nn.Module):
         return final_forecast.view(-1)  # Ensure it's a 1D tensor of size [batch_size]
 
 # Sample data (as you provided)
+'''
 data = [
     [93, '3/12/14 17:39', -64.877263, -3.03684],
     [93, '3/14/14 4:00', -64.877105, -3.038135],
@@ -58,6 +60,10 @@ data = [
     [93, '3/17/14 22:00', -64.886215, -3.033063],
     [93, '3/18/14 4:02', -64.879131, -3.038117]
 ]
+'''
+current_animal = sys.argv[1]
+file_name = f'map_{current_animal}.csv'
+data = pd.read_csv(file_name, header=None)  # header=None to indicate no column names
 
 # Create a DataFrame
 df = pd.DataFrame(data, columns=['ID', 'Timestamp', 'Longitude', 'Latitude'])
@@ -175,7 +181,7 @@ for _ in range(5):
     # Append the new entry to the data with the correct number of columns
     # Here, you need to match the original df.columns structure (6 columns)
     new_data.append([
-        93,
+        current_animal,
         new_timestamp.strftime('%m/%d/%y %H:%M'),
         last_row['Longitude'],
         last_row['Latitude'],
