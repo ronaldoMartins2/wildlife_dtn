@@ -1,0 +1,5 @@
+{
+    "output_dim": 6,
+    "hidden_dim": 6,
+    "num_blocks": 6
+}

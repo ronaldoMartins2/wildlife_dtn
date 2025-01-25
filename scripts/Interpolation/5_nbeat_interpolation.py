@@ -4,6 +4,13 @@ import torch.nn as nn
 from datetime import timedelta
 import sys
 
+# python3 5_nbeat_interpolation.py 94 n(numero de registros)
+#exemplo python3 5_nbeat_interpolation.py 94 1032
+
+from utils import (
+    read_field_from_json
+) 
+
 # Define the NBeatsBlock with a residual connection fix
 class NBeatsBlock(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_dim):
@@ -44,7 +51,7 @@ class NBeats(nn.Module):
 
 def getDataFromCSV( current_animal ):
     # Read the CSV file into a DataFrame
-    df = pd.read_csv(f'map_{current_animal}.csv', header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
+    df = pd.read_csv(f'../map_{current_animal}.csv', header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
 
     return df
 
@@ -87,11 +94,13 @@ y = df[target].values
 X_tensor = torch.tensor(X, dtype=torch.float32)
 y_tensor = torch.tensor(y, dtype=torch.float32)
 
+read_field_from_json('hyperparameters.json', "output_dim")
+
 # Hyperparameters
 input_dim = X_tensor.shape[1]  # Number of features (Prev Time Difference, Longitude, Latitude)
-output_dim = 6  # Output: predict multiple future time steps
-hidden_dim = 6  # Hidden layer size
-num_blocks = 6  # Number of N-BEATS blocks
+output_dim = read_field_from_json('hyperparameters.json', "output_dim")  # Output: predict multiple future time steps
+hidden_dim = read_field_from_json('hyperparameters.json', "hidden_dim")  # Hidden layer size
+num_blocks = read_field_from_json('hyperparameters.json', "num_blocks")  # Number of N-BEATS blocks
 
 # Create the model
 model = NBeats(input_dim, output_dim, hidden_dim, num_blocks)
@@ -166,7 +175,7 @@ def find_min_max_dates():
         tuple: A tuple containing the earliest and latest dates.
     """
     # Load the CSV file without assuming a header
-    data = pd.read_csv(f'map_{current_animal}.csv', header=None)
+    data = pd.read_csv(f'../map_{current_animal}.csv', header=None)
 
     # Rename columns for clarity (modify as per actual column names)
     data.columns = ['ID', 'Datetime', 'Longitude', 'Latitude']
@@ -208,9 +217,10 @@ print(start_date, end_date)
 predicted_df = predict_between_dates(start_date, end_date, df, model)
 
 # Display the predicted data
-print(predicted_df)
 
+predicted_df = predicted_df.head(int(sys.argv[2]))
+print(predicted_df)
 #predicted_df.to_csv(f'map_{current_animal}_interpolation.csv', index=False)
 
 columns_to_save = ['ID', 'Timestamp', 'Longitude', 'Latitude']
-predicted_df[columns_to_save].to_csv( f'map_{current_animal}_interpolation.csv', index=False, header=False)
+predicted_df[columns_to_save].to_csv( f'../map_{current_animal}_interpolation_nbeats.csv', index=False, header=False)
