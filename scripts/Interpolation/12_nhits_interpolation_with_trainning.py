@@ -7,7 +7,7 @@ from datetime import timedelta
 # python3 -m venv venv
 # source ./venv/bin/activate
 
-# python3 12_nhits_interpolation_with_trainning.py 94 '1/22/15 17:31' '7/31/15 17:31'
+# python3 12_nhits_interpolation_with_trainning.py 96 982
 
 # Define the NHiTSBlock with hierarchical time series forecasting mechanism
 class NHiTSBlock(nn.Module):
@@ -143,7 +143,8 @@ for epoch in range(num_epochs):
 
 
 # Prediction function between two dates
-def predict_between_dates(start_date, end_date, df, model, num_steps=10):
+# Prediction function between two dates
+def predict_between_dates(start_date, end_date, df, model, min_records=4000, step_increment=10):
     current_timestamp = start_date
     new_data = []
 
@@ -160,41 +161,45 @@ def predict_between_dates(start_date, end_date, df, model, num_steps=10):
     # Prepare the tensor for model input
     last_features = torch.tensor([[prev_time_diff, longitude, latitude]], dtype=torch.float32)
 
-    for step in range(num_steps):
-        time_diff_forecast, lon_forecast, lat_forecast = model(last_features)  # Get the forecast from the model
-        
-        # Extract forecasted values
-        predicted_time_diff = time_diff_forecast.item()
-        predicted_longitude = lon_forecast.item()
-        predicted_latitude = lat_forecast.item()
+    # Generate predictions until the desired number of records is reached
+    num_steps = step_increment  # Start with an initial number of steps
+    while len(new_data) < min_records:
+        for step in range(num_steps):
+            time_diff_forecast, lon_forecast, lat_forecast = model(last_features)  # Get the forecast from the model
+            
+            # Extract forecasted values
+            predicted_time_diff = time_diff_forecast.item()
+            predicted_longitude = lon_forecast.item()
+            predicted_latitude = lat_forecast.item()
 
-        # Print the predicted values for debugging
-        print(f"Step {step+1}: Predicted time difference: {predicted_time_diff} hours")
-        print(f"Predicted Longitude: {predicted_longitude}, Predicted Latitude: {predicted_latitude}")
+            # If the predicted time difference is too small, skip this step
+            if predicted_time_diff < 0.1:  # Adjust this threshold as needed
+                print("Predicted time difference too small. Stopping predictions.")
+                break
 
-        # If the predicted time difference is too small, we could skip this step
-        if predicted_time_diff < 0.1:  # Adjust this threshold based on your needs
-            print("Predicted time difference too small. Stopping predictions.")
-            break
+            # Calculate the next timestamp using the predicted time difference
+            new_timestamp = current_timestamp + timedelta(hours=predicted_time_diff)
 
-        # Calculate the next timestamp using the predicted time difference
-        new_timestamp = current_timestamp + timedelta(hours=predicted_time_diff)
+            # Save the forecast data point
+            new_data.append([last_row['ID'], new_timestamp.strftime('%m/%d/%y %H:%M'), predicted_longitude, predicted_latitude])
 
-        # Save the forecast data point
-        new_data.append([last_row['ID'], new_timestamp.strftime('%m/%d/%y %H:%M'), predicted_longitude, predicted_latitude])
+            # Update current timestamp and features for the next iteration
+            current_timestamp = new_timestamp
+            
+            # Update the input features for the next iteration using the last predicted values
+            prev_time_diff = predicted_time_diff  # New previous time difference for the next step
+            longitude = predicted_longitude  # New predicted longitude
+            latitude = predicted_latitude   # New predicted latitude
 
-        # Update current timestamp and features for the next iteration
-        current_timestamp = new_timestamp
-        
-        # Update the input features for the next iteration using the last predicted values
-        prev_time_diff = predicted_time_diff  # New previous time difference for the next step
-        longitude = predicted_longitude  # New predicted longitude
-        latitude = predicted_latitude   # New predicted latitude
+            # Update the input features for the model
+            last_features = torch.tensor([[prev_time_diff, longitude, latitude]], dtype=torch.float32)
 
-        # Update the input features for the model
-        last_features = torch.tensor([[prev_time_diff, longitude, latitude]], dtype=torch.float32)
+        # If not enough records are generated, increase the step count
+        if len(new_data) < min_records:
+            num_steps += step_increment  # Increment steps to ensure we generate enough records
 
     return pd.DataFrame(new_data, columns=['ID', 'Timestamp', 'Longitude', 'Latitude'])
+
 
 
 # Save the results to CSV
@@ -210,9 +215,10 @@ end_date_str = '7/31/15 17:31'
 
 start_date = pd.to_datetime(start_date_str, format='%m/%d/%y %H:%M')
 end_date = pd.to_datetime(end_date_str, format='%m/%d/%y %H:%M')
-
+len_data = int(sys.argv[2])
 # Predict between the two dates
-predicted_df = predict_between_dates(start_date, end_date, df, model, num_steps=20)  # Set num_steps to 20
-
+predicted_df = predicted_df = predict_between_dates(start_date, end_date, df, model, min_records=len_data, step_increment=10)
+  # Set num_steps to 20
+predicted_df = predicted_df.head(len_data)
 # Save the predictions to a CSV file
 save_to_csv(predicted_df, f'../map_{current_animal}_interpolation_nhits.csv')
