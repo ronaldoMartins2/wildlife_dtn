@@ -5,10 +5,12 @@ import re
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 
+# python3 6_kmeans_individual_csv.py 94
+
 current_animal = sys.argv[1]
 
 # Read data from CSV
-file_name = f'map_{current_animal}.csv'
+file_name = f'../map_{current_animal}.csv'
 data = pd.read_csv(file_name, header=None)  # header=None to indicate no column names
 
 # Print the first few rows to inspect the raw data
