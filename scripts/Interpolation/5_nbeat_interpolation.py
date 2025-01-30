@@ -4,7 +4,9 @@ import torch.nn as nn
 from datetime import timedelta
 import sys
 
-# python3 5_nbeat_interpolation.py 94
+
+# python3 5_nbeat_interpolation.py 94 n(numero de registros)
+#exemplo python3 5_nbeat_interpolation.py 94 1032
 
 from utils import (
     read_field_from_json
@@ -216,9 +218,10 @@ print(start_date, end_date)
 predicted_df = predict_between_dates(start_date, end_date, df, model)
 
 # Display the predicted data
-print(predicted_df)
 
+predicted_df = predicted_df.head(int(sys.argv[2]))
+print(predicted_df)
 #predicted_df.to_csv(f'map_{current_animal}_interpolation.csv', index=False)
 
 columns_to_save = ['ID', 'Timestamp', 'Longitude', 'Latitude']
-predicted_df[columns_to_save].to_csv( f'map_{current_animal}_interpolation.csv', index=False, header=False)
+predicted_df[columns_to_save].to_csv( f'../map_{current_animal}_interpolation_nbeats.csv', index=False, header=False)

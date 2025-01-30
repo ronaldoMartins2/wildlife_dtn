@@ -1,13 +1,16 @@
 import pandas as pd  
 import sys  
 
+#python3 5_nbeat_interpolation_merged.py 93 nhits
+#or
+#python3 5_nbeat_interpolation_merged.py 93 nbeats
 
 def merge_and_interpolate():
     
     # Carrega o primeiro arquivo CSV. O nome do arquivo é definido dinamicamente a partir do argumento do sistema.
-    data1 = pd.read_csv(f'map_{sys.argv[1]}.csv', skiprows=0, header=None)  
+    data1 = pd.read_csv(f'../map_{sys.argv[1]}.csv', skiprows=0, header=None)  
     # Carrega o segundo arquivo CSV. O nome do arquivo é definido dinamicamente a partir do argumento do sistema.
-    data2 = pd.read_csv(f'map_{sys.argv[1]}_interpolation.csv', skiprows=0, header=None)
+    data2 = pd.read_csv(f'../map_{sys.argv[1]}_interpolation_{sys.argv[2]}.csv', skiprows=0, header=None)
     
     # Define as colunas para o DataFrame do primeiro arquivo.
     data1.columns = ['ID', 'Datetime', 'Longitude', 'Latitude']
@@ -29,7 +32,7 @@ def merge_and_interpolate():
     combined_data = combined_data.sort_values(by='Datetime')    
     
     # Salva o DataFrame combinado em um novo arquivo CSV. O nome do arquivo é definido dinamicamente.
-    combined_data.to_csv(f'map_{sys.argv[1]}_interpolation_merged.csv', index=False, header=None)
+    combined_data.to_csv(f'../map_{sys.argv[1]}_interpolation_merged_{sys.argv[2]}.csv', index=False, header=None)
 
 # Código executado se o script estiver sendo rodado diretamente, e não importado como módulo.
 if __name__ == "__main__":
