@@ -9,6 +9,7 @@ from datetime import timedelta
 
 # python3 12_nhits_interpolation_with_trainning.py 96 982
 
+
 # Define the NHiTSBlock with hierarchical time series forecasting mechanism
 class NHiTSBlock(nn.Module):
     def __init__(self, input_dim, hidden_dim, num_hierarchies):
@@ -142,7 +143,6 @@ for epoch in range(num_epochs):
         print(f"Epoch {epoch}, Loss: {loss.item():.4f}")
 
 
-# Prediction function between two dates
 # Prediction function between two dates
 def predict_between_dates(start_date, end_date, df, model, min_records=4000, step_increment=10):
     current_timestamp = start_date

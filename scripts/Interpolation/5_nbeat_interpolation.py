@@ -4,6 +4,7 @@ import torch.nn as nn
 from datetime import timedelta
 import sys
 
+
 # python3 5_nbeat_interpolation.py 94 n(numero de registros)
 #exemplo python3 5_nbeat_interpolation.py 94 1032
 
