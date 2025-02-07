@@ -10,7 +10,7 @@ import os
 #exemplo python3 5_nbeat_interpolation.py 94 1032
 
 #inside scripts (folder)
-#python3 -m Interpolation.nbeat_interpolation 94 1032
+# python3 -m Interpolation.nbeat_interpolation 94 1032
 
 from Common.utils import (
     read_field_from_json
