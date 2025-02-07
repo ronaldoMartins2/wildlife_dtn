@@ -50,7 +50,7 @@ centroids = kmeans.cluster_centers_
 # Save cluster coordinates to CSV
 output_file = f'kmeans_coords_{current_animal}.csv'
 cluster_data = pd.DataFrame(centroids, columns=['Longitude', 'Latitude'])
-cluster_data.to_csv(output_file, index=False)
+cluster_data.to_csv(output_file, index=False, header=None)
 print(f"Cluster centroids saved to {output_file}")
 
 # Plotting

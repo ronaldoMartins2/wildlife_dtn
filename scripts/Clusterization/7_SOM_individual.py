@@ -46,7 +46,7 @@ data_selected = data_cleaned.iloc[100:108, [2, 3]]
 coords = data_selected.values
 
 # Save cleaned coordinates to CSV
-data_selected.to_csv(f'som_coords_{current_animal}.csv', index=False, header=['Longitude', 'Latitude'])
+data_selected.to_csv(f'som_coords_{current_animal}.csv', index=False, header=None)
 
 print("Coordinates saved to coords_processed.csv")
 
