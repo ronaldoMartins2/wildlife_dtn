@@ -6,6 +6,9 @@ import psycopg2
 
 # python3 2_encontrar_contatos_entre_nos.py 93 94
 
+# pip install sklearn
+# pip install scikit-learn
+
 first_animal = sys.argv[1]
 second_animal = sys.argv[2]
 

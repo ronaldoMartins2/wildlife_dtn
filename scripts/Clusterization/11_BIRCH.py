@@ -4,6 +4,13 @@ from sklearn.cluster import Birch
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 
+# exemplode execução
+# python3 11_BIRCH.py 93
+
+#/home/rnmartins/usp/wildlife_dtn/scripts/Data_preparation/map_93.csv
+
+#/home/rnmartins/usp/wildlife_dtn/scripts/Clusterization/11_BIRCH.py
+
 # Step 1: Load Data
 raw_data = pd.read_csv('map_93.csv', header=None, names=['id', 'Timestamp', 'Longitude', 'Latitude'])
 

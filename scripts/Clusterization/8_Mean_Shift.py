@@ -3,7 +3,10 @@ import numpy as np
 from sklearn.cluster import MeanShift
 import matplotlib.pyplot as plt
 
-# Step 1: Load Data
+# exemplo de execução
+# python3 8_Mean_Shift.py 93
+
+# Step 1: Load Data from Data_preparation folder
 data = [
     [93, "3/12/14 17:39", -64.877263, -3.03684],
     [93, "3/14/14 4:00", -64.877105, -3.038135],
@@ -41,7 +44,8 @@ plt.ylabel('Latitude')
 plt.title('Mean-Shift Clustering of Latitude and Longitude')
 plt.legend()
 
+# salvar conforme id da onça
 plt.savefig(f'onca_93_mean_shift.png')
 
 
-plt.show()
+#plt.show()
