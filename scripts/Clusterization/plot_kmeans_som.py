@@ -2,6 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 
+# plot_kmeans_som_birch_mean_shift 
+
 # Carregar os dados sem cabeçalho
 kmeans_data = pd.read_csv(f"kmeans_coords_{sys.argv[1]}.csv", header=None)
 som_data = pd.read_csv(f"som_coords_{sys.argv[1]}.csv", header=None)
