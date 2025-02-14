@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 current_animal = sys.argv[1]
 
 # Read data from CSV
-file_name = f'../map_{current_animal}.csv'
+file_name = f'../Data_preparation/map_{current_animal}.csv'
 data = pd.read_csv(file_name, header=None)  # header=None to indicate no column names
 
 # Remove commas from the longitude and latitude columns (columns 2 and 3)

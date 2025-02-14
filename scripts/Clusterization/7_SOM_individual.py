@@ -6,11 +6,24 @@ from minisom import MiniSom  # Import MiniSom for SOM
 
 # pip install minisom
 
+
+# python3 -m venv venv
+# source ./venv/bin/activate
+
+# python3 7_SOM_individual.py 94
+
+
 current_animal = sys.argv[1]
 
 # Read data from CSV
-file_name = f'../map_{current_animal}.csv'
-data = pd.read_csv(file_name, header=None)
+file_name = f'../Data_preparation/map_{current_animal}.csv'
+
+data = pd.read_csv(file_name, header=None)  # header=None to indicate no column names
+
+# Print the first few rows to inspect the raw data
+print("Raw data preview:")
+print(data.head())  # Check if the data looks correct
+
 
 # Remove commas from the longitude and latitude columns (columns 2 and 3)
 data.iloc[:, 2] = data.iloc[:, 2].replace({',': ''}, regex=True)
@@ -56,7 +69,13 @@ clusters = np.array([cluster_map[i][0] for i in range(len(coords))])
 plt.figure(figsize=(10, 6))
 for cluster_id in np.unique(clusters):
     cluster_points = coords[clusters == cluster_id]
-    plt.scatter(cluster_points[:, 0], cluster_points[:, 1], label=f'Centroíde {cluster_id}', alpha=0.7)
+
+    plt.scatter(
+        cluster_points[:, 0],
+        cluster_points[:, 1],
+        label=f'Centroíde {cluster_id}',
+        alpha=0.7
+    )
 
 plt.title('SOM Clustering of GPS Coordinates')
 plt.xlabel('Longitude')

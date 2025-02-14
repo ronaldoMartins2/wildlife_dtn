@@ -7,6 +7,8 @@ import sys
 # Carregar os dados sem cabeçalho
 kmeans_data = pd.read_csv(f"kmeans_coords_{sys.argv[1]}.csv", header=None)
 som_data = pd.read_csv(f"som_coords_{sys.argv[1]}.csv", header=None)
+birch = pd.read_csv(f"birch_clusters_map_{sys.argv[1]}.csv", header=None)
+mean_shift = pd.read_csv(f"birch_clusters_map_{sys.argv[1]}.csv", header=None)
 
 # Definir nomes das colunas dinamicamente
 if kmeans_data.shape[1] == 2:
@@ -19,12 +21,24 @@ if som_data.shape[1] == 2:
 elif som_data.shape[1] == 3:
     som_data.columns = ['latitude', 'longitude', 'label']
 
+if birch.shape[1] == 2:
+    birch.columns = ['latitude', 'longitude']
+elif birch.shape[1] == 3:
+    birch.columns = ['latitude', 'longitude', 'label']
+
+if mean_shift.shape[1] == 2:
+    mean_shift.columns = ['latitude', 'longitude']
+elif mean_shift.shape[1] == 3:
+    mean_shift.columns = ['latitude', 'longitude', 'label']
+
 # Criar o gráfico
 plt.figure(figsize=(10, 6))
 
 # Plotar os pontos originais
 plt.scatter(kmeans_data['longitude'], kmeans_data['latitude'], label='K-Means Clusters', alpha=0.6, cmap='viridis')
 plt.scatter(som_data['longitude'], som_data['latitude'], label='SOM Clusters', alpha=0.6, cmap='coolwarm')
+plt.scatter(birch['longitude'], birch['latitude'], label='BIRCH Clusters', alpha=0.6, cmap='plasma')
+plt.scatter(mean_shift['longitude'], mean_shift['latitude'], label='MEAN-SHIFT Clusters', alpha=0.6, cmap='cividis')
 
 plt.xlabel("Longitude")
 plt.ylabel("Latitude")

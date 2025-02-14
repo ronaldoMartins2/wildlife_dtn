@@ -1,4 +1,5 @@
 import json
+import csv
 
 def read_field_from_json(json_file, field_name):
     """
@@ -29,3 +30,19 @@ def read_field_from_json(json_file, field_name):
     except json.JSONDecodeError:
         print(f"Error decoding the JSON file '{json_file}'.")
         return None
+
+
+def get_list_animals(file_name):
+    # Open the CSV file
+    with open(file_name, newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        
+        # Create a set to store unique IDs
+        ids = set()
+        
+        # Iterate through each row and add the ID to the set
+        for row in reader:
+            ids.add(row['individual.local.identifier (ID)'])
+    
+    # Convert the set back to a list before returning
+    return list(ids)

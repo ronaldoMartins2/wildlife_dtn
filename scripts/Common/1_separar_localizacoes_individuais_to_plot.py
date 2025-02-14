@@ -34,7 +34,7 @@ df = pd.DataFrame(columns=custom_header)
 
 with open ( file_rawdata ) as csv_file :
 
-    print('inside main with')
+    #print('inside main with')
 
     csv_reader = csv . reader ( csv_file, delimiter = ',')
     line_count = 0
@@ -42,7 +42,7 @@ with open ( file_rawdata ) as csv_file :
     for row in csv_reader :
 
         if line_count == 0:
-            print ( f' Column names are (first with) { ",". join ( row ) } ')
+            #print ( f' Column names are (first with) { ",". join ( row ) } ')
             line_count += 1
         else :
             currentTime = dt . strptime ( row[1] , "%m/%d/%y %H:%M" )
@@ -54,12 +54,12 @@ with open ( file_rawdata ) as csv_file :
 
             line_count += 1
 
-    print ( f' Processed {line_count} lines. list_animals {len(list_animals)}')
+    #print ( f' Processed {line_count} lines. list_animals {len(list_animals)}')
 
-print( f'list_animals {list_animals}' )
+#print( f'list_animals {list_animals}' )
 
-print ( ' firstDate : ')
-print ( actualTimeEven )
+#print ( ' firstDate : ')
+#print ( actualTimeEven )
 
 data = []
 
@@ -70,7 +70,7 @@ with open ( file_rawdata ) as csv_file :
     for row in csv_reader :
         if line_count == 0:
             
-            print ( f' Column names are { ",". join ( row ) } ')
+            #print ( f' Column names are { ",". join ( row ) } ')
             #writer.writerow ( { 'lat': 'lat', 'long': 'lng' } )
 
         else :
