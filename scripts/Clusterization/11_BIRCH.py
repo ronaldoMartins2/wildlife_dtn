@@ -7,12 +7,9 @@ import matplotlib.pyplot as plt
 # exemplode execução
 # python3 11_BIRCH.py 93
 
-#/home/rnmartins/usp/wildlife_dtn/scripts/Data_preparation/map_93.csv
-
-#/home/rnmartins/usp/wildlife_dtn/scripts/Clusterization/11_BIRCH.py
 
 # Step 1: Load Data
-raw_data = pd.read_csv('map_93.csv', header=None, names=['id', 'Timestamp', 'Longitude', 'Latitude'])
+raw_data = pd.read_csv(f'../Data_preparation/map_{sys.argv[1]}.csv', header=None, names=['id', 'Timestamp', 'Longitude', 'Latitude'])
 
 data = raw_data[:100]
 
@@ -26,7 +23,12 @@ coordinates = scaler.fit_transform(df[['Longitude', 'Latitude']])
 birch_model = Birch(n_clusters=None, threshold=0.5)
 df['Cluster'] = birch_model.fit_predict(coordinates)
 
-# Step 4: Plot Clusters
+# Step 4: Save Results to CSV
+output_csv_path = f'birch_clusters_map_{sys.argv[1]}.csv'
+df[['Longitude', 'Latitude', 'Cluster']].to_csv(output_csv_path, index=False, header=None)
+print(f"Clusters saved to {output_csv_path}")
+
+# Step 5: Plot Clusters
 plt.figure(figsize=(10, 6))
 
 # Plot each cluster with a unique color
@@ -40,6 +42,6 @@ plt.ylabel("Latitude")
 plt.legend()
 plt.grid()
 
-plt.savefig(f'onca_93_BIRCH.png')
-
+plt.savefig(f'onca_{sys.argv[1]}_BIRCH.png')
 plt.show()
+

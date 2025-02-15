@@ -16,7 +16,7 @@ from minisom import MiniSom  # Import MiniSom for SOM
 current_animal = sys.argv[1]
 
 # Read data from CSV
-file_name = f'../map_{current_animal}.csv'
+file_name = f'../Data_preparation/map_{current_animal}.csv'
 
 data = pd.read_csv(file_name, header=None)  # header=None to indicate no column names
 
