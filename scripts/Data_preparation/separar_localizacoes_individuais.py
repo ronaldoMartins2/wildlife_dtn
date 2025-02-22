@@ -5,28 +5,22 @@
 
 import csv
 import sys
+import os
 from datetime import datetime as dt
 
-current_animal = sys.argv [1]
-<<<<<<< HEAD
-file_rawdata = 'jaguar_mamiraua.csv'
-
 def run(current_animal, file_rawdata):
     # create the csv writer
-    file = open ( 'Data_preparation/map_'+ current_animal + '.csv', 'w')
 
-    fields = ( 'id', 'time', 'long', 'lat')
-    writer = csv . DictWriter ( file, fieldnames = fields, lineterminator= '\n')
-=======
-file_rawdata = '../jaguar_mamiraua.csv'
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+    output_file = os.path.join(results_dir, 'map_' + current_animal + '.csv')
+    
+    file = open( output_file, 'w')
 
-def run(current_animal, file_rawdata):
-    # create the csv writer
-    file = open( 'map_'+ current_animal + '.csv', 'w')
+    #file = open( '../Results/map_'+ current_animal + '.csv', 'w')
 
     fields = ( 'id', 'time', 'long', 'lat')
     writer = csv . DictWriter( file, fieldnames = fields, lineterminator= '\n')
->>>>>>> a669d8c089ea539b938c97798982d3b82ba9c965
 
     # empty dictionary
     list_animals = { }
@@ -85,4 +79,9 @@ def run(current_animal, file_rawdata):
     # close the file
     file.close( )
 
-run( current_animal, file_rawdata )
+def run_mock( ):
+    
+    current_animal = sys.argv [1]
+    file_rawdata = '../Results/jaguar_mamiraua.csv'
+
+    run( current_animal, file_rawdata )
