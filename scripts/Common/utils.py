@@ -1,5 +1,70 @@
 import json
 import csv
+import os
+import pandas as pd
+
+interpolations_methods = ['N_BEATS', 'N_HITS']
+
+def merge_csvs( current_animal, method ):
+
+    print('call merge_csvs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+
+    # Define the results directory and file path
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+    file_path = os.path.join(results_dir, f'map_{current_animal}.csv')  # Path to the CSV file
+
+    # Check if the file exists
+    if not os.path.exists(file_path):
+        print(f"File {file_path} not found.")
+        return None
+
+    # Read the CSV file into a DataFrame
+    df_raw = pd.read_csv(file_path)
+    df_raw.columns = ['ID', 'DateTime', 'Longitude', 'Latitude']
+
+    if method == 'N_BEATS':
+        file_path = os.path.join(results_dir, f'map_{current_animal}_interpolation_nbeats.csv')  # Path to the CSV file
+
+    if method == 'N_HITS':
+        file_path = os.path.join(results_dir, f'map_{current_animal}_interpolation_nhits.csv')  # Path to the CSV file
+
+
+    # Check if the file exists
+    if not os.path.exists(file_path):
+        print(f"File {file_path} not found.")
+        return None
+
+    # Read the CSV file into a DataFrame
+    df_interpolation = pd.read_csv(file_path)
+    df_interpolation.columns = ['ID', 'DateTime', 'Longitude', 'Latitude']
+
+    result = pd.concat([df_raw, df_interpolation], axis=0)
+
+    print('####################################################################################################################')
+    print(result.head(10))
+
+    # Convert the 'DateTime' column to datetime type
+    #result['DateTime'] = pd.to_datetime(result['DateTime'], format='%d/%m/%y %H:%M')
+    result['DateTime'] = pd.to_datetime(result['DateTime'], format='%m/%d/%y %H:%M')
+
+    # Sort the DataFrame by the 'DateTime' column
+    df_sorted = result.sort_values(by='DateTime')
+
+    columns_to_save = ['ID', 'DateTime', 'Longitude', 'Latitude']
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+
+    if method == 'N_BEATS':    
+        file_path = os.path.join(results_dir, f'map_{current_animal}_interpolation_nbeats_merged.csv')
+
+    if method == 'N_HITS':    
+        file_path = os.path.join(results_dir, f'map_{current_animal}_interpolation_nhits_merged.csv')
+
+
+    df_sorted[columns_to_save].to_csv( file_path, index=False, header=False)
+
 
 def read_field_from_json(json_file, field_name):
     """

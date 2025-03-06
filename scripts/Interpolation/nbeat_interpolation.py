@@ -80,7 +80,7 @@ def getDataFromCSV( current_animal ):
 #df['Timestamp'] = pd.to_datetime(df['Timestamp'], format='%m/%d/%y %H:%M')
 
 
-def run( current_animal, number_of_predictions ):
+def run( current_animal, number_of_predictions, len_animal ):
 
     df = getDataFromCSV( current_animal )
 
@@ -165,7 +165,7 @@ def run( current_animal, number_of_predictions ):
 
         while current_timestamp <= end_date:
             
-            print(f'current_timestamp {current_timestamp} end_date {end_date}')
+            #print(f'current_timestamp {current_timestamp} end_date {end_date}')
             # Prepare the input for the model (use the last known values from the previous row)
             last_row = df.iloc[-1]
             last_features = torch.tensor([[last_row['Prev Time Difference (hours)'], last_row['Longitude'], last_row['Latitude']]], dtype=torch.float32)
@@ -203,9 +203,6 @@ def run( current_animal, number_of_predictions ):
             tuple: A tuple containing the earliest and latest dates.
         """
         # Load the CSV file without assuming a header
-        #base_path = '/home/rnmartins/usp/wildlife_dtn/scripts/Data_preparation' 
-        #base_path = '/home/rnmartins/usp/wildlife_dtn/Data_preparation'
-        #file_path = os.path.join(base_path, f'map_{current_animal}.csv')
 
         script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
         results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
@@ -264,13 +261,24 @@ def run( current_animal, number_of_predictions ):
     start_date = pd.to_datetime( start_date_str, format='%m/%d/%y %H:%M')
     end_date = pd.to_datetime(end_date_str, format='%m/%d/%y %H:%M')
     print(start_date, end_date)
-    # Call the function to predict data between the given dates
-    predicted_df = predict_between_dates(start_date, end_date, df, model)
+
+    len_animal = int(len_animal)
+    predicted_df = pd.DataFrame()
+
+    while len(predicted_df) < len_animal:
+
+        print(f' len {len(predicted_df)} len_animal {len_animal} current_animal {current_animal} ******************************')
+
+        # Call the function to predict data between the given dates
+        new_predictions = predict_between_dates(start_date, end_date, df, model)
+
+        # Concatenate the new predictions to the existing predicted_df
+        predicted_df = pd.concat([predicted_df, new_predictions], ignore_index=True)
 
     # Display the predicted data
 
-    predicted_df = predicted_df.head( int(number_of_predictions) )
-    print(predicted_df)
+    #predicted_df = predicted_df.head( int(number_of_predictions) )
+    #print(predicted_df)
     #predicted_df.to_csv(f'map_{current_animal}_interpolation.csv', index=False)
 
     columns_to_save = ['ID', 'Timestamp', 'Longitude', 'Latitude']

@@ -3,6 +3,7 @@ import torch.nn as nn
 import pandas as pd
 from datetime import timedelta
 import sys
+import os
 
 # python3 12_nhits_interpolation_2.py 94 '1/22/15 17:31' '7/31/15 17:31'
 
@@ -143,12 +144,18 @@ def predict_between_dates(start_date, end_date, df, model, num_steps=10):
 
 # Save the results to CSV
 def save_to_csv(df, filename):
-    df.to_csv(filename, index=False, header=True)
+    #df.to_csv(filename, index=False, header=True)
+    df.to_csv(filename, index=False, header=False)
     print(f"Results saved to {filename}")
 
 def getDataFromCSV( current_animal ):
     # Read the CSV file into a DataFrame
-    df = pd.read_csv(f'map_{current_animal}.csv', header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+    file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
+    
+    df = pd.read_csv( file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
 
     return df
 
@@ -159,23 +166,47 @@ def run_mock():
     #end_date_str = sys.argv [3]
     run( current_animal )
 
-def run(current_animal):
+def run(current_animal, len_animal, start_date, end_date):
 
     df = getDataFromCSV( current_animal )
 
     # Define your date range and input file
-    start_date_str = '1/22/15 17:31'
-    end_date_str = '7/31/15 17:31'
+    #start_date_str = '1/22/15 17:31'
+    #end_date_str = '7/31/15 17:31'
+
+    #start_date_str = '1/22/14 17:31'
+    #end_date_str = '7/31/15 17:31'
+
+    start_date_str = start_date
+    end_date_str = end_date
 
     start_date = pd.to_datetime(start_date_str, format='%m/%d/%y %H:%M')
     end_date = pd.to_datetime(end_date_str, format='%m/%d/%y %H:%M')
 
-
     # Load the dataset
-    df = load_data(f'map_{current_animal}.csv')  # Make sure this file exists
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+    file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
 
-    # Predict between the two dates
-    predicted_df = predict_between_dates(start_date, end_date, df, model, num_steps=20)  # Set num_steps to 20
+    df = load_data( file_path )  # Make sure this file exists
+
+    len_animal = int(len_animal)
+    predicted_df = pd.DataFrame()
+
+    while len(predicted_df) < len_animal:
+
+        # Predict between the two dates
+        new_predictions = predict_between_dates(start_date, end_date, df, model, num_steps=20)
+
+        # Concatenate the new predictions to the existing predicted_df
+        predicted_df = pd.concat([predicted_df, new_predictions], ignore_index=True)
+
+        #start_date = predicted_df['date_column'].iloc[-1]  # Replace 'date_column' with the actual column name for dates
+
 
     # Save the predictions to a CSV file
-    save_to_csv(predicted_df, f'../Results/predicted_map_{current_animal}_interpolation.csv')
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+    file_path = os.path.join(results_dir, f'map_{current_animal}_interpolation_nhits.csv')
+
+    save_to_csv(predicted_df, file_path)

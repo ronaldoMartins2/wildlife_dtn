@@ -4,11 +4,18 @@ import sys
 
 # plot_kmeans_som_birch_mean_shift 
 
+# python3 -m venv venv
+# source ./venv/bin/activate
+
+# python3 plot_kmeans_som_birch_mean_shift.py 94 
+
+current_animal = sys.argv[1]
+
 # Carregar os dados sem cabeçalho
-kmeans_data = pd.read_csv(f"kmeans_coords_{sys.argv[1]}.csv", header=None)
-som_data = pd.read_csv(f"som_coords_{sys.argv[1]}.csv", header=None)
-birch = pd.read_csv(f"birch_clusters_map_{sys.argv[1]}.csv", header=None)
-mean_shift = pd.read_csv(f"birch_clusters_map_{sys.argv[1]}.csv", header=None)
+kmeans_data = pd.read_csv(f"kmeans_coords_{current_animal}.csv", header=None)
+som_data = pd.read_csv(f"som_coords_{current_animal}.csv", header=None)
+birch = pd.read_csv(f"birch_clusters_map_{current_animal}.csv", header=None)
+mean_shift = pd.read_csv(f"birch_clusters_map_{current_animal}.csv", header=None)
 
 # Definir nomes das colunas dinamicamente
 if kmeans_data.shape[1] == 2:
@@ -45,4 +52,8 @@ plt.ylabel("Latitude")
 plt.title("Clusters e Centróides da Onça")
 plt.legend()
 plt.grid()
-plt.show()
+#plt.show()
+
+
+# Save the plot as an image
+plt.savefig(f'onca_{current_animal}_clusterization_comparizon.png')
