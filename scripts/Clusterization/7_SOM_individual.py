@@ -3,6 +3,7 @@ import pandas as pd
 import sys
 import matplotlib.pyplot as plt
 from minisom import MiniSom  # Import MiniSom for SOM
+import os
 
 # pip install minisom
 
@@ -15,8 +16,12 @@ from minisom import MiniSom  # Import MiniSom for SOM
 
 current_animal = sys.argv[1]
 
+script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+file_name = os.path.join(results_dir, f'map_{current_animal}.csv')
+
 # Read data from CSV
-file_name = f'../Data_preparation/map_{current_animal}.csv'
+#file_name = f'../Data_preparation/map_{current_animal}.csv'
 
 data = pd.read_csv(file_name, header=None)  # header=None to indicate no column names
 
@@ -83,4 +88,4 @@ plt.ylabel('Latitude')
 plt.legend()
 plt.grid(True)
 plt.savefig(f'onca_{current_animal}_som.png')
-plt.show()
+#plt.show()

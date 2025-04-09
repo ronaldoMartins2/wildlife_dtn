@@ -111,3 +111,19 @@ def get_list_animals(file_name):
     
     # Convert the set back to a list before returning
     return list(ids)
+
+def create_clusterization_results(folder_name):
+    script_dir = os.path.dirname(os.path.abspath(__file__)) 
+    folder_path = os.path.join(script_dir, '..', folder_name)
+
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+        print(f"Folder '{folder_path}' created successfully")
+        return True
+    else:
+        print(f"Folder '{folder_path}' already exists")
+        return False
+
+    #script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    #results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
+    #file_name = os.path.join(results_dir, f'onca_{current_animal}_kmeans.png')

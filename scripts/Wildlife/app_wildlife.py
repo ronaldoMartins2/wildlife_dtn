@@ -27,13 +27,18 @@ from Data_preparation.separar_localizacoes_individuais import (
     run as run_preparation
 )
 
+'''
 from Interpolation.nbeat_interpolation import (
     run as run_interpolation_nbeat
 )
+'''
 
+'''
 from Interpolation.nhits_interpolation import (
     run as run_interpolation_nhits
 )
+'''
+
 
 from Evaluation.average_by_individual import (
     run as run_average_by_individual,
@@ -48,6 +53,22 @@ from Evaluation.average_comparison import (
 
 from Common.utils import (
     interpolations_methods
+)
+
+from Clusterization.kmeans_individual_csv import (
+    run as run_kmeans
+)
+
+from Clusterization.SOM_individual import (
+    run as run_som
+)
+
+from Clusterization.Mean_Shift import (
+    run as run_mean_shift
+)
+
+from Clusterization.BIRCH import (
+    run as run_birch
 )
 
 # data preparation
@@ -70,6 +91,7 @@ for current_animal in list_animals:
 time.sleep(2)
 
 
+'''
 for current_animal in list_animals:
     #TODO review number_of_predictions 
     number_of_predictions = 5
@@ -81,8 +103,9 @@ for current_animal in list_animals:
     len_animal = get_len_animal( current_animal )
     start_date, end_date = get_top_botom_date( current_animal )
     run_interpolation_nhits(current_animal, len_animal, start_date, end_date)
-   
+'''   
 
+'''
 for current_animal in list_animals:
 
     merge_csvs( current_animal, 'N_BEATS' )
@@ -94,15 +117,24 @@ for current_animal in list_animals:
     calc_average_by_method( current_animal, 'N_HITS' )
 
 run_average_comparison( len_animals )
+'''
+
+# run clusterization kmeans
+'''
+for current_animal in list_animals:
+
+    #run_kmeans(current_animal)
+    run_som(current_animal)
+'''
+#run_som(95)
+#run_mean_shift(94)
+#run_kmeans(93)
+#run_som(93)
+
+run_birch(94)
+
+# run clusterization SOM
+
+# run clusterization Mean Shift
 
 
-# run_interpolation('94')
-
-# python 3 Interpolation/5_nbeat_interpolation.py 94 1032
-
-
-# python3 Data_preparation/1_separar_localizacoes_individuais.py 94
-
-# interpolation
-
-# python3 5_nbeat_interpolation.py 94 n

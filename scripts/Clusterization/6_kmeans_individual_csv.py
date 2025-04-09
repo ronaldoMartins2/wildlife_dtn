@@ -4,13 +4,20 @@ import sys
 import re
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
+import os
+
+# pip install scikit-learn
 
 # python3 6_kmeans_individual_csv.py 94
 
 current_animal = sys.argv[1]
 
+script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+file_name = os.path.join(results_dir, f'map_{current_animal}.csv')
+
 # Read data from CSV
-file_name = f'../Data_preparation/map_{current_animal}.csv'
+#file_name = f'../Data_preparation/map_{current_animal}.csv'
 data = pd.read_csv(file_name, header=None)  # header=None to indicate no column names
 
 # Remove commas from the longitude and latitude columns (columns 2 and 3)
@@ -84,5 +91,10 @@ plt.legend()
 plt.grid(True)
 
 # Save the plot as an image
-plt.savefig(f'onca_{current_animal}_kmeans.png')
-plt.show()
+
+script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+file_name = os.path.join(results_dir, f'onca_{current_animal}_kmeans.png')
+#plt.savefig(f'onca_{current_animal}_kmeans.png')
+plt.savefig(file_name)
+#plt.show()

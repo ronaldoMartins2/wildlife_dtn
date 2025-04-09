@@ -76,7 +76,7 @@ def run( len_animals ):
                         fontsize=9)
 
     plt.tight_layout()
-    plt.show()
+    #plt.show()
 
     script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
