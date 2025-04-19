@@ -124,6 +124,22 @@ def create_clusterization_results(folder_name):
         print(f"Folder '{folder_path}' already exists")
         return False
 
-    #script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    #results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
-    #file_name = os.path.join(results_dir, f'onca_{current_animal}_kmeans.png')
+def create_pairs(elements):
+    """
+    Creates all possible pairs from the given set of elements.
+    Each pair contains two different elements (no self-pairing).
+    
+    Args:
+        elements: An iterable containing the elements
+        
+    Returns:
+        List of tuples, where each tuple is a unique pair
+    """
+    result = []
+    elements_list = list(elements)
+    
+    for i in range(len(elements_list)):
+        for j in range(i + 1, len(elements_list)):
+            result.append((elements_list[i], elements_list[j]))
+    
+    return result

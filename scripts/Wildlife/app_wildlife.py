@@ -20,18 +20,17 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 from Common.utils import (
     read_field_from_json,
     get_list_animals,
-    merge_csvs
+    merge_csvs,
+    create_pairs
 ) 
 
 from Data_preparation.separar_localizacoes_individuais import (
     run as run_preparation
 )
 
-'''
 from Interpolation.nbeat_interpolation import (
     run as run_interpolation_nbeat
 )
-'''
 
 '''
 from Interpolation.nhits_interpolation import (
@@ -71,6 +70,10 @@ from Clusterization.BIRCH import (
     run as run_birch
 )
 
+from DTN.contacts import (
+    run as run_contacts
+)
+
 # data preparation
 
 file_rawdata = sys.argv [1]
@@ -91,13 +94,14 @@ for current_animal in list_animals:
 time.sleep(2)
 
 
-'''
+
 for current_animal in list_animals:
     #TODO review number_of_predictions 
     number_of_predictions = 5
     len_animal = get_len_animal( current_animal )
     run_interpolation_nbeat(current_animal, number_of_predictions, len_animal)
 
+'''
 for current_animal in list_animals:
 
     len_animal = get_len_animal( current_animal )
@@ -131,10 +135,23 @@ for current_animal in list_animals:
 #run_kmeans(93)
 #run_som(93)
 
-run_birch(94)
+#run_birch(94)
 
 # run clusterization SOM
 
 # run clusterization Mean Shift
+
+#DTN Contacts
+#criar os conjunto dois a dois sem repetição
+
+pairs = create_pairs(list_animals)
+
+for pair in pairs:
+    run_contacts(pair[0], pair[1])
+
+#print('pairs ')
+#print(pairs)
+
+#run_contacts(93, 94)
 
 

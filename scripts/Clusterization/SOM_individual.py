@@ -7,8 +7,8 @@ import os
 from Common.utils import (
     create_clusterization_results
 )
-# pip install minisom
 
+# pip install minisom
 
 # python3 -m venv venv
 # source ./venv/bin/activate
