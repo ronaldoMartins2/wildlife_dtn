@@ -54,9 +54,14 @@ def run(current_animal):
     coords = data_selected.values
 
     # Save cleaned coordinates to CSV
-    data_selected.to_csv(f'som_coords_{current_animal}.csv', index=False, header=None)
+    create_clusterization_results('Results/Clusterization')
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
+    file_name = os.path.join(results_dir, f'clusters_som_{current_animal}.csv')
 
-    print("Coordinates saved to coords_processed.csv")
+    data_selected.to_csv(file_name, index=False, header=None)
+
+    print(f"Coordinates saved to {file_name}")
 
     # Check if coords has valid data
     if coords.shape[0] == 0:

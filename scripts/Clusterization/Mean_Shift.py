@@ -13,13 +13,11 @@ from Common.utils import (
 
 # Step 1: Load Data from Data_preparation folder
 
-
 def run(current_animal):
 
     script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
     file_name = os.path.join(results_dir, f'map_{current_animal}.csv')
-
 
     data = pd.read_csv(file_name, header=None, names=['id', 'Timestamp', 'Longitude', 'Latitude'])
     data = data[:100]
@@ -41,7 +39,12 @@ def run(current_animal):
 
 
     # Step 4: Save Results to CSV
-    output_csv_path = f'clusters_mean_shift_map_{current_animal}.csv'
+
+    create_clusterization_results('Results/Clusterization')
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
+    output_csv_path = os.path.join(results_dir, f'clusters_mean_shift_map_{current_animal}.csv')
+
     df[['Longitude', 'Latitude', 'Cluster']].to_csv(output_csv_path, index=False, header=None)
     print(f"Clusters saved to {output_csv_path}")
 

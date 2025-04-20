@@ -34,7 +34,12 @@ def run(current_animal):
     df['Cluster'] = birch_model.fit_predict(coordinates)
 
     # Step 4: Save Results to CSV
-    output_csv_path = f'birch_clusters_map_{current_animal}.csv'
+
+    create_clusterization_results('Results/Clusterization')
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
+    output_csv_path = os.path.join(results_dir, f'clusters_birch_map_{current_animal}.csv')
+
     df[['Longitude', 'Latitude', 'Cluster']].to_csv(output_csv_path, index=False, header=None)
     print(f"Clusters saved to {output_csv_path}")
 

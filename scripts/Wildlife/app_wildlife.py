@@ -70,6 +70,10 @@ from Clusterization.BIRCH import (
     run as run_birch
 )
 
+from Clusterization.plot_kmeans_som_birch_mean_shift import (
+    run as run_plot_kmeans_som_birch_mean_shift
+)   
+
 from DTN.contacts import (
     run as run_contacts
 )
@@ -93,13 +97,15 @@ for current_animal in list_animals:
     
 time.sleep(2)
 
+############## INTERPOLATION ##############################
 
-
+'''
 for current_animal in list_animals:
     #TODO review number_of_predictions 
     number_of_predictions = 5
     len_animal = get_len_animal( current_animal )
     run_interpolation_nbeat(current_animal, number_of_predictions, len_animal)
+'''
 
 '''
 for current_animal in list_animals:
@@ -107,7 +113,7 @@ for current_animal in list_animals:
     len_animal = get_len_animal( current_animal )
     start_date, end_date = get_top_botom_date( current_animal )
     run_interpolation_nhits(current_animal, len_animal, start_date, end_date)
-'''   
+'''
 
 '''
 for current_animal in list_animals:
@@ -123,13 +129,20 @@ for current_animal in list_animals:
 run_average_comparison( len_animals )
 '''
 
+############## CLUSTERIZATION ##############################
 # run clusterization kmeans
-'''
-for current_animal in list_animals:
+
+#for current_animal in list_animals:
 
     #run_kmeans(current_animal)
-    run_som(current_animal)
-'''
+    #run_som(current_animal)
+
+run_kmeans(93)
+run_som(93)
+run_mean_shift(93)
+run_birch(93)     
+
+
 #run_som(95)
 #run_mean_shift(94)
 #run_kmeans(93)
@@ -141,17 +154,21 @@ for current_animal in list_animals:
 
 # run clusterization Mean Shift
 
-#DTN Contacts
+'''
+for current_animal in list_animals:
+
+        run_plot_kmeans_som_birch_mean_shift(current_animal)
+'''
+
+run_plot_kmeans_som_birch_mean_shift(93)
+
+############## #DTN Contacts ##################################
 #criar os conjunto dois a dois sem repetição
 
+'''
 pairs = create_pairs(list_animals)
 
 for pair in pairs:
     run_contacts(pair[0], pair[1])
-
-#print('pairs ')
-#print(pairs)
-
-#run_contacts(93, 94)
-
+'''
 

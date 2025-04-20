@@ -61,7 +61,11 @@ def run(current_animal):
     centroids = kmeans.cluster_centers_
 
     # Save cluster coordinates to CSV
-    output_file = f'kmeans_coords_{current_animal}.csv'
+    create_clusterization_results('Results/Clusterization')
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
+    output_file = os.path.join(results_dir, f'clusters_kmeans_{current_animal}.csv')
+
     cluster_data = pd.DataFrame(centroids, columns=['Longitude', 'Latitude'])
     cluster_data.to_csv(output_file, index=False, header=None)
     print(f"Cluster centroids saved to {output_file}")
