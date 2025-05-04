@@ -4,6 +4,15 @@ import pandas as pd
 from datetime import timedelta
 import sys
 import os
+from Data_preparation.raw_data_integration import get_id_from_json
+from Data_preparation.data_field import DataField
+
+from Common.utils import (
+    create_clusterization_results,
+    read_field_from_json,
+    TRAINNING_SET,
+    results_folder
+) 
 
 # python3 12_nhits_interpolation_2.py 94 '1/22/15 17:31' '7/31/15 17:31'
 
@@ -74,9 +83,9 @@ class NHiTS(nn.Module):
 
 
 # Load your CSV data here
-def load_data(filename):
+def load_data(filename, mask):
     df = pd.read_csv(filename, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
-    df['Timestamp'] = pd.to_datetime(df['Timestamp'], format='%m/%d/%y %H:%M')
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'], format=mask)
     return df
 
 # Create the NHiTS model
@@ -88,7 +97,7 @@ num_hierarchies = 3  # Number of hierarchical levels
 model = NHiTS(input_dim, hidden_dim, num_blocks, num_hierarchies)
 
 # Function to predict between two dates
-def predict_between_dates(start_date, end_date, df, model, num_steps=10):
+def predict_between_dates(start_date, end_date, df, model, mask, num_steps=10):
     current_timestamp = start_date
     new_data = []
 
@@ -126,7 +135,9 @@ def predict_between_dates(start_date, end_date, df, model, num_steps=10):
         new_timestamp = current_timestamp + timedelta(hours=predicted_time_diff)
 
         # Save the forecast data point
-        new_data.append([last_row['ID'], new_timestamp.strftime('%m/%d/%y %H:%M'), predicted_longitude, predicted_latitude])
+        #new_data.append([last_row['ID'], new_timestamp.strftime('%m/%d/%y %H:%M'), predicted_longitude, predicted_latitude])
+        new_data.append([last_row['ID'], new_timestamp.strftime(mask), predicted_longitude, predicted_latitude])
+        
 
         # Update current timestamp and features for the next iteration
         current_timestamp = new_timestamp
@@ -148,14 +159,18 @@ def save_to_csv(df, filename):
     df.to_csv(filename, index=False, header=False)
     print(f"Results saved to {filename}")
 
-def getDataFromCSV( current_animal ):
+def getDataFromCSV( current_animal, file_rawdata_name ):
     # Read the CSV file into a DataFrame
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+    results_dir = results_folder( file_rawdata_name )
+    
     file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
     
     df = pd.read_csv( file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
+
+    # Limitar a 80% dos registros
+    limit = int(TRAINNING_SET * len(df))
+    df = df.iloc[:limit]
 
     return df
 
@@ -166,29 +181,26 @@ def run_mock():
     #end_date_str = sys.argv [3]
     run( current_animal )
 
-def run(current_animal, len_animal, start_date, end_date):
+def run(current_animal, len_animal, start_date, end_date, file_rawdata_name, file_rawdata_columns):
 
-    df = getDataFromCSV( current_animal )
+    df = getDataFromCSV( current_animal, file_rawdata_name )
 
     # Define your date range and input file
-    #start_date_str = '1/22/15 17:31'
-    #end_date_str = '7/31/15 17:31'
-
-    #start_date_str = '1/22/14 17:31'
-    #end_date_str = '7/31/15 17:31'
 
     start_date_str = start_date
     end_date_str = end_date
 
-    start_date = pd.to_datetime(start_date_str, format='%m/%d/%y %H:%M')
-    end_date = pd.to_datetime(end_date_str, format='%m/%d/%y %H:%M')
+    mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
+
+    start_date = pd.to_datetime(start_date_str, format=mask)
+    end_date = pd.to_datetime(end_date_str, format=mask)
 
     # Load the dataset
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+    results_dir = results_folder( file_rawdata_name )
+
     file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
 
-    df = load_data( file_path )  # Make sure this file exists
+    df = load_data( file_path, mask )  # Make sure this file exists
 
     len_animal = int(len_animal)
     predicted_df = pd.DataFrame()
@@ -196,7 +208,7 @@ def run(current_animal, len_animal, start_date, end_date):
     while len(predicted_df) < len_animal:
 
         # Predict between the two dates
-        new_predictions = predict_between_dates(start_date, end_date, df, model, num_steps=20)
+        new_predictions = predict_between_dates(start_date, end_date, df, model, mask, num_steps=20)
 
         # Concatenate the new predictions to the existing predicted_df
         predicted_df = pd.concat([predicted_df, new_predictions], ignore_index=True)
@@ -205,8 +217,8 @@ def run(current_animal, len_animal, start_date, end_date):
 
 
     # Save the predictions to a CSV file
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
-    file_path = os.path.join(results_dir, f'map_{current_animal}_interpolation_nhits.csv')
+    results_dir = results_folder( file_rawdata_name )
+
+    file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits.csv')
 
     save_to_csv(predicted_df, file_path)

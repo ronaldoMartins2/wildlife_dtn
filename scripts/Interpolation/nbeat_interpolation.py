@@ -6,7 +6,13 @@ import sys
 import os
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from Data_preparation.raw_data_integration import get_id_from_json
+from Data_preparation.data_field import DataField
 
+from Common.utils import (
+    create_clusterization_results,
+    results_folder
+)
 
 # python3 5_nbeat_interpolation.py 94 n(numero de registros)
 #exemplo python3 5_nbeat_interpolation.py 94 1032
@@ -15,8 +21,13 @@ from dateutil.relativedelta import relativedelta
 # python3 -m Interpolation.nbeat_interpolation 94 1032
 
 from Common.utils import (
-    read_field_from_json
-) 
+    read_field_from_json,
+    TRAINNING_SET
+)
+
+from Data_preparation.clear_outtliers import (
+    run as run_clear_outliers
+)
 
 # Define the NBeatsBlock with a residual connection fix
 class NBeatsBlock(nn.Module):
@@ -56,20 +67,18 @@ class NBeats(nn.Module):
         # Flatten the output to match the target shape: [batch_size]
         return final_forecast.view(-1)  # Ensure it's a 1D tensor of size [batch_size]
 
-def getDataFromCSV( current_animal ):
+def getDataFromCSV( current_animal, file_rawdata_name ):
     # Read the CSV file into a DataFrame
-    #base_path = '/home/rnmartins/usp/wildlife_dtn/scripts/Data_preparation' 
+    
+    results_dir = results_folder( file_rawdata_name )
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
     file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
 
-    #base_path = '/home/rnmartins/usp/wildlife_dtn/Data_preparation'
-    #file_path = os.path.join(base_path, f'map_{current_animal}.csv')
-
-    #df = pd.read_csv(f'../Data_preparation/map_{current_animal}.csv', header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
     df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
 
+    # Limita a 80% do número de registros
+    limit = int(TRAINNING_SET * len(df))
+    df = df.iloc[:limit]
 
     return df
 
@@ -80,12 +89,21 @@ def getDataFromCSV( current_animal ):
 #df['Timestamp'] = pd.to_datetime(df['Timestamp'], format='%m/%d/%y %H:%M')
 
 
-def run( current_animal, number_of_predictions, len_animal ):
+def run( current_animal, number_of_predictions, len_animal, file_rawdata_name, file_rawdata_columns ):
 
-    df = getDataFromCSV( current_animal )
+    df = getDataFromCSV( current_animal, file_rawdata_name )
+
+    if df.empty:
+        print(f'df is empty {current_animal}-{file_rawdata_name}')
+        return 
+
+    df = run_clear_outliers( df, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"] )
+
+    mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
 
     # Convert the 'Timestamp' column to datetime objects
-    df['Timestamp'] = pd.to_datetime(df['Timestamp'], format='%m/%d/%y %H:%M')
+    #df['Timestamp'] = pd.to_datetime(df['Timestamp'], format='%m/%d/%y %H:%M')
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'], format=mask)
 
     # Calculate the time differences between consecutive timestamps in hours
     df['Time Difference (hours)'] = df['Timestamp'].diff().dt.total_seconds() / 3600
@@ -159,7 +177,7 @@ def run( current_animal, number_of_predictions, len_animal ):
             print(f"Epoch {epoch}, Loss: {loss.item():.4f}")
 
     # Function to predict values between dates
-    def predict_between_dates(start_date, end_date, df, model, num_steps=5):
+    def predict_between_dates(start_date, end_date, df, file_rawdata_columns, model, num_steps=5):
         new_data = []
         current_timestamp = start_date
 
@@ -183,7 +201,10 @@ def run( current_animal, number_of_predictions, len_animal ):
             new_timestamp = current_timestamp + timedelta(hours=predicted_time_diff)
 
             # Append the new entry to the data with the correct number of columns
-            new_data.append([current_animal, new_timestamp.strftime('%m/%d/%y %H:%M'), last_row['Longitude'], last_row['Latitude'],
+            mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
+
+            #new_data.append([current_animal, new_timestamp.strftime('%m/%d/%y %H:%M'), last_row['Longitude'], last_row['Latitude'],
+            new_data.append([current_animal, new_timestamp.strftime(mask), last_row['Longitude'], last_row['Latitude'],
                             last_row['Time Difference (hours)'], last_row['Prev Time Difference (hours)']])
 
             # Update current_timestamp and last_row for the next iteration
@@ -192,7 +213,7 @@ def run( current_animal, number_of_predictions, len_animal ):
 
         return pd.DataFrame(new_data, columns=['ID', 'Timestamp', 'Longitude', 'Latitude', 'Time Difference (hours)', 'Prev Time Difference (hours)'])
 
-    def find_min_max_dates():
+    def find_min_max_dates(current_animal, file_rawdata_columns):
         """
         Reads a CSV file and identifies the earliest and latest dates in the 'Datetime' column.
 
@@ -202,12 +223,14 @@ def run( current_animal, number_of_predictions, len_animal ):
         Returns:
             tuple: A tuple containing the earliest and latest dates.
         """
+
+        mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
+
         # Load the CSV file without assuming a header
 
-        script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-        results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
-        file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
+        results_dir = results_folder( file_rawdata_name )
 
+        file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
 
         data = pd.read_csv(file_path, header=None)
 
@@ -219,7 +242,9 @@ def run( current_animal, number_of_predictions, len_animal ):
         print(data['Datetime'].head())
 
         # Convert the 'Datetime' column to datetime format
-        data['Datetime'] = pd.to_datetime(data['Datetime'], format='%m/%d/%y %H:%M', errors='coerce')
+        #data['Datetime'] = pd.to_datetime(data['Datetime'], format='%m/%d/%y %H:%M', errors='coerce')
+        data['Datetime'] = pd.to_datetime(data['Datetime'], format=mask, errors='coerce')
+
 
         # Check for rows with invalid or missing dates
         invalid_dates = data[data['Datetime'].isna()]
@@ -231,60 +256,60 @@ def run( current_animal, number_of_predictions, len_animal ):
         data = data.dropna(subset=['Datetime'])
 
         # Find the minimum and maximum dates
-        min_date = data['Datetime'].min().strftime('%m/%d/%y %H:%M')
-        max_date = data['Datetime'].max().strftime('%m/%d/%y %H:%M')
+
+        min_date = data['Datetime'].min().strftime( mask )
+        max_date = data['Datetime'].max().strftime( mask )
 
         return min_date, max_date
     # Define start and end dates
 
-    #start_date_str = '3/18/14 4:02'
-    #end_date_str = '3/19/14 4:02'
-    start_date_str, end_date_str = find_min_max_dates()
+    start_date_str, end_date_str = find_min_max_dates( current_animal, file_rawdata_columns )
 
     ########################################### just one month ############################################
-    #start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
-    start_date = datetime.strptime(start_date_str, '%m/%d/%y %H:%M')
+
+    mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
+
+    start_date = datetime.strptime(start_date_str, mask)
 
     # Add 2 months to start_date
     end_date = start_date + relativedelta(months=+2)
 
     # Convert end_date back to string in the same format
     #end_date_str = end_date.strftime('%Y-%m-%d')
-    end_date_str = end_date.strftime('%m/%d/%y %H:%M')
-    
+    #end_date_str = end_date.strftime('%m/%d/%y %H:%M')
+    end_date_str = end_date.strftime(mask)
+
     #######################################################################################################
 
-    print(start_date_str, end_date_str)
-    #start_date_str = '3/13/14 4:02'
-    #end_date_str = '3/17/14 4:02'
-
-    start_date = pd.to_datetime( start_date_str, format='%m/%d/%y %H:%M')
-    end_date = pd.to_datetime(end_date_str, format='%m/%d/%y %H:%M')
-    print(start_date, end_date)
+    start_date = pd.to_datetime( start_date_str, format=mask)
+    end_date = pd.to_datetime(end_date_str, format=mask)
 
     len_animal = int(len_animal)
     predicted_df = pd.DataFrame()
 
+
+
     while len(predicted_df) < len_animal:
 
-        print(f' len {len(predicted_df)} len_animal {len_animal} current_animal {current_animal} ******************************')
-
         # Call the function to predict data between the given dates
-        new_predictions = predict_between_dates(start_date, end_date, df, model)
+        print(f'>>>> start_date {start_date}, end_date {end_date}, df {df}')
+        if not df.empty:
+            new_predictions = predict_between_dates(start_date, end_date, df, file_rawdata_columns, model)
 
-        # Concatenate the new predictions to the existing predicted_df
-        predicted_df = pd.concat([predicted_df, new_predictions], ignore_index=True)
+            # Concatenate the new predictions to the existing predicted_df
+            predicted_df = pd.concat([predicted_df, new_predictions], ignore_index=True)
 
     # Display the predicted data
 
-    #predicted_df = predicted_df.head( int(number_of_predictions) )
-    #print(predicted_df)
-    #predicted_df.to_csv(f'map_{current_animal}_interpolation.csv', index=False)
-
     columns_to_save = ['ID', 'Timestamp', 'Longitude', 'Latitude']
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+    results__rawdataset_dir = results_folder( file_rawdata_name )
+
+    #create_clusterization_results('Results/Interpolation')
+    create_clusterization_results(f'{results__rawdataset_dir}/Interpolation')
+
+    results_dir = os.path.join(script_dir, '..', f'{results__rawdataset_dir}/Interpolation')  # Navigate to the parent directory and into 'Results'
+    
     file_path = os.path.join(results_dir, f'map_{current_animal}_interpolation_nbeats.csv')
 
     predicted_df[columns_to_save].to_csv( file_path, index=False, header=False)

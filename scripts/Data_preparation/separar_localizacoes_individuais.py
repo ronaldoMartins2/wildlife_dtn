@@ -7,20 +7,23 @@ import csv
 import sys
 import os
 from datetime import datetime as dt
+from Data_preparation.raw_data_integration import get_id_from_json
+from Data_preparation.data_field import DataField
+from Common.utils import results_folder
 
-def run(current_animal, file_rawdata):
-    # create the csv writer
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
-    output_file = os.path.join(results_dir, 'map_' + current_animal + '.csv')
-    
+def run( current_animal, file_rawdata_name, file_rawdata_columns ):
+
+    results_dir = results_folder( file_rawdata_name )
+
+    output_file = os.path.join(results_dir, f'map_{current_animal}.csv')
+
     file = open( output_file, 'w')
-
-    #file = open( '../Results/map_'+ current_animal + '.csv', 'w')
 
     fields = ( 'id', 'time', 'long', 'lat')
     writer = csv . DictWriter( file, fieldnames = fields, lineterminator= '\n')
+
+    mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
 
     # empty dictionary
     list_animals = { }
@@ -28,60 +31,70 @@ def run(current_animal, file_rawdata):
     actualTimeEvenStr = '1/1/2022 17:39'
     actualTimeEven = dt . strptime ( actualTimeEvenStr, "%m/%d/%Y %H:%M" )
 
-    with open ( file_rawdata ) as csv_file :
+    with open ( file_rawdata_name ) as csv_file :
 
-        #print('inside main with')
+        csv_reader = csv.DictReader(csv_file)
 
-        csv_reader = csv . reader ( csv_file, delimiter = ',')
+        rows = list(csv_reader)
+        if rows:
+            print(f"There is data in {file_rawdata_name}!")
+        else:
+            print(f"No data found in {file_rawdata_name}.")
+            return
+            
         line_count = 0
 
-        for row in csv_reader :
+        for row in rows :
 
             if line_count == 0:
-                #print ( f' Column names are (first with) { ",". join ( row ) } ')
                 line_count += 1
             else :
-                currentTime = dt . strptime ( row[1] , "%m/%d/%y %H:%M" )
+                currentTime = dt . strptime ( row[ get_id_from_json(file_rawdata_columns, DataField.DATETIME) ] , mask )
 
                 if currentTime < actualTimeEven :
                     actualTimeEven = currentTime
 
-                list_animals [ row[6] ] = 'id'
+                list_animals [ row[ get_id_from_json(file_rawdata_columns, DataField.ID) ] ] = 'id'
 
                 line_count += 1
 
-        #print ( f' Processed {line_count} lines. list_animals {len(list_animals)}')
+        print(f'line_count total {line_count}')
+        
 
-    #print( f'list_animals {list_animals}' )
+    with open ( file_rawdata_name ) as csv_file :
 
-    #print ( ' firstDate : ')
-    #print ( actualTimeEven )
+        csv_reader = csv.DictReader(csv_file)
 
-    with open ( file_rawdata ) as csv_file :
-        csv_reader = csv.reader( csv_file, delimiter = ',')
         line_count = 0
         
         for row in csv_reader :
             if line_count == 0:
-                #print ( f' Column names are { ",". join ( row ) } ')
                 line_count += 1
             else :
 
-                list_animals [ row[6] ] = 'id'
+                id_raw_data = row[ get_id_from_json(file_rawdata_columns, DataField.ID) ]
+                id_raw_data = id_raw_data.replace(" ", "")
 
-                if row[6] == current_animal :
-                    #print(f' row[6] {row[6]}  current_animal {current_animal} ')
-                    writer.writerow ( { 'id': row[6], 'time': row[1], 'long': row[2], 'lat': row[3] } )
+                list_animals[ id_raw_data ] = 'id'
+
+                if id_raw_data == current_animal :
+
+                    writer.writerow({
+                        'id': id_raw_data,
+                        'time': row[ get_id_from_json(file_rawdata_columns, DataField.DATETIME) ],
+                        'long': row[ get_id_from_json(file_rawdata_columns, DataField.LONGITUDE) ],
+                        'lat': row[ get_id_from_json(file_rawdata_columns, DataField.LATITUDE) ]
+                    })
 
                 line_count += 1
+        
         print ( f' Processed {line_count} lines. ')
 
-    # close the file
     file.close( )
 
 def run_mock( ):
     
     current_animal = sys.argv [1]
-    file_rawdata = '../Results/jaguar_mamiraua.csv'
+    file_rawdata_name = '../Results/jaguar_mamiraua.csv'
 
-    run( current_animal, file_rawdata )
+    run( current_animal, file_rawdata_name )

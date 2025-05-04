@@ -19,12 +19,14 @@ def run(current_animal):
 
     # current_animal = sys.argv[1]
 
+    # Read data from CSV
     script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
-    file_name = os.path.join(results_dir, f'map_{current_animal}.csv')
+    #results_dir = os.path.join(script_dir, '..', 'Results/Interpolation')  # Navigate to the parent directory and into 'Results'
 
-    # Read data from CSV
-    #file_name = f'../Data_preparation/map_{current_animal}.csv'
+    # TODO check if will use rawdata or interpolated data
+    file_name = os.path.join(results_dir, f'map_{current_animal}.csv')
+    #file_name = os.path.join(results_dir, f'map_{current_animal}_interpolation_nbeats.csv')
 
     data = pd.read_csv(file_name, header=None)  # header=None to indicate no column names
 

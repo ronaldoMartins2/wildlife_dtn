@@ -9,38 +9,43 @@ from Evaluation.average_by_individual import (
     get_id_animal_sorted
 )
 
-def run( len_animals ):
+from Common.utils import (
+    results_folder
+)
+
+def run( len_animals, file_rawdata ):
 
     #raw_means = [11.9, 8.84, 100.4, 7.41, 31.26, 10.2, 2.78, 111.22]
-    raw_means = get_average_by_animal_sorted( )
+    raw_means = get_average_by_animal_sorted( file_rawdata )
 
     # TODO for some reasons is saved duplicated so I put a len_animals to limit 
     raw_means = raw_means[:len_animals]
 
     labels = []
-    animal_sorted = get_id_animal_sorted()
+    animal_sorted = get_id_animal_sorted( file_rawdata )
     
+    print(f'animal_sorted +++++++++++++++++++++++ {animal_sorted} len_animals {len_animals}')
+
     for current in animal_sorted[:len_animals]:
 
         # Dados fornecidos
         #labels = ['Onça 93', 'Onça 94', 'Onça 95', 'Onça 96', 'Onça 97', 'Onça 98', 'Onça 99', 'Onça 100']
             
         # Dados fornecidos
-        labels.append( f'Onça {current}' )
+        labels.append( f'Animal {current}' )
 
     print(f'array of measures len: {len(raw_means)}')
-    print(get_average_by_animal_sorted())
+    print(get_average_by_animal_sorted( file_rawdata ))
 
-    #nbeats_means = [0.13, 5.37, 12.48, 0.73, 18.69, 10.89, 2.73, 7.06]
-    nbeats_means = get_average_nbeats_by_animal_sorted()
+    nbeats_means = get_average_nbeats_by_animal_sorted( file_rawdata )
 
     nbeats_means = nbeats_means[:len_animals]
 
-    #nbeats_merged_means = [0.13,4.24,11.1,0.67,11.7,5.27,1.38,6.64]
-
-    nbeats_merged_means = get_average_nhits_by_animal_sorted()
+    nbeats_merged_means = get_average_nhits_by_animal_sorted( file_rawdata )
 
     nbeats_merged_means = nbeats_merged_means[:len_animals]
+
+    print(f'nbeats_merged_means -------------- {nbeats_merged_means}')
 
     x = np.arange(len(labels))  # Posições das barras no eixo Y
     width = 0.25  # Largura das barras
@@ -48,18 +53,14 @@ def run( len_animals ):
     # Ajustando o gráfico para exibir as barras na vertical
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    #bars1 = ax.barh(x - width, raw_means, width, label='Dados Brutos', align='center')
-    #bars2 = ax.barh(x, nbeats_means, width, label='Pós NBEATS', align='center')
-    #bars3 = ax.barh(x + width, nbeats_merged_means, width, label='Pós merged NBEATS', align='center')
-
     bars1 = ax.barh(x - width, raw_means, width, label='Dados Brutos', align='center')
     bars2 = ax.barh(x, nbeats_means, width, label='NBEATS', align='center')
     bars3 = ax.barh(x + width, nbeats_merged_means, width, label='NHITS', align='center')
 
     # Adicionar títulos e rótulos
-    ax.set_ylabel('Onças')
+    ax.set_ylabel('Animais')
     ax.set_xlabel('Média de Tempo entre Coletas')
-    ax.set_title('Comparação das Médias de Tempo entre Coletas')
+    ax.set_title(f'Comparação das Médias de Tempo entre Coletas - Dataset: {file_rawdata}')
     ax.set_yticks(x)
     ax.set_yticklabels(labels)
     ax.legend()
@@ -76,11 +77,13 @@ def run( len_animals ):
                         fontsize=9)
 
     plt.tight_layout()
-    #plt.show()
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
-    file_path = os.path.join(results_dir, f'average_comparison.png')
+    #script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    #results_dir = os.path.join(script_dir, '..', 'Results/Interpolation')  # Navigate to the parent directory and into 'Results'
+
+    results_dir = results_folder( file_rawdata )
+
+    file_path = os.path.join(results_dir, f'Interpolation/average_comparison.png')
 
     # Save the plot as an image
     plt.savefig( file_path )

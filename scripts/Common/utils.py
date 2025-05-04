@@ -2,16 +2,36 @@ import json
 import csv
 import os
 import pandas as pd
+from Data_preparation.data_field import DataField
+from Data_preparation.raw_data_integration import get_id_from_json
 
 interpolations_methods = ['N_BEATS', 'N_HITS']
 
-def merge_csvs( current_animal, method ):
+TRAINNING_SET = 0.8
+VALIDATION_SET = 0.1
+TESTING_SET = 0.1
+CONTACT_DISTANCE = 5000
 
-    print('call merge_csvs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+def results_folder( file_rawdata_name ):
+
+    file_name = file_rawdata_name.split('/')
+    file_name = file_name[-1].split('.')[0]
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    results_dir = os.path.join(script_dir, '..', f'Results/{file_name}')
+    
+    os.makedirs(results_dir, exist_ok=True)
+
+    return results_dir
+
+def merge_csvs( current_animal, method, file_rawdata_name, file_rawdata_columns ):
 
     # Define the results directory and file path
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+    #script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    #results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+    
+    results_dir = results_folder( file_rawdata_name )
+
     file_path = os.path.join(results_dir, f'map_{current_animal}.csv')  # Path to the CSV file
 
     # Check if the file exists
@@ -24,10 +44,10 @@ def merge_csvs( current_animal, method ):
     df_raw.columns = ['ID', 'DateTime', 'Longitude', 'Latitude']
 
     if method == 'N_BEATS':
-        file_path = os.path.join(results_dir, f'map_{current_animal}_interpolation_nbeats.csv')  # Path to the CSV file
+        file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')  # Path to the CSV file
 
     if method == 'N_HITS':
-        file_path = os.path.join(results_dir, f'map_{current_animal}_interpolation_nhits.csv')  # Path to the CSV file
+        file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits.csv')  # Path to the CSV file
 
 
     # Check if the file exists
@@ -41,26 +61,27 @@ def merge_csvs( current_animal, method ):
 
     result = pd.concat([df_raw, df_interpolation], axis=0)
 
-    print('####################################################################################################################')
-    print(result.head(10))
-
     # Convert the 'DateTime' column to datetime type
     #result['DateTime'] = pd.to_datetime(result['DateTime'], format='%d/%m/%y %H:%M')
-    result['DateTime'] = pd.to_datetime(result['DateTime'], format='%m/%d/%y %H:%M')
+    mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
+
+    result['DateTime'] = pd.to_datetime(result['DateTime'], format=mask)
 
     # Sort the DataFrame by the 'DateTime' column
     df_sorted = result.sort_values(by='DateTime')
 
     columns_to_save = ['ID', 'DateTime', 'Longitude', 'Latitude']
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+    #script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    #results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+
+    results_dir = results_folder( file_rawdata_name )
 
     if method == 'N_BEATS':    
-        file_path = os.path.join(results_dir, f'map_{current_animal}_interpolation_nbeats_merged.csv')
+        file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats_merged.csv')
 
     if method == 'N_HITS':    
-        file_path = os.path.join(results_dir, f'map_{current_animal}_interpolation_nhits_merged.csv')
+        file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits_merged.csv')
 
 
     df_sorted[columns_to_save].to_csv( file_path, index=False, header=False)
@@ -97,7 +118,7 @@ def read_field_from_json(json_file, field_name):
         return None
 
 
-def get_list_animals(file_name):
+def get_list_animals(file_name, file_rawdata_columns):
     # Open the CSV file
     with open(file_name, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -107,7 +128,12 @@ def get_list_animals(file_name):
         
         # Iterate through each row and add the ID to the set
         for row in reader:
-            ids.add(row['individual.local.identifier (ID)'])
+            #ids.add(row['individual.local.identifier (ID)'])
+
+            STR_ID = row[ get_id_from_json(file_rawdata_columns, DataField.ID) ]
+            STR_ID = STR_ID.replace(' ', '')
+
+            ids.add( STR_ID )
     
     # Convert the set back to a list before returning
     return list(ids)
@@ -143,3 +169,18 @@ def create_pairs(elements):
             result.append((elements_list[i], elements_list[j]))
     
     return result
+
+def append_variables_to_file(up, down, filename="variables.txt"):
+    """
+    Append the up and down variables to a text file.
+    
+    Args:
+        up: The up variable to append
+        down: The down variable to append
+        filename: Name of the file to append to (default: variables.txt)
+    """
+    with open(filename, "a") as file:  # "a" mode for append instead of "w" for write
+        #file.write(f"up={up},down={down}\n")  # One line per pair for easier processing later
+
+        file.write(f"{up}\n")
+        file.write(f"{down}\n")
