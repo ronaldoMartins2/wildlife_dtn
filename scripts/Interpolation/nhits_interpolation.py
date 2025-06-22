@@ -89,12 +89,42 @@ def load_data(filename, mask):
     return df
 
 # Create the NHiTS model
-input_dim = 3  # Features: 'Prev Time Difference (hours)', 'Longitude', 'Latitude'
-hidden_dim = 6  # Hidden layer size
-num_blocks = 6  # Number of NHiTS blocks
-num_hierarchies = 3  # Number of hierarchical levels
+#input_dim = 3  # Features: 'Prev Time Difference (hours)', 'Longitude', 'Latitude'
+#hidden_dim = 6  # Hidden layer size
+#num_blocks = 6  # Number of NHiTS blocks
+#num_hierarchies = 3  # Number of hierarchical levels
 
-model = NHiTS(input_dim, hidden_dim, num_blocks, num_hierarchies)
+#model = NHiTS(input_dim, hidden_dim, num_blocks, num_hierarchies)
+
+
+def load_trained_model(current_animal, file_rawdata_name):
+ 
+    input_dim = 3  # Features: 'Prev Time Difference (hours)', 'Longitude', 'Latitude'
+    #hidden_dim = 6  # Hidden layer size
+    #num_blocks = 6  # Number of NHiTS blocks
+    hidden_dim = 64  # Match the trained model
+    num_blocks = 4  # Match the trained model
+    num_hierarchies = 3  # Number of hierarchical levels
+
+    results_dir = results_folder(file_rawdata_name)
+
+    filename = file_rawdata_name.split('/')[-1].split('.')[0]
+    model_path = os.path.join(results_dir, f'nhits_model_general_{filename}.pth')
+    
+    # Create model with same architecture
+    #model = NHiTS(input_dim=3, hidden_dim=64, num_blocks=4, num_hierarchies=3)
+    model = NHiTS(input_dim, hidden_dim, num_blocks, num_hierarchies)
+
+    print(f'model_path >>> {model_path}')
+
+    # Load trained weights
+    #checkpoint = torch.load(model_path)
+    checkpoint = torch.load(model_path, weights_only=False)
+
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.eval()
+
+    return model
 
 # Function to predict between two dates
 def predict_between_dates(start_date, end_date, df, model, mask, num_steps=10):
@@ -181,7 +211,12 @@ def run_mock():
     #end_date_str = sys.argv [3]
     run( current_animal )
 
-def run(current_animal, len_animal, start_date, end_date, file_rawdata_name, file_rawdata_columns):
+def run(    current_animal, 
+            len_animal, 
+            start_date, 
+            end_date, 
+            file_rawdata_name, 
+            file_rawdata_columns ):
 
     df = getDataFromCSV( current_animal, file_rawdata_name )
 
@@ -205,10 +240,13 @@ def run(current_animal, len_animal, start_date, end_date, file_rawdata_name, fil
     len_animal = int(len_animal)
     predicted_df = pd.DataFrame()
 
+    trainned_model = load_trained_model(current_animal, file_rawdata_name)
+
     while len(predicted_df) < len_animal:
 
         # Predict between the two dates
-        new_predictions = predict_between_dates(start_date, end_date, df, model, mask, num_steps=20)
+        #new_predictions = predict_between_dates(start_date, end_date, df, model, mask, num_steps=20)
+        new_predictions = predict_between_dates(start_date, end_date, df, trainned_model, mask, num_steps=20)
 
         # Concatenate the new predictions to the existing predicted_df
         predicted_df = pd.concat([predicted_df, new_predictions], ignore_index=True)

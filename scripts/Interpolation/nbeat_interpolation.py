@@ -11,8 +11,12 @@ from Data_preparation.data_field import DataField
 
 from Common.utils import (
     create_clusterization_results,
-    results_folder
+    results_folder,
 )
+
+from Interpolation.nbeat_trainer import train_nbeats_model
+
+from Interpolation.nbeat_model import NBeats
 
 # python3 5_nbeat_interpolation.py 94 n(numero de registros)
 #exemplo python3 5_nbeat_interpolation.py 94 1032
@@ -29,6 +33,7 @@ from Data_preparation.clear_outtliers import (
     run as run_clear_outliers
 )
 
+'''
 # Define the NBeatsBlock with a residual connection fix
 class NBeatsBlock(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_dim):
@@ -66,6 +71,7 @@ class NBeats(nn.Module):
 
         # Flatten the output to match the target shape: [batch_size]
         return final_forecast.view(-1)  # Ensure it's a 1D tensor of size [batch_size]
+'''
 
 def getDataFromCSV( current_animal, file_rawdata_name ):
     # Read the CSV file into a DataFrame
@@ -82,14 +88,31 @@ def getDataFromCSV( current_animal, file_rawdata_name ):
 
     return df
 
-# Create a DataFrame
-#df = pd.DataFrame(data, columns=['ID', 'Timestamp', 'Longitude', 'Latitude'])
+def load_trained_nbeats_model(file_rawdata_name):
+    input_dim = 3
+    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'Interpolation', 'hyperparameters.json')
 
-# Convert the 'Timestamp' column to datetime objects
-#df['Timestamp'] = pd.to_datetime(df['Timestamp'], format='%m/%d/%y %H:%M')
+    output_dim = read_field_from_json(file_path, "output_dim")
+    hidden_dim = read_field_from_json(file_path, "hidden_dim")
+    num_blocks = read_field_from_json(file_path, "num_blocks")
 
+    model = NBeats(input_dim, output_dim, hidden_dim, num_blocks)
 
-def run( current_animal, number_of_predictions, len_animal, file_rawdata_name, file_rawdata_columns ):
+    results_dir = results_folder(file_rawdata_name)
+    filename = file_rawdata_name.split('/')[-1].split('.')[0]
+    model_path = os.path.join(results_dir, f'nbeats_model_general_{filename}.pth')
+
+    print(f'Loading trained model from {model_path}')
+    checkpoint = torch.load(model_path, map_location=torch.device('cpu'))  # Add map_location if needed
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.eval()
+    return model
+
+def run(    current_animal, 
+            number_of_predictions, 
+            len_animal, 
+            file_rawdata_name, 
+            file_rawdata_columns ):
 
     df = getDataFromCSV( current_animal, file_rawdata_name )
 
@@ -114,31 +137,20 @@ def run( current_animal, number_of_predictions, len_animal, file_rawdata_name, f
     # Let's use the time differences as the target and the latitude, longitude, and previous time differences as features.
     df['Prev Time Difference (hours)'] = df['Time Difference (hours)'].shift(1)
 
-    # Drop the NaN value created by the shift (first row)
     df = df.dropna(subset=['Prev Time Difference (hours)'])
 
-    # Feature columns
     features = ['Prev Time Difference (hours)', 'Longitude', 'Latitude']
-
-    # Target column
     target = 'Time Difference (hours)'
 
-    # Prepare the data for training
     X = df[features].values
     y = df[target].values
 
-    # Convert to PyTorch tensors
     X_tensor = torch.tensor(X, dtype=torch.float32)
     y_tensor = torch.tensor(y, dtype=torch.float32)
 
     script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     results_dir = os.path.join(script_dir, '..', 'Interpolation')  # Navigate to the parent directory and into 'Results'
     file_path = os.path.join(results_dir, f'hyperparameters.json')
-
-    #base_path = '/home/rnmartins/usp/wildlife_dtn/scripts/Interpolation' 
-    #json = f'{base_path}/hyperparameters.json'
-
-    #read_field_from_json( file_path, "output_dim")
 
     # Hyperparameters
     input_dim = X_tensor.shape[1]  # Number of features (Prev Time Difference, Longitude, Latitude)
@@ -154,27 +166,46 @@ def run( current_animal, number_of_predictions, len_animal, file_rawdata_name, f
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     # Ensure the target tensor is reshaped correctly to have the same shape as the forecast
-    y_tensor = y_tensor.view(-1, 1)  # Reshape to (12, 1) if the model is predicting single values
+    y_tensor = y_tensor.view(-1, 1)  # Reshape to (12, 1) if the model is predicting single values    
+    
+    results_dir = results_folder(file_rawdata_name)
 
-    # Training loop
-    for epoch in range(100):  # 100 epochs
-        model.train()  # Set the model to training mode
-        optimizer.zero_grad()  # Zero the gradients
+    filename = file_rawdata_name.split('/')[-1].split('.')[0]
+    model_path = os.path.join(results_dir, f'nbeats_model_general_{filename}.pth')
 
-        # Forward pass
-        forecast = model(X_tensor)
+    print(f'results_dir is {results_dir} ##########################################')
 
-        #print(f"Forecast shape: {forecast.shape}, Target shape: {y_tensor.shape}")
+    '''
+    if os.path.exists(model_path):
+        print('model exist in file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+        model = load_trained_nbeats_model(file_rawdata_name)
+    else:
+        # Train the model as before
+        model = NBeats(input_dim, output_dim, hidden_dim, num_blocks)
+        criterion = nn.MSELoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        y_tensor = y_tensor.view(-1, 1)
 
-        # Ensure the forecast and target have the same shape for loss calculation
-        loss = criterion(forecast, y_tensor)
+        for epoch in range(100):
+            model.train()
+            optimizer.zero_grad()
+            forecast = model(X_tensor)
+            loss = criterion(forecast, y_tensor)
+            loss.backward()
+            optimizer.step()
+            if epoch % 10 == 0:
+                print(f"Epoch {epoch}, Loss: {loss.item():.4f}")
 
-        # Backward pass and optimization
-        loss.backward()
-        optimizer.step()
+        # Save model after training
+        torch.save({'model_state_dict': model.state_dict()}, model_path)
+        print(f"Model saved to {model_path}")
+    '''
 
-        if epoch % 10 == 0:
-            print(f"Epoch {epoch}, Loss: {loss.item():.4f}")
+    if not os.path.exists(model_path):
+        print("Model not found, training...")
+        # train_nbeats_model(current_animal, file_rawdata_name, file_rawdata_columns)
+        print('need first generate trainning model')
+        sys.exit()
 
     # Function to predict values between dates
     def predict_between_dates(start_date, end_date, df, file_rawdata_columns, model, num_steps=5):
@@ -183,7 +214,6 @@ def run( current_animal, number_of_predictions, len_animal, file_rawdata_name, f
 
         while current_timestamp <= end_date:
             
-            #print(f'current_timestamp {current_timestamp} end_date {end_date}')
             # Prepare the input for the model (use the last known values from the previous row)
             last_row = df.iloc[-1]
             last_features = torch.tensor([[last_row['Prev Time Difference (hours)'], last_row['Longitude'], last_row['Latitude']]], dtype=torch.float32)
@@ -191,11 +221,8 @@ def run( current_animal, number_of_predictions, len_animal, file_rawdata_name, f
             # Predict the next time difference (forecasting multiple steps)
             forecast = model(last_features)
 
-            #print(f"Forecast shape: {forecast.shape}")  # This will show [1, 6] (6 time steps)
-
             # We can choose how to use the forecast vector. Here we use the first predicted time difference.
             predicted_time_diff = forecast[0].item()  # Use the first predicted time difference as a scalar
-            #print(f"Predicted Time Difference: {predicted_time_diff} hours")
 
             # Calculate the next timestamp using the predicted time difference
             new_timestamp = current_timestamp + timedelta(hours=predicted_time_diff)
@@ -225,8 +252,6 @@ def run( current_animal, number_of_predictions, len_animal, file_rawdata_name, f
         """
 
         mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
-
-        # Load the CSV file without assuming a header
 
         results_dir = results_folder( file_rawdata_name )
 
@@ -265,8 +290,6 @@ def run( current_animal, number_of_predictions, len_animal, file_rawdata_name, f
 
     start_date_str, end_date_str = find_min_max_dates( current_animal, file_rawdata_columns )
 
-    ########################################### just one month ############################################
-
     mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
 
     start_date = datetime.strptime(start_date_str, mask)
@@ -274,20 +297,13 @@ def run( current_animal, number_of_predictions, len_animal, file_rawdata_name, f
     # Add 2 months to start_date
     end_date = start_date + relativedelta(months=+2)
 
-    # Convert end_date back to string in the same format
-    #end_date_str = end_date.strftime('%Y-%m-%d')
-    #end_date_str = end_date.strftime('%m/%d/%y %H:%M')
     end_date_str = end_date.strftime(mask)
-
-    #######################################################################################################
 
     start_date = pd.to_datetime( start_date_str, format=mask)
     end_date = pd.to_datetime(end_date_str, format=mask)
 
     len_animal = int(len_animal)
     predicted_df = pd.DataFrame()
-
-
 
     while len(predicted_df) < len_animal:
 
@@ -299,16 +315,13 @@ def run( current_animal, number_of_predictions, len_animal, file_rawdata_name, f
             # Concatenate the new predictions to the existing predicted_df
             predicted_df = pd.concat([predicted_df, new_predictions], ignore_index=True)
 
-    # Display the predicted data
-
     columns_to_save = ['ID', 'Timestamp', 'Longitude', 'Latitude']
 
     results__rawdataset_dir = results_folder( file_rawdata_name )
 
-    #create_clusterization_results('Results/Interpolation')
     create_clusterization_results(f'{results__rawdataset_dir}/Interpolation')
 
-    results_dir = os.path.join(script_dir, '..', f'{results__rawdataset_dir}/Interpolation')  # Navigate to the parent directory and into 'Results'
+    results_dir = os.path.join(script_dir, '..', f'{results__rawdataset_dir}/Interpolation')
     
     file_path = os.path.join(results_dir, f'map_{current_animal}_interpolation_nbeats.csv')
 

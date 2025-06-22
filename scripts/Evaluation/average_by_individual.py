@@ -84,7 +84,11 @@ def get_id_animal_sorted( file_rawdata_name ):
 
 def calc_average_by_method(current_animal, methods, file_rawdata_name):
 
+    print(f'file_rawdata_name >>>>>>>>> {file_rawdata_name}')
+
     results_dir = results_folder( file_rawdata_name )
+
+    print(f'results_dir >>>>>>>> {results_dir}')
 
     if methods == 'N_BEATS':
         file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats_merged.csv')
@@ -96,9 +100,9 @@ def calc_average_by_method(current_animal, methods, file_rawdata_name):
         file_to_save = os.path.join(results_dir, 'Interpolation/averages_nhits.csv')
         method_to_save = 'average_nhits'
 
-    data = pd.read_csv(file_path, header=None)
-
     print(f'file_path >>>>>>>>>>>>>>>>>>>>>> {file_path}')
+
+    data = pd.read_csv(file_path, header=None)
 
     # Convert the second column to datetime objects
     #data[1] = pd.to_datetime(data[1], format='%Y-%m-%d %H:%M:%S')

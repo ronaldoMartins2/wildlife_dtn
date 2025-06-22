@@ -18,7 +18,12 @@ def results_folder( file_rawdata_name ):
     file_name = file_name[-1].split('.')[0]
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    results_dir = os.path.join(script_dir, '..', f'Results/{file_name}')
+
+    script_dir = script_dir.replace('Common', '')
+
+    print(f'script_dir >>>>>>>>> {script_dir}')
+
+    results_dir = os.path.join(script_dir, f'Results/{file_name}')
     
     os.makedirs(results_dir, exist_ok=True)
 
