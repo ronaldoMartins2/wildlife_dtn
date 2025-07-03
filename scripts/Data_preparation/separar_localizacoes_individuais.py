@@ -14,6 +14,8 @@ from Common.utils import results_folder
 
 def run( current_animal, file_rawdata_name, file_rawdata_columns ):
 
+    hiper_content = []
+
     results_dir = results_folder( file_rawdata_name )
 
     output_file = os.path.join(results_dir, f'map_{current_animal}.csv')
@@ -59,7 +61,10 @@ def run( current_animal, file_rawdata_name, file_rawdata_columns ):
                 line_count += 1
 
         print(f'line_count total {line_count}')
-        
+
+        #hiper_content.append( f'{file_rawdata_name} line_count total {line_count}' )
+
+    count_animal = 0
 
     with open ( file_rawdata_name ) as csv_file :
 
@@ -85,10 +90,18 @@ def run( current_animal, file_rawdata_name, file_rawdata_columns ):
                         'long': row[ get_id_from_json(file_rawdata_columns, DataField.LONGITUDE) ],
                         'lat': row[ get_id_from_json(file_rawdata_columns, DataField.LATITUDE) ]
                     })
+                    count_animal += 1
 
                 line_count += 1
         
-        print ( f' Processed {line_count} lines. ')
+        print ( f' Processed {line_count} lines. ' )
+        hiper_content.append( f'{file_rawdata_name} animal {current_animal} Processed {count_animal} from total {line_count} lines. ' )
+
+    results_dir = results_folder(file_rawdata_name)
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+    with open(hiper_path, "a") as file:
+        for line in hiper_content:
+            file.write(line + '\n')
 
     file.close( )
 

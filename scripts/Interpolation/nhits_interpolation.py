@@ -88,25 +88,28 @@ def load_data(filename, mask):
     df['Timestamp'] = pd.to_datetime(df['Timestamp'], format=mask)
     return df
 
-# Create the NHiTS model
-#input_dim = 3  # Features: 'Prev Time Difference (hours)', 'Longitude', 'Latitude'
-#hidden_dim = 6  # Hidden layer size
-#num_blocks = 6  # Number of NHiTS blocks
-#num_hierarchies = 3  # Number of hierarchical levels
-
-#model = NHiTS(input_dim, hidden_dim, num_blocks, num_hierarchies)
-
-
 def load_trained_model(current_animal, file_rawdata_name):
  
-    input_dim = 3  # Features: 'Prev Time Difference (hours)', 'Longitude', 'Latitude'
-    #hidden_dim = 6  # Hidden layer size
-    #num_blocks = 6  # Number of NHiTS blocks
-    hidden_dim = 64  # Match the trained model
-    num_blocks = 4  # Match the trained model
-    num_hierarchies = 3  # Number of hierarchical levels
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    hyperparam_path = os.path.join(script_dir, 'hyperparameters.json')
+
+    input_dim = read_field_from_json(hyperparam_path, "input_dim_nhits")
+    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nhits")
+    num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nhits")
+    num_hierarchies = read_field_from_json(hyperparam_path, "num_hierarchies_nhits")
+
+    hiper_content = []
+    hiper_content.append( f"Hyper nhits input_dim {input_dim}" )
+    hiper_content.append( f"Hyper nhits hidden_dim {hidden_dim}" )
+    hiper_content.append( f"Hyper nhits num_blocks {num_blocks}" )
+    hiper_content.append( f"Hyper nhits num_hierarchies {num_hierarchies}" )
 
     results_dir = results_folder(file_rawdata_name)
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+
+    with open(hiper_path, "a") as file:
+        for line in hiper_content:
+            file.write(line + '\n')
 
     filename = file_rawdata_name.split('/')[-1].split('.')[0]
     model_path = os.path.join(results_dir, f'nhits_model_general_{filename}.pth')
@@ -201,6 +204,16 @@ def getDataFromCSV( current_animal, file_rawdata_name ):
     # Limitar a 80% dos registros
     limit = int(TRAINNING_SET * len(df))
     df = df.iloc[:limit]
+
+    hiper_content = []
+
+    hiper_content.append( f"Trainning nhits animal {current_animal} 80% {limit}" )
+
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+
+    with open(hiper_path, "a") as file:
+        for line in hiper_content:
+            file.write(line + '\n')
 
     return df
 

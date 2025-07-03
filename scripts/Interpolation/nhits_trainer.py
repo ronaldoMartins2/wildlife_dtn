@@ -11,10 +11,9 @@ from Data_preparation.data_field import DataField
 import matplotlib.pyplot as plt
 
 from Common.utils import (
-    #create_clusterization_results,
-    #read_field_from_json,
     TRAINNING_SET,
-    results_folder
+    results_folder,
+    read_field_from_json
 )
 
 from Interpolation.nhits_interpolation import NHiTS
@@ -163,7 +162,7 @@ class NHiTSTrainer:
         
         return total_loss / len(val_loader)
     
-    def train(self, train_loader, val_loader, epochs=100, lr=0.001, patience=10):
+    def train(self, train_loader, val_loader, file_rawdata_name, epochs=100, lr=0.001, patience=10):
         """
         Full training loop with early stopping
         """
@@ -174,35 +173,10 @@ class NHiTSTrainer:
         patience_counter = 0
         
         print("Starting training...")
-        
-        '''
-        for epoch in range(epochs):
-            train_loss = self.train_epoch(train_loader, optimizer, criterion)
-            val_loss = self.validate(val_loader, criterion)
-            
-            self.train_losses.append(train_loss)
-            self.val_losses.append(val_loss)
-            
-            print(f"Epoch {epoch+1}/{epochs}: Train Loss = {train_loss:.6f}, Val Loss = {val_loss:.6f}")
-            
-            # Early stopping
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-                patience_counter = 0
-                # Save best model
-                torch.save(self.model.state_dict(), 'best_nhits_model.pth')
-            else:
-                patience_counter += 1
-                
-            if patience_counter >= patience:E
-                print(f"Early stopping at epoch {epoch+1}")
-                break
-        '''
-
-        #results_dir = results_folder(file_rawdata_name)
-        #model_path = os.path.join(results_dir, f'nhits_trainning_model_results.pth')
 
         log_file_path = "training_log_nhits.txt"
+
+        final_loss = 0
 
         for epoch in range(epochs):
             train_loss = self.train_epoch(train_loader, optimizer, criterion)
@@ -232,12 +206,26 @@ class NHiTSTrainer:
                 with open(log_file_path, "a") as f:
                     f.write(stop_msg + "\n")
                 break
+
+            final_loss = val_loss
         
         # Load best model
         self.model.load_state_dict(torch.load('best_nhits_model.pth'))
 
         print("Training completed!")
+        
+        hiper_content = []
+    
+        hiper_content.append( f"Hyper nhits loss {final_loss}" )
+        hiper_content.append( f"Hyper nhits epochs {epochs}" )
 
+        results_dir = results_folder(file_rawdata_name)
+
+        hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+
+        with open(hiper_path, "a") as file:
+            for line in hiper_content:
+                file.write(line + '\n')
     
     def plot_losses(self):
         """
@@ -357,13 +345,16 @@ def main_training(  df,
     # Set device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
-    
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    hyperparam_path = os.path.join(script_dir, 'hyperparameters.json')
+
     # Create model
-    input_dim = 3
-    hidden_dim = 64  # Increased for better capacity
-    num_blocks = 4
-    num_hierarchies = 3
-    
+    input_dim = read_field_from_json(hyperparam_path, "input_dim_nhits")
+    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nhits")
+    num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nhits")
+    num_hierarchies = read_field_from_json(hyperparam_path, "num_hierarchies_nhits")
+
     model = NHiTS(input_dim, hidden_dim, num_blocks, num_hierarchies)
     print(f"Created NHiTS model with {sum(p.numel() for p in model.parameters())} parameters")
     
@@ -374,9 +365,23 @@ def main_training(  df,
     print("Preparing sequences...")
     train_loader, val_loader = trainer.prepare_data(df, sequence_length=20, batch_size=32)
     print(f"Training batches: {len(train_loader)}, Validation batches: {len(val_loader)}")
-    
+
+    hiper_content = []
+    hiper_content.append( f"Hyper nhits input_dim {input_dim}" )
+    hiper_content.append( f"Hyper nhits hidden_dim {hidden_dim}" )
+    hiper_content.append( f"Hyper nhits num_blocks {num_blocks}" )
+    hiper_content.append( f"Hyper nhits num_hierarchies {num_hierarchies}" )
+
+    results_dir = results_folder(file_rawdata_name)
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+
+    with open(hiper_path, "a") as file:
+        for line in hiper_content:
+            file.write(line + '\n')
+
+
     # Train model
-    trainer.train(train_loader, val_loader, epochs=200, lr=0.001, patience=20)
+    trainer.train(train_loader, val_loader, file_rawdata_name, epochs=200, lr=0.001, patience=20)
     
     # Plot losses
     trainer.plot_losses()

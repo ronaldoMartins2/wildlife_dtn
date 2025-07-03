@@ -22,8 +22,9 @@ from Common.utils import (
     read_field_from_json,
     get_list_animals,
     merge_csvs,
-    create_pairs
-) 
+    create_pairs,
+    results_folder
+)
 
 from Data_preparation.separar_localizacoes_individuais import (
     run as run_preparation
@@ -91,6 +92,16 @@ from DTN.contacts import (
 file_rawdata = sys.argv [1]
 file_rawdata_columns = sys.argv [2]
 
+results_dir = results_folder(file_rawdata)
+hiper_path = os.path.join(results_dir, 'hiperparameters.txt')
+
+# Check if the file exists before trying to delete it
+if os.path.exists(hiper_path):
+    os.remove(hiper_path)
+    print(f"Deleted: {hiper_path}")
+else:
+    print(f"No file found at: {hiper_path}")
+
 list_animals = get_list_animals( file_rawdata, file_rawdata_columns )
 
 len_animals = len(list_animals)
@@ -133,12 +144,12 @@ if tangara == 'tangara_mata_atlantica':
 #for current_animal in list_animals:
 #    trainer = main_training(current_animal, file_rawdata, file_rawdata_columns)
 
-#main_training_list(list_animals, file_rawdata, file_rawdata_columns)
+main_training_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
 
 #train_nbeats_model_single(current_animal, file_rawdata, file_rawdata_columns)
-train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
-sys.exit()
+#train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
+#sys.exit()
 
 for current_animal in list_animals:
     #TODO review number_of_predictions 
@@ -151,9 +162,9 @@ for current_animal in list_animals:
 
     run_interpolation_nbeat(current_animal, number_of_predictions, len_animal, file_rawdata, file_rawdata_columns)
 
-    #start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
+    start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
 
-    #run_interpolation_nhits(current_animal, len_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
+    run_interpolation_nhits(current_animal, len_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
 
 
 sys.exit()

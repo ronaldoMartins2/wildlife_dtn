@@ -16,11 +16,6 @@ def prepare_training_data(  #current_animal,
                             file_rawdata_name,
                             file_rawdata_columns):
 
-    #results_dir = results_folder(file_rawdata_name)
-    #file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
-
-    #df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
-
     limit = int(TRAINNING_SET * len(df))
     df = df.iloc[:limit]
 
@@ -47,9 +42,7 @@ def prepare_training_data(  #current_animal,
 def train_nbeats_model_list(
                         animal_list,
                         file_rawdata_name, 
-                        file_rawdata_columns, 
-                        epochs=100, 
-                        lr=0.001
+                        file_rawdata_columns,
                         ):
     results_dir = results_folder(file_rawdata_name)
     
@@ -72,8 +65,6 @@ def train_nbeats_model_single(
                             current_animal,
                             file_rawdata_name, 
                             file_rawdata_columns, 
-                            epochs=100, 
-                            lr=0.001
                             ):
 
     results_dir = results_folder(file_rawdata_name)
@@ -101,7 +92,6 @@ def train_nbeats_model( #current_animal,
         return
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    #hyperparam_path = os.path.join(script_dir, 'Interpolation', 'hyperparameters.json')
     hyperparam_path = os.path.join(script_dir, 'hyperparameters.json')
 
     input_dim = X_tensor.shape[1]
@@ -119,6 +109,8 @@ def train_nbeats_model( #current_animal,
 
     log_file_path = "training_log_nbeat.txt"
 
+    final_loss = 0
+
     for epoch in range(epochs):
         model.train()
         optimizer.zero_grad()
@@ -132,6 +124,8 @@ def train_nbeats_model( #current_animal,
             log_msg = f"[{filename}] Epoch {epoch}, Loss: {loss.item():.4f}"
             print(log_msg)
 
+            final_loss = loss.item()
+
             # Write log to file
             with open(log_file_path, "a") as f:
                 f.write(log_msg + "\n")
@@ -141,6 +135,21 @@ def train_nbeats_model( #current_animal,
     model_path = os.path.join(results_dir, f'nbeats_model_general_{filename}.pth')
     torch.save({'model_state_dict': model.state_dict()}, model_path)
     print(f"Model saved to {model_path}")
+
+    hiper_content = []
+ 
+    hiper_content.append( f"Hyper nbeat input_dim {input_dim}" )
+    hiper_content.append( f"Hyper nbeat output_dim {output_dim}" )
+    hiper_content.append( f"Hyper nbeat hidden_dim {hidden_dim}" )
+    hiper_content.append( f"Hyper nbeat num_blocks {num_blocks}" )
+    hiper_content.append( f"Hyper nbeat loss {final_loss}" )
+    hiper_content.append( f"Hyper nbeat epochs {epochs}" )
+
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+
+    with open(hiper_path, "a") as file:
+        for line in hiper_content:
+            file.write(line + '\n')
 
 if __name__ == "__main__":
     import sys

@@ -33,46 +33,6 @@ from Data_preparation.clear_outtliers import (
     run as run_clear_outliers
 )
 
-'''
-# Define the NBeatsBlock with a residual connection fix
-class NBeatsBlock(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim):
-        super(NBeatsBlock, self).__init__()
-        self.fc1 = nn.Linear(input_dim, hidden_dim)
-        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
-        self.fc3 = nn.Linear(hidden_dim, output_dim)  # Output is scalar (1 value)
-        self.fc_res = nn.Linear(output_dim, input_dim)  # Residual connection adjustment
-
-    def forward(self, x):
-        x_residual = x  # Save the residual input for later addition
-
-        x = torch.relu(self.fc1(x))  # Shape: [batch_size, hidden_dim]
-        x = torch.relu(self.fc2(x))  # Shape: [batch_size, hidden_dim]
-        forecast = self.fc3(x)  # Shape: [batch_size, output_dim], output_dim = 1
-
-        forecast = self.fc_res(forecast)  # Adjust the forecast for residual connection [batch_size, input_dim]
-        return forecast
-
-# Define the NBeats model
-class NBeats(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim, num_blocks):
-        super(NBeats, self).__init__()
-        self.blocks = nn.ModuleList([NBeatsBlock(input_dim, output_dim, hidden_dim) for _ in range(num_blocks)])
-
-    def forward(self, x):
-        forecasts = []
-        for block in self.blocks:
-            forecast = block(x)  # Pass the input through each block
-            forecasts.append(forecast)
-            x = x + forecast  # Residual connection (now they have the same shape)
-
-        # Average the forecasts, resulting in shape [batch_size, output_dim]
-        final_forecast = sum(forecasts) / len(forecasts)
-
-        # Flatten the output to match the target shape: [batch_size]
-        return final_forecast.view(-1)  # Ensure it's a 1D tensor of size [batch_size]
-'''
-
 def getDataFromCSV( current_animal, file_rawdata_name ):
     # Read the CSV file into a DataFrame
     
@@ -85,6 +45,25 @@ def getDataFromCSV( current_animal, file_rawdata_name ):
     # Limita a 80% do número de registros
     limit = int(TRAINNING_SET * len(df))
     df = df.iloc[:limit]
+
+    hiper_content = []
+
+    hiper_content.append( f"Trainning nbeat animal {current_animal} 80% {limit}" )
+
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+
+    with open(hiper_path, "a") as file:
+        for line in hiper_content:
+            file.write(line + '\n')
+
+
+    #################
+    #num_repeats = 50
+
+    #for _ in range(num_repeats):
+    #    print("R ")
+    #    time.sleep(5)  # Delay of 5 seconds
+    ##############
 
     return df
 
@@ -113,6 +92,15 @@ def run(    current_animal,
             len_animal, 
             file_rawdata_name, 
             file_rawdata_columns ):
+
+
+    #################
+    #num_repeats = 50
+
+    #for _ in range(num_repeats):
+    #    print("S ")
+    #    time.sleep(5)  # Delay of 5 seconds
+    ##############
 
     df = getDataFromCSV( current_animal, file_rawdata_name )
 
@@ -174,32 +162,6 @@ def run(    current_animal,
     model_path = os.path.join(results_dir, f'nbeats_model_general_{filename}.pth')
 
     print(f'results_dir is {results_dir} ##########################################')
-
-    '''
-    if os.path.exists(model_path):
-        print('model exist in file >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-        model = load_trained_nbeats_model(file_rawdata_name)
-    else:
-        # Train the model as before
-        model = NBeats(input_dim, output_dim, hidden_dim, num_blocks)
-        criterion = nn.MSELoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-        y_tensor = y_tensor.view(-1, 1)
-
-        for epoch in range(100):
-            model.train()
-            optimizer.zero_grad()
-            forecast = model(X_tensor)
-            loss = criterion(forecast, y_tensor)
-            loss.backward()
-            optimizer.step()
-            if epoch % 10 == 0:
-                print(f"Epoch {epoch}, Loss: {loss.item():.4f}")
-
-        # Save model after training
-        torch.save({'model_state_dict': model.state_dict()}, model_path)
-        print(f"Model saved to {model_path}")
-    '''
 
     if not os.path.exists(model_path):
         print("Model not found, training...")

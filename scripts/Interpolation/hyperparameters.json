@@ -1,5 +1,9 @@
 {
     "output_dim": 6,
     "hidden_dim": 6,
-    "num_blocks": 6
+    "num_blocks": 6,
+    "input_dim_nhits": 3,
+    "hidden_dim_nhits": 64,
+    "num_blocks_nhits": 4,
+    "num_hierarchies_nhits": 3
 }
