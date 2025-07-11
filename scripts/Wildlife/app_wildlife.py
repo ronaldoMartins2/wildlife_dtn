@@ -83,7 +83,7 @@ from Clusterization.plot_kmeans_som_birch_mean_shift import (
     run as run_plot_kmeans_som_birch_mean_shift
 )   
 
-from DTN.contacts import (
+from DTN.mobility_contacts import (
     run as run_contacts
 )
 
@@ -151,6 +151,7 @@ main_training_list(list_animals, file_rawdata, file_rawdata_columns)
 #train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
 
+'''
 for current_animal in list_animals:
     #TODO review number_of_predictions 
     number_of_predictions = 5
@@ -158,16 +159,15 @@ for current_animal in list_animals:
     
     print(f'len_animal {len_animal} current_animal {current_animal} file_rawdata {file_rawdata}')
 
-    #sys.exit()
-
     run_interpolation_nbeat(current_animal, number_of_predictions, len_animal, file_rawdata, file_rawdata_columns)
 
     start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
 
     run_interpolation_nhits(current_animal, len_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
 
+'''
 
-sys.exit()
+#sys.exit()
 
 
 '''
@@ -183,6 +183,7 @@ start_date, end_date = get_top_botom_date( 93 )
 run_interpolation_nhits(93, len_animal, start_date, end_date)
 '''
 
+'''
 for current_animal in list_animals:
 
     merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )
@@ -196,8 +197,9 @@ for current_animal in list_animals:
 
 
 run_average_comparison( len_animals, file_rawdata )
+'''
 
-sys.exit()
+#sys.exit()
 
 '''
 
@@ -210,10 +212,14 @@ sys.exit()
     #run_som(current_animal)
 
 '''
-run_kmeans(93)
-run_som(93)
-run_mean_shift(93)
-run_birch(93)     
+run_kmeans(93, file_rawdata)
+run_som(93, file_rawdata)
+#run_mean_shift(93)
+#run_birch(93)     
+
+sys.exit()
+
+
 '''
 
 #run_som(95)

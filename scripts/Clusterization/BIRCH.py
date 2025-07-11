@@ -64,8 +64,6 @@ def run(current_animal):
     file_name = os.path.join(results_dir, f'onca_{current_animal}_BIRCH.png')
 
     plt.savefig(file_name)
-#    plt.show()
-
 
 def run_mock():
     current_animal = sys.argv [1]

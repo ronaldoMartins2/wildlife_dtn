@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 from minisom import MiniSom  # Import MiniSom for SOM
 import os
 from Common.utils import (
-    create_clusterization_results
+    create_clusterization_results,
+    results_folder,
+    read_field_from_json
 )
 
 # pip install minisom
@@ -15,18 +17,12 @@ from Common.utils import (
 
 # python3 7_SOM_individual.py 94
 
-def run(current_animal):
+def run(current_animal, file_rawdata_name):
 
-    # current_animal = sys.argv[1]
-
-    # Read data from CSV
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
-    #results_dir = os.path.join(script_dir, '..', 'Results/Interpolation')  # Navigate to the parent directory and into 'Results'
+    results_dir = results_folder(file_rawdata_name)
 
     # TODO check if will use rawdata or interpolated data
     file_name = os.path.join(results_dir, f'map_{current_animal}.csv')
-    #file_name = os.path.join(results_dir, f'map_{current_animal}_interpolation_nbeats.csv')
 
     data = pd.read_csv(file_name, header=None)  # header=None to indicate no column names
 
@@ -57,8 +53,7 @@ def run(current_animal):
 
     # Save cleaned coordinates to CSV
     create_clusterization_results('Results/Clusterization')
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
+    
     file_name = os.path.join(results_dir, f'clusters_som_{current_animal}.csv')
 
     data_selected.to_csv(file_name, index=False, header=None)
@@ -70,11 +65,29 @@ def run(current_animal):
         print("Error: No valid coordinates left for clustering.")
         sys.exit(1)
 
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
+
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+    sigma = read_field_from_json(hyperparam_path, "sigma_SOM")
+    learning_rate = read_field_from_json(hyperparam_path, "learning_rate_SOM")
+    ephocs = read_field_from_json(hyperparam_path, "ephocs_SOM")
+
     # SOM Parameters
     som_x, som_y = 8, 8
-    som = MiniSom(som_x, som_y, coords.shape[1], sigma=0.5, learning_rate=0.5)
+    som = MiniSom(som_x, som_y, coords.shape[1], sigma, learning_rate)
     som.random_weights_init(coords)
-    som.train_random(coords, 500)
+    som.train_random(coords, ephocs)
+    
+    hiper_content = []
+    hiper_content.append( f"Hyper SOM sigma {sigma}" )
+    hiper_content.append( f"Hyper SOM learning_rate {learning_rate}" )
+    hiper_content.append( f"Hyper SOM ephocs {ephocs}" )
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+    with open(hiper_path, "a") as file:
+        for line in hiper_content:
+            file.write(line + '\n')
+
 
     # Get cluster assignments
     cluster_map = {i: som.winner(coord) for i, coord in enumerate(coords)}
@@ -99,12 +112,10 @@ def run(current_animal):
     plt.grid(True)
 
     create_clusterization_results('Results/Clusterization')
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
+
     file_name = os.path.join(results_dir, f'onca_{current_animal}_som.png')
 
     plt.savefig(file_name)
-    #plt.show()
 
 def run_mock():
     current_animal = sys.argv [1]

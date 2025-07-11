@@ -67,11 +67,11 @@ class NHiTSTrainer:
         
         return np.array(sequences), np.array(targets)
     
-    def prepare_data(self, df, sequence_length=10, test_split=0.2, batch_size=32):
+    def prepare_data(self, df, sequence_length=10, test_split=0.2, batch_size=32, prediction_horizon=1):
         """
         Prepare training and validation datasets
         """
-        sequences, targets = self.prepare_sequences(df, sequence_length)
+        sequences, targets = self.prepare_sequences(df, sequence_length, prediction_horizon)
         
         if len(sequences) == 0:
             raise ValueError("No sequences generated. Check your data or sequence_length parameter.")
@@ -218,6 +218,8 @@ class NHiTSTrainer:
     
         hiper_content.append( f"Hyper nhits loss {final_loss}" )
         hiper_content.append( f"Hyper nhits epochs {epochs}" )
+        hiper_content.append( f"Hyper nhits lr {lr}" )
+        hiper_content.append( f"Hyper nhits patience {patience}" )
 
         results_dir = results_folder(file_rawdata_name)
 
@@ -239,7 +241,6 @@ class NHiTSTrainer:
         plt.title('Training and Validation Losses')
         plt.legend()
         plt.grid(True)
-        plt.show()
     
     def save_model(self, filepath):
         """
@@ -346,14 +347,23 @@ def main_training(  df,
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    hyperparam_path = os.path.join(script_dir, 'hyperparameters.json')
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
+
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
 
     # Create model
     input_dim = read_field_from_json(hyperparam_path, "input_dim_nhits")
     hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nhits")
     num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nhits")
     num_hierarchies = read_field_from_json(hyperparam_path, "num_hierarchies_nhits")
+    epochs = read_field_from_json(hyperparam_path, "epochs_nhits")
+    lr = read_field_from_json(hyperparam_path, "lr_nhits")
+    patience = read_field_from_json(hyperparam_path, "patience_nhits")
+    sequence_length = read_field_from_json(hyperparam_path, "sequence_length_nhits")
+    prediction_horizon = read_field_from_json(hyperparam_path, "prediction_horizon_nhits")
+    test_split = read_field_from_json(hyperparam_path, "test_split_nhits")
+    batch_size = read_field_from_json(hyperparam_path, "batch_size_nhits")
 
     model = NHiTS(input_dim, hidden_dim, num_blocks, num_hierarchies)
     print(f"Created NHiTS model with {sum(p.numel() for p in model.parameters())} parameters")
@@ -363,7 +373,7 @@ def main_training(  df,
     
     # Prepare data
     print("Preparing sequences...")
-    train_loader, val_loader = trainer.prepare_data(df, sequence_length=20, batch_size=32)
+    train_loader, val_loader = trainer.prepare_data(df, sequence_length, test_split, batch_size, prediction_horizon)
     print(f"Training batches: {len(train_loader)}, Validation batches: {len(val_loader)}")
 
     hiper_content = []
@@ -371,6 +381,11 @@ def main_training(  df,
     hiper_content.append( f"Hyper nhits hidden_dim {hidden_dim}" )
     hiper_content.append( f"Hyper nhits num_blocks {num_blocks}" )
     hiper_content.append( f"Hyper nhits num_hierarchies {num_hierarchies}" )
+    hiper_content.append( f"Hyper nhits epochs {epochs}" )
+    hiper_content.append( f"Hyper nhits lr {lr}" )
+    hiper_content.append( f"Hyper nhits patience {patience}" )
+    hiper_content.append( f"Hyper nhits sequence_length {sequence_length}" )
+    hiper_content.append( f"Hyper nhits batch_size {batch_size}" )    
 
     results_dir = results_folder(file_rawdata_name)
     hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
@@ -381,7 +396,7 @@ def main_training(  df,
 
 
     # Train model
-    trainer.train(train_loader, val_loader, file_rawdata_name, epochs=200, lr=0.001, patience=20)
+    trainer.train(train_loader, val_loader, file_rawdata_name, epochs, lr, patience)
     
     # Plot losses
     trainer.plot_losses()

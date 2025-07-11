@@ -140,5 +140,3 @@ plt.ylabel('Latitude')
 
 # Save the plot as an image
 plt.savefig(f'onca_{current_animal}.png')
-
-plt.show()

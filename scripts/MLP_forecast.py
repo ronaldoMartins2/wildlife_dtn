@@ -93,8 +93,6 @@ plt.grid(True)
 # Save the plot as an image
 plt.savefig(f'onca_93_mlp.png')
 
-plt.show()
-
 # Print forecasted values
 for i, (lon, lat) in enumerate(zip(forecasted_lons, forecasted_lats), 1):
     print(f"Step {i} - Predicted Longitude: {lon}, Predicted Latitude: {lat}")

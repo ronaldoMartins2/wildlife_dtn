@@ -65,7 +65,6 @@ def run(current_animal):
     plt.title(f"Clusters e Centróides da Onça {current_animal}")
     plt.legend()
     plt.grid()
-    #plt.show()
 
     create_clusterization_results('Results/Clusterization')
     script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory

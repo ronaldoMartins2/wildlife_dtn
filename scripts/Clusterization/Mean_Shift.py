@@ -67,9 +67,6 @@ def run(current_animal):
     # salvar conforme id da onça
     plt.savefig(file_name)
 
-    #plt.show()
-
-
 def run_mock():
     current_animal = sys.argv [1]
 

@@ -29,5 +29,3 @@ plt.grid(axis="y", linestyle="--", alpha=0.7)
 # Exibir os valores em cima das barras
 for i, count in enumerate(contact_counts):
     plt.text(i, count + 1, str(count), ha="center", fontsize=12)
-
-plt.show()

@@ -6,24 +6,21 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import os
 from Common.utils import (
-    create_clusterization_results
+    create_clusterization_results,
+    results_folder,
+    read_field_from_json
 )
 # pip install scikit-learn
 
 # python3 6_kmeans_individual_csv.py 94
 
+def run(current_animal, file_rawdata_name):
 
+    results_dir = results_folder(file_rawdata_name)
 
-def run(current_animal):
-
-    #current_animal = sys.argv[1]
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
     file_name = os.path.join(results_dir, f'map_{current_animal}.csv')
 
     # Read data from CSV
-    #file_name = f'../Data_preparation/map_{current_animal}.csv'
     data = pd.read_csv(file_name, header=None)  # header=None to indicate no column names
 
     # Remove commas from the longitude and latitude columns (columns 2 and 3)
@@ -52,18 +49,34 @@ def run(current_animal):
         print("Error: No valid coordinates left for clustering.")
         sys.exit(1)
 
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
+
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+    n_clusters = read_field_from_json(hyperparam_path, "n_clusters_kmeans")
+    random_state = read_field_from_json(hyperparam_path, "random_state_kmeans")
+    n_init = read_field_from_json(hyperparam_path, "n_init_kmeans")
+
     # Apply KMeans
-    kmeans = KMeans(n_clusters=8, random_state=0, n_init=10)
+    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=n_init)
     kmeans.fit(coords)
+
+    hiper_content = []
+    hiper_content.append( f"Hyper kmeans n_clusters {n_clusters}" )
+    hiper_content.append( f"Hyper kmeans random_state {random_state}" )
+    hiper_content.append( f"Hyper kmeans n_init {n_init}" )
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+    with open(hiper_path, "a") as file:
+        for line in hiper_content:
+            file.write(line + '\n')
 
     # Get cluster labels and centroids
     clusters = kmeans.labels_
     centroids = kmeans.cluster_centers_
 
     # Save cluster coordinates to CSV
-    create_clusterization_results('Results/Clusterization')
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
+    create_clusterization_results(f'{results_dir}/Clusterization')
+    
     output_file = os.path.join(results_dir, f'clusters_kmeans_{current_animal}.csv')
 
     cluster_data = pd.DataFrame(centroids, columns=['Longitude', 'Latitude'])
@@ -102,14 +115,12 @@ def run(current_animal):
 
     # Save the plot as an image
 
-
-    create_clusterization_results('Results/Clusterization')
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
+    create_clusterization_results(f'{results_dir}/Clusterization')
+    #script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    #results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
     file_name = os.path.join(results_dir, f'onca_{current_animal}_kmeans.png')
     #plt.savefig(f'onca_{current_animal}_kmeans.png')
     plt.savefig(file_name)
-    #plt.show()
 
 def run_mock():
     current_animal = sys.argv [1]

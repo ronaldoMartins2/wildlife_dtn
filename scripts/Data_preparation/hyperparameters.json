@@ -1,0 +1,25 @@
+{
+    "output_dim": 6,
+    "hidden_dim": 6,
+    "num_blocks": 6,
+
+    "input_dim_nhits": 3,
+    "hidden_dim_nhits": 64,
+    "num_blocks_nhits": 4,
+    "num_hierarchies_nhits": 3,
+    "epochs_nhits": 200,
+    "lr_nhits": 0.001,
+    "patience_nhits": 20,
+    "sequence_length_nhits": 20,
+    "test_split_nhits": 0.2,
+    "batch_size_nhits": 32,
+    "prediction_horizon_nhits": 1,
+
+    "sigma_SOM": 0.5,
+    "learning_rate_SOM": 0.5,
+    "ephocs_SOM": 500,
+
+    "n_clusters_kmeans": 8,
+    "random_state_kmeans": 0,
+    "n_init_kmeans": 10
+}
