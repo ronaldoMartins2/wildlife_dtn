@@ -68,18 +68,28 @@ def getDataFromCSV( current_animal, file_rawdata_name ):
     return df
 
 def load_trained_nbeats_model(file_rawdata_name):
-    input_dim = 3
-    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'Interpolation', 'hyperparameters.json')
 
-    output_dim = read_field_from_json(file_path, "output_dim")
-    hidden_dim = read_field_from_json(file_path, "hidden_dim")
-    num_blocks = read_field_from_json(file_path, "num_blocks")
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
+
+    #script_dir = os.path.dirname(os.path.abspath(__file__))
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+    #file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'Interpolation', 'hyperparameters.json')
+
+    input_dim = 3
+    output_dim = read_field_from_json(hyperparam_path, "output_dim")
+    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim")
+    num_blocks = read_field_from_json(hyperparam_path, "num_blocks")
 
     model = NBeats(input_dim, output_dim, hidden_dim, num_blocks)
 
-    results_dir = results_folder(file_rawdata_name)
+    #results_dir = results_folder(file_rawdata_name)
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    data_prep_dir = os.path.join(script_dir, '..', 'Interpolation')  # Navigate to the parent directory and into 'Results'
+
     filename = file_rawdata_name.split('/')[-1].split('.')[0]
-    model_path = os.path.join(results_dir, f'nbeats_model_general_{filename}.pth')
+    model_path = os.path.join(data_prep_dir, f'nbeats_model_general_{filename}.pth')
 
     print(f'Loading trained model from {model_path}')
     checkpoint = torch.load(model_path, map_location=torch.device('cpu'))  # Add map_location if needed
@@ -136,15 +146,16 @@ def run(    current_animal,
     X_tensor = torch.tensor(X, dtype=torch.float32)
     y_tensor = torch.tensor(y, dtype=torch.float32)
 
+
     script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Interpolation')  # Navigate to the parent directory and into 'Results'
-    file_path = os.path.join(results_dir, f'hyperparameters.json')
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
 
     # Hyperparameters
     input_dim = X_tensor.shape[1]  # Number of features (Prev Time Difference, Longitude, Latitude)
-    output_dim = read_field_from_json(file_path, "output_dim")  # Output: predict multiple future time steps
-    hidden_dim = read_field_from_json(file_path, "hidden_dim")  # Hidden layer size
-    num_blocks = read_field_from_json(file_path, "num_blocks")  # Number of N-BEATS blocks
+    output_dim = read_field_from_json(hyperparam_path, "output_dim")  # Output: predict multiple future time steps
+    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim")  # Hidden layer size
+    num_blocks = read_field_from_json(hyperparam_path, "num_blocks")  # Number of N-BEATS blocks
 
     # Create the model
     model = NBeats(input_dim, output_dim, hidden_dim, num_blocks)
@@ -156,15 +167,33 @@ def run(    current_animal,
     # Ensure the target tensor is reshaped correctly to have the same shape as the forecast
     y_tensor = y_tensor.view(-1, 1)  # Reshape to (12, 1) if the model is predicting single values    
     
+    hiper_content = []
+    hiper_content.append( f"Hyper nbeats input_dim {input_dim}" )
+    hiper_content.append( f"Hyper nbeats output_dim {output_dim}" )
+    hiper_content.append( f"Hyper nbeats hidden_dim {hidden_dim}" )
+    hiper_content.append( f"Hyper nbeats num_blocks {num_blocks}" )
+    #hiper_content.append( f"Hyper nbeats num_hierarchies {num_hierarchies}" )
+
+    results_dir = results_folder(file_rawdata_name)
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+
+    with open(hiper_path, "a") as file:
+        for line in hiper_content:
+            file.write(line + '\n')
+
+
     results_dir = results_folder(file_rawdata_name)
 
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    data_prep_dir = os.path.join(script_dir, '..', 'Interpolation/models')  # Navigate to the parent directory and into 'Results'
+
     filename = file_rawdata_name.split('/')[-1].split('.')[0]
-    model_path = os.path.join(results_dir, f'nbeats_model_general_{filename}.pth')
+    model_path = os.path.join(data_prep_dir, f'nbeats_model_general_{filename}.pth')
 
     print(f'results_dir is {results_dir} ##########################################')
 
     if not os.path.exists(model_path):
-        print("Model not found, training...")
+        print("Model not found for nbeat, training...")
         # train_nbeats_model(current_animal, file_rawdata_name, file_rawdata_columns)
         print('need first generate trainning model')
         sys.exit()

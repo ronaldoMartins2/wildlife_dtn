@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 import sys
 import os
 from Common.utils import (
-    create_clusterization_results
+    create_clusterization_results,
+    results_folder,
+    read_field_from_json
 )
 
 # exemplo de execução
@@ -13,10 +15,10 @@ from Common.utils import (
 
 # Step 1: Load Data from Data_preparation folder
 
-def run(current_animal):
+def run(current_animal, file_rawdata_name):
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+    results_dir = results_folder(file_rawdata_name)
+
     file_name = os.path.join(results_dir, f'map_{current_animal}.csv')
 
     data = pd.read_csv(file_name, header=None, names=['id', 'Timestamp', 'Longitude', 'Latitude'])
@@ -32,8 +34,13 @@ def run(current_animal):
     # Step 2: Prepare Data for Clustering (Longitude, Latitude)
     coordinates = df[['Longitude', 'Latitude']].values
 
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+    bandwidth = read_field_from_json(hyperparam_path, "bandwidth")
+
     # Step 3: Apply Mean-Shift
-    mean_shift = MeanShift(bandwidth=0.001)  # Adjust bandwidth as necessary
+    mean_shift = MeanShift(bandwidth=bandwidth)  # Adjust bandwidth as necessary
     mean_shift.fit(coordinates)
     df['Cluster'] = mean_shift.labels_
 
@@ -41,8 +48,6 @@ def run(current_animal):
     # Step 4: Save Results to CSV
 
     create_clusterization_results('Results/Clusterization')
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
     output_csv_path = os.path.join(results_dir, f'clusters_mean_shift_map_{current_animal}.csv')
 
     df[['Longitude', 'Latitude', 'Cluster']].to_csv(output_csv_path, index=False, header=None)
@@ -60,14 +65,22 @@ def run(current_animal):
     plt.legend()
 
     create_clusterization_results('Results/Clusterization')
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
+
     file_name = os.path.join(results_dir, f'onca_{current_animal}_mean_shift.png')
+
+    hiper_content = []
+    hiper_content.append( f"Hyper Mean-Shift bandwidth {bandwidth}" )
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+    with open(hiper_path, "a") as file:
+        for line in hiper_content:
+            file.write(line + '\n')
+
 
     # salvar conforme id da onça
     plt.savefig(file_name)
 
 def run_mock():
     current_animal = sys.argv [1]
+    file_rawdata_name = sys.argv [2]
 
-    run( current_animal )
+    run( current_animal, file_rawdata_name)

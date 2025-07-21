@@ -89,9 +89,10 @@ def load_data(filename, mask):
     return df
 
 def load_trained_model(current_animal, file_rawdata_name):
- 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    hyperparam_path = os.path.join(script_dir, 'hyperparameters.json')
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
 
     input_dim = read_field_from_json(hyperparam_path, "input_dim_nhits")
     hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nhits")

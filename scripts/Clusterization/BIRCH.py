@@ -5,17 +5,19 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import os
 from Common.utils import (
-    create_clusterization_results
+    create_clusterization_results,
+    results_folder,
+    read_field_from_json
 )
 
 # exemplode execução
 # python3 11_BIRCH.py 93
 
 
-def run(current_animal):
+def run(current_animal, file_rawdata_name):
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
+    results_dir = results_folder(file_rawdata_name)
+    
     file_name = os.path.join(results_dir, f'map_{current_animal}.csv')
 
     # Step 1: Load Data
@@ -29,15 +31,19 @@ def run(current_animal):
     scaler = StandardScaler()
     coordinates = scaler.fit_transform(df[['Longitude', 'Latitude']])
 
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+    threshold = read_field_from_json(hyperparam_path, "threshold")    
+
     # Step 3: Apply BIRCH Clustering
-    birch_model = Birch(n_clusters=None, threshold=0.5)
+    birch_model = Birch(n_clusters=None, threshold=threshold)
     df['Cluster'] = birch_model.fit_predict(coordinates)
 
     # Step 4: Save Results to CSV
 
     create_clusterization_results('Results/Clusterization')
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
+
     output_csv_path = os.path.join(results_dir, f'clusters_birch_map_{current_animal}.csv')
 
     df[['Longitude', 'Latitude', 'Cluster']].to_csv(output_csv_path, index=False, header=None)
@@ -59,13 +65,20 @@ def run(current_animal):
 
 
     create_clusterization_results('Results/Clusterization')
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
+
     file_name = os.path.join(results_dir, f'onca_{current_animal}_BIRCH.png')
+
+    hiper_content = []
+    hiper_content.append( f"Hyper BIRCH threshold {threshold}" )
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+    with open(hiper_path, "a") as file:
+        for line in hiper_content:
+            file.write(line + '\n')
 
     plt.savefig(file_name)
 
 def run_mock():
     current_animal = sys.argv [1]
-
-    run( current_animal )
+    file_rawdata_name = sys.argv [2]
+    
+    run( current_animal, file_rawdata_name )

@@ -91,8 +91,11 @@ def train_nbeats_model( #current_animal,
         print("Training data is empty. Skipping training.")
         return
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    hyperparam_path = os.path.join(script_dir, 'hyperparameters.json')
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
+
+    #script_dir = os.path.dirname(os.path.abspath(__file__))
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
 
     input_dim = X_tensor.shape[1]
     output_dim = read_field_from_json(hyperparam_path, "output_dim")
@@ -132,7 +135,10 @@ def train_nbeats_model( #current_animal,
 
     results_dir = results_folder(file_rawdata_name)
 
-    model_path = os.path.join(results_dir, f'nbeats_model_general_{filename}.pth')
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    data_prep_dir = os.path.join(script_dir, '..', 'Interpolation/models')  # Navigate to the parent directory and into 'Results'
+
+    model_path = os.path.join(data_prep_dir, f'nbeats_model_general_{filename}.pth')
     torch.save({'model_state_dict': model.state_dict()}, model_path)
     print(f"Model saved to {model_path}")
 
