@@ -103,22 +103,16 @@ def run(    current_animal,
             file_rawdata_name, 
             file_rawdata_columns ):
 
-
-    #################
-    #num_repeats = 50
-
-    #for _ in range(num_repeats):
-    #    print("S ")
-    #    time.sleep(5)  # Delay of 5 seconds
-    ##############
-
     df = getDataFromCSV( current_animal, file_rawdata_name )
 
     if df.empty:
         print(f'df is empty {current_animal}-{file_rawdata_name}')
         return 
 
-    df = run_clear_outliers( df, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"] )
+    if 'jaguar' in file_rawdata_name:
+        df = run_clear_outliers( df, dataset_name="Jaguar" )
+    else:
+        df = run_clear_outliers( df, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"] )
 
     mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
 
@@ -190,8 +184,6 @@ def run(    current_animal,
     filename = file_rawdata_name.split('/')[-1].split('.')[0]
     model_path = os.path.join(data_prep_dir, f'nbeats_model_general_{filename}.pth')
 
-    print(f'results_dir is {results_dir} ##########################################')
-
     if not os.path.exists(model_path):
         print("Model not found for nbeat, training...")
         # train_nbeats_model(current_animal, file_rawdata_name, file_rawdata_columns)
@@ -204,7 +196,7 @@ def run(    current_animal,
         current_timestamp = start_date
 
         while current_timestamp <= end_date:
-            
+
             # Prepare the input for the model (use the last known values from the previous row)
             last_row = df.iloc[-1]
             last_features = torch.tensor([[last_row['Prev Time Difference (hours)'], last_row['Longitude'], last_row['Latitude']]], dtype=torch.float32)
@@ -214,6 +206,12 @@ def run(    current_animal,
 
             # We can choose how to use the forecast vector. Here we use the first predicted time difference.
             predicted_time_diff = forecast[0].item()  # Use the first predicted time difference as a scalar
+
+            #print(".")
+
+            if predicted_time_diff <= 0:
+                print("Predicted time difference is non-positive, breaking loop.")
+                break
 
             # Calculate the next timestamp using the predicted time difference
             new_timestamp = current_timestamp + timedelta(hours=predicted_time_diff)
@@ -299,8 +297,9 @@ def run(    current_animal,
     while len(predicted_df) < len_animal:
 
         # Call the function to predict data between the given dates
-        print(f'>>>> start_date {start_date}, end_date {end_date}, df {df}')
+
         if not df.empty:
+
             new_predictions = predict_between_dates(start_date, end_date, df, file_rawdata_columns, model)
 
             # Concatenate the new predictions to the existing predicted_df
@@ -313,7 +312,7 @@ def run(    current_animal,
     create_clusterization_results(f'{results__rawdataset_dir}/Interpolation')
 
     results_dir = os.path.join(script_dir, '..', f'{results__rawdataset_dir}/Interpolation')
-    
+
     file_path = os.path.join(results_dir, f'map_{current_animal}_interpolation_nbeats.csv')
 
     predicted_df[columns_to_save].to_csv( file_path, index=False, header=False)

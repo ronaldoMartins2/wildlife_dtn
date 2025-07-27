@@ -303,7 +303,7 @@ python scripts/Interpolation/nhits_trainer.py 93 rawdata/jaguar_mamiraua.csv raw
 
 
 '''
-def main_training_list( animal_list, 
+def nhits_main_training_list( animal_list, 
                         file_rawdata_name, 
                         file_rawdata_columns ):
 

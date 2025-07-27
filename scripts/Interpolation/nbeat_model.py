@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-# Define the NBeatsBlock with residual connection fix
+# Define the NBeatsBlock with residual connection fix and ReLU on output
 class NBeatsBlock(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_dim):
         super(NBeatsBlock, self).__init__()
@@ -29,6 +29,15 @@ class NBeats(nn.Module):
         for block in self.blocks:
             forecast = block(x)
             forecasts.append(forecast)
-            x = x + forecast
+            x = x + forecast  # Residual connection
+            
+        # Average the forecasts from each block
         final_forecast = sum(forecasts) / len(forecasts)
-        return final_forecast.view(-1)
+        
+        # Apply ReLU to ensure positive predictions
+        final_forecast = torch.relu(final_forecast)
+        
+        # Clip to a minimum threshold to avoid too small predictions
+        final_forecast = torch.maximum(final_forecast, torch.tensor(0.1))  # Clip to 0.1 if necessary
+
+        return final_forecast.view(-1)  # Flatten to match expected output shape

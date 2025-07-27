@@ -22,7 +22,12 @@ def prepare_training_data(  #current_animal,
     if df.empty:
         return None, None
 
-    df = run_clear_outliers(df, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"])
+    if 'jaguar' in file_rawdata_name:
+        df = run_clear_outliers(df, dataset_name="Jaguar")
+    else:
+        df = run_clear_outliers(df, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"])
+
+    print("Inside nbeat_trainer")
 
     mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
     df['Timestamp'] = pd.to_datetime(df['Timestamp'], format=mask)

@@ -21,8 +21,6 @@ def results_folder( file_rawdata_name ):
 
     script_dir = script_dir.replace('Common', '')
 
-    print(f'script_dir >>>>>>>>> {script_dir}')
-
     results_dir = os.path.join(script_dir, f'Results/{file_name}')
     
     os.makedirs(results_dir, exist_ok=True)
@@ -32,9 +30,6 @@ def results_folder( file_rawdata_name ):
 def merge_csvs( current_animal, method, file_rawdata_name, file_rawdata_columns ):
 
     # Define the results directory and file path
-    #script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    #results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
-    
     results_dir = results_folder( file_rawdata_name )
 
     file_path = os.path.join(results_dir, f'map_{current_animal}.csv')  # Path to the CSV file
@@ -76,9 +71,6 @@ def merge_csvs( current_animal, method, file_rawdata_name, file_rawdata_columns 
     df_sorted = result.sort_values(by='DateTime')
 
     columns_to_save = ['ID', 'DateTime', 'Longitude', 'Latitude']
-
-    #script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    #results_dir = os.path.join(script_dir, '..', 'Results')  # Navigate to the parent directory and into 'Results'
 
     results_dir = results_folder( file_rawdata_name )
 

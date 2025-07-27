@@ -38,7 +38,6 @@ def process_files(file1, file2, file_number_onca1, file_number_onca2):
     print("Merged columns:", list(merged.columns))
 
     # Compute geodesic distance using iterrows (evita erro do apply)
-    print(f" distance ######################################################################")
     distances = []
     for _, row in merged.iterrows():
         coord1 = (row[f'Latitude{suffix1}'], row[f'Longitude{suffix1}'])

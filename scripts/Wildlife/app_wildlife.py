@@ -32,7 +32,7 @@ from Data_preparation.separar_localizacoes_individuais import (
 
 from Interpolation.nhits_trainer import (
     main_training,
-    main_training_list
+    nhits_main_training_list
 )
 
 from Interpolation.nbeat_trainer import (
@@ -142,7 +142,7 @@ if tangara == 'tangara_mata_atlantica':
 #for current_animal in list_animals:
 #    trainer = main_training(current_animal, file_rawdata, file_rawdata_columns)
 
-main_training_list(list_animals, file_rawdata, file_rawdata_columns)
+#nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
 
 #train_nbeats_model_single(current_animal, file_rawdata, file_rawdata_columns)
@@ -157,15 +157,15 @@ for current_animal in list_animals:
     
     print(f'len_animal {len_animal} current_animal {current_animal} file_rawdata {file_rawdata}')
 
-    #run_interpolation_nbeat(current_animal, number_of_predictions, len_animal, file_rawdata, file_rawdata_columns)
+    run_interpolation_nbeat(current_animal, number_of_predictions, len_animal, file_rawdata, file_rawdata_columns)
 
-    #start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
+    start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
 
-    #run_interpolation_nhits(current_animal, len_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
+    run_interpolation_nhits(current_animal, len_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
 
 
 
-#sys.exit()
+sys.exit()
 
 
 '''
@@ -218,20 +218,6 @@ run_birch(93, file_rawdata)
 sys.exit()
 
 
-'''
-
-#run_som(95)
-#run_mean_shift(94)
-#run_kmeans(93)
-#run_som(93)
-
-#run_birch(94)
-
-# run clusterization SOM
-
-# run clusterization Mean Shift
-
-'''
 for current_animal in list_animals:
 
         run_plot_kmeans_som_birch_mean_shift(current_animal)
