@@ -10,13 +10,16 @@ from Data_preparation.raw_data_integration import get_id_from_json
 from Data_preparation.data_field import DataField
 import matplotlib.pyplot as plt
 
+from torch.serialization import safe_globals
+from sklearn.preprocessing import MinMaxScaler
+
 from Common.utils import (
     TRAINNING_SET,
     results_folder,
     read_field_from_json
 )
 
-from Interpolation.nhits_interpolation import NHiTS
+from Interpolation.nhits_model import NHits
 
 class NHiTSTrainer:
     def __init__(self, model, device='cpu'):
@@ -252,12 +255,14 @@ class NHiTSTrainer:
             'scaler_targets': self.scaler_targets
         }, filepath)
         print(f"Model saved to {filepath}")
-    
+
     def load_model(self, filepath):
         """
-        Load a trained model
+        Load a trained model including scalers, safely.
         """
-        checkpoint = torch.load(filepath)
+        with safe_globals([MinMaxScaler]):
+            checkpoint = torch.load(filepath, weights_only=False)
+
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.scaler_features = checkpoint['scaler_features']
         self.scaler_targets = checkpoint['scaler_targets']
@@ -298,9 +303,7 @@ def load_data_for_training(current_animal, file_rawdata_name, file_rawdata_colum
 
 
 '''
-
 python scripts/Interpolation/nhits_trainer.py 93 rawdata/jaguar_mamiraua.csv rawdata/jaguar_columns.json
-
 
 '''
 def nhits_main_training_list( animal_list, 
@@ -329,13 +332,37 @@ def main_training_single(   current_animal,
                             file_rawdata_columns ):
 
     # Load data
-    print("Loading data...")
     df = load_data_for_training(current_animal, file_rawdata_name, file_rawdata_columns)
     print(f"Loaded {len(df)} data points for animal {current_animal}")
 
     main_training(  df, 
                     file_rawdata_name, 
                     file_rawdata_columns )
+
+def getNhitsModel():
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
+
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+
+    input_dim = read_field_from_json(hyperparam_path, "input_dim_nhits")
+    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nhits")
+    num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nhits")
+    num_hierarchies = read_field_from_json(hyperparam_path, "num_hierarchies_nhits")
+
+    model = NHits(input_dim, hidden_dim, num_blocks, num_hierarchies)
+
+    return model
+
+def getModelPath( file_rawdata_name ):
+
+    results_dir = results_folder(file_rawdata_name)
+
+    filename = file_rawdata_name.split('/')[-1].split('.')[0]
+    model_path = os.path.join(results_dir, f'nhits_model_general_{filename}.pth')
+
+    return model_path
 
 def main_training(  df, 
                     file_rawdata_name, 
@@ -350,13 +377,8 @@ def main_training(  df,
     script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
 
-    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
-
     # Create model
-    input_dim = read_field_from_json(hyperparam_path, "input_dim_nhits")
-    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nhits")
-    num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nhits")
-    num_hierarchies = read_field_from_json(hyperparam_path, "num_hierarchies_nhits")
+
     epochs = read_field_from_json(hyperparam_path, "epochs_nhits")
     lr = read_field_from_json(hyperparam_path, "lr_nhits")
     patience = read_field_from_json(hyperparam_path, "patience_nhits")
@@ -365,7 +387,8 @@ def main_training(  df,
     test_split = read_field_from_json(hyperparam_path, "test_split_nhits")
     batch_size = read_field_from_json(hyperparam_path, "batch_size_nhits")
 
-    model = NHiTS(input_dim, hidden_dim, num_blocks, num_hierarchies)
+    model = getNhitsModel()
+
     print(f"Created NHiTS model with {sum(p.numel() for p in model.parameters())} parameters")
     
     # Create trainer
@@ -400,12 +423,8 @@ def main_training(  df,
     
     # Plot losses
     trainer.plot_losses()
-    
-    # Save model
-    results_dir = results_folder(file_rawdata_name)
 
-    filename = file_rawdata_name.split('/')[-1].split('.')[0]
-    model_path = os.path.join(results_dir, f'nhits_model_general_{filename}.pth')
+    model_path = getModelPath( file_rawdata_name )
 
     print(f'model_path >>> {model_path}')
 
