@@ -56,15 +56,6 @@ def getDataFromCSV( current_animal, file_rawdata_name ):
         for line in hiper_content:
             file.write(line + '\n')
 
-
-    #################
-    #num_repeats = 50
-
-    #for _ in range(num_repeats):
-    #    print("R ")
-    #    time.sleep(5)  # Delay of 5 seconds
-    ##############
-
     return df
 
 def load_trained_nbeats_model(file_rawdata_name):
@@ -72,9 +63,7 @@ def load_trained_nbeats_model(file_rawdata_name):
     script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
 
-    #script_dir = os.path.dirname(os.path.abspath(__file__))
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
-    #file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'Interpolation', 'hyperparameters.json')
 
     input_dim = 3
     output_dim = read_field_from_json(hyperparam_path, "output_dim")
@@ -82,8 +71,6 @@ def load_trained_nbeats_model(file_rawdata_name):
     num_blocks = read_field_from_json(hyperparam_path, "num_blocks")
 
     model = NBeats(input_dim, output_dim, hidden_dim, num_blocks)
-
-    #results_dir = results_folder(file_rawdata_name)
 
     script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     data_prep_dir = os.path.join(script_dir, '..', 'Interpolation')  # Navigate to the parent directory and into 'Results'
@@ -117,7 +104,6 @@ def run(    current_animal,
     mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
 
     # Convert the 'Timestamp' column to datetime objects
-    #df['Timestamp'] = pd.to_datetime(df['Timestamp'], format='%m/%d/%y %H:%M')
     df['Timestamp'] = pd.to_datetime(df['Timestamp'], format=mask)
 
     # Calculate the time differences between consecutive timestamps in hours
@@ -256,7 +242,6 @@ def run(    current_animal,
         print(data['Datetime'].head())
 
         # Convert the 'Datetime' column to datetime format
-        #data['Datetime'] = pd.to_datetime(data['Datetime'], format='%m/%d/%y %H:%M', errors='coerce')
         data['Datetime'] = pd.to_datetime(data['Datetime'], format=mask, errors='coerce')
 
 
@@ -270,7 +255,6 @@ def run(    current_animal,
         data = data.dropna(subset=['Datetime'])
 
         # Find the minimum and maximum dates
-
         min_date = data['Datetime'].min().strftime( mask )
         max_date = data['Datetime'].max().strftime( mask )
 

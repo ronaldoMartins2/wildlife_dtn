@@ -142,13 +142,14 @@ if tangara == 'tangara_mata_atlantica':
 #for current_animal in list_animals:
 #    trainer = main_training(current_animal, file_rawdata, file_rawdata_columns)
 
-#nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
-#sys.exit()
+nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
+sys.exit()
 
+################ call for training models Nbeat and Nhits #########################################################
 #train_nbeats_model_single(current_animal, file_rawdata, file_rawdata_columns)
-#train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
-#sys.exit()
-
+train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
+sys.exit()
+####################################################################################################################
 
 for current_animal in list_animals:
     #TODO review number_of_predictions 
