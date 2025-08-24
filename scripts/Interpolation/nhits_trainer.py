@@ -468,6 +468,19 @@ class NHiTSTrainer:
         }, filepath)
         print(f"Model saved to {filepath}")
 
+    def load_model(self, filepath):
+        """
+        Load a trained model including scalers, safely.
+        """
+        with safe_globals([MinMaxScaler]):
+            checkpoint = torch.load(filepath, weights_only=False)
+
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.scaler_features = checkpoint['scaler_features']
+        self.scaler_targets = checkpoint['scaler_targets']
+        print(f"Model loaded from {filepath}")
+
+
 def nhits_main_training_list(   animal_list, 
                                 file_rawdata_name, 
                                 file_rawdata_columns ):

@@ -1,0 +1,89 @@
+# Start the database
+# docker-compose up -d
+
+# View logs
+# docker-compose logs -f postgres
+
+# Stop the database
+# docker-compose down
+
+# Stop and remove volumes (deletes data)
+# docker-compose down -v
+
+# Connect to PostgreSQL directly
+# docker exec -it postgres_db psql -U myuser -d myappdb
+
+
+# docker exec -it postgres_db psql -U myuser -d myappdb
+
+
+
+#-- Create jaguar_contacts table
+#CREATE TABLE IF NOT EXISTS jaguar_contacts (
+#    id SERIAL PRIMARY KEY,
+#    conn VARCHAR(255) NOT NULL,
+#    for_contact VARCHAR(255),
+#    to_contact VARCHAR(255),
+#    state VARCHAR(50),
+#    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+#    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+#);
+
+# \dt
+# SELECT * FROM jaguar_contacts;
+
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: myappdb
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d/
+    networks:
+      - postgres_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d myappdb"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Optional: pgAdmin for database management
+  # master: admin123
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8085:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - postgres_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  postgres_network:
+    driver: bridge

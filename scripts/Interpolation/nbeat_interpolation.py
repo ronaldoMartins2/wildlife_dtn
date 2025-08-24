@@ -18,12 +18,6 @@ from Interpolation.nbeat_trainer import train_nbeats_model
 
 from Interpolation.nbeat_model import NBeats
 
-# python3 5_nbeat_interpolation.py 94 n(numero de registros)
-#exemplo python3 5_nbeat_interpolation.py 94 1032
-
-#inside scripts (folder)
-# python3 -m Interpolation.nbeat_interpolation 94 1032
-
 from Common.utils import (
     read_field_from_json,
     TRAINNING_SET
@@ -191,7 +185,8 @@ def run(    current_animal,
             forecast = model(last_features)
 
             # We can choose how to use the forecast vector. Here we use the first predicted time difference.
-            predicted_time_diff = forecast[0].item()  # Use the first predicted time difference as a scalar
+            #predicted_time_diff = forecast[0].item()  # Use the first predicted time difference as a scalar
+            predicted_time_diff = forecast.item()  # Use the first predicted time difference as a scalar
 
             #print(".")
 

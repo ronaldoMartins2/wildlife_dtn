@@ -2,10 +2,12 @@ import os
 import pandas as pd
 from geopy.distance import geodesic
 import sys
+
 from Common.utils import (
     create_clusterization_results,
     append_variables_to_file,
-    CONTACT_DISTANCE
+    CONTACT_DISTANCE,
+    results_folder
 )
 
 def find_min_max_dates(file_path):
@@ -20,7 +22,7 @@ def find_min_max_dates(file_path):
     max_date = data['Datetime'].max()
     return min_date, max_date
 
-def process_files(file1, file2, file_number_onca1, file_number_onca2):
+def process_files(file1, file2, file_number_onca1, file_number_onca2, file_rawdata_name):
     suffix1 = f'__{file_number_onca1}'
     suffix2 = f'__{file_number_onca2}'
 
@@ -54,8 +56,10 @@ def process_files(file1, file2, file_number_onca1, file_number_onca2):
     filtered = merged[merged['Distance'] < CONTACT_DISTANCE]
 
     create_clusterization_results('Results/DTN')
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results/DTN')  # Navigate to the parent directory and into 'Results'
+    #script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    #results_dir = os.path.join(script_dir, '..', 'Results/DTN')  # Navigate to the parent directory and into 'Results'
+    
+    results_dir = results_folder(file_rawdata_name)
     output_DTN_filename = os.path.join(results_dir, f'contacts_DTN.txt')
 
 
@@ -75,23 +79,28 @@ def process_files(file1, file2, file_number_onca1, file_number_onca2):
     # Export to CSV
 
     create_clusterization_results('Results/DTN')
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results/DTN')  # Navigate to the parent directory and into 'Results'
+    
+    #script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    #results_dir = os.path.join(script_dir, '..', 'Results/DTN')  # Navigate to the parent directory and into 'Results'
+    results_dir = results_folder(file_rawdata_name)
+
     output_filename = os.path.join(results_dir, f'contacts_{file_number_onca1}_{file_number_onca2}.csv')
 
     filtered.to_csv(output_filename, index=False)
     print(f"\nFiltered contacts saved to '{output_filename}'")
 
-def run(file_number_onca1, file_number_onca2):
+def run(file_number_onca1, file_number_onca2, file_rawdata_name):
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results/Interpolation')  # Navigate to the parent directory and into 'Results'
+    #script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
+    #results_dir = os.path.join(script_dir, '..', 'Results/Interpolation')  # Navigate to the parent directory and into 'Results'
     
-    file_path_1 = os.path.join(results_dir, f'map_{file_number_onca1}_interpolation_nbeats.csv')
-    file_path_2 = os.path.join(results_dir, f'map_{file_number_onca2}_interpolation_nbeats.csv')
+    results_dir = results_folder(file_rawdata_name)
+
+    file_path_1 = os.path.join(results_dir, f'Interpolation/map_{file_number_onca1}_interpolation_nbeats.csv')
+    file_path_2 = os.path.join(results_dir, f'Interpolation/map_{file_number_onca2}_interpolation_nbeats.csv')
 
     # Rodar o script
-    process_files(file_path_1, file_path_2, file_number_onca1, file_number_onca2)
+    process_files(file_path_1, file_path_2, file_number_onca1, file_number_onca2, file_rawdata_name)
 
 def run_mock():
     file_number_onca1 = sys.argv[1]

@@ -16,6 +16,8 @@ import time
 # python3 scripts/Wildlife/app_wildlife.py rawdata/jaguar_mamiraua.csv rawdata/jaguar_columns.json
 # python3 scripts/Wildlife/app_wildlife.py rawdata/tangara_mata_atlantica.csv rawdata/tangara_columns.json
 
+# SELECT * FROM jaguar_contacts;
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 
 from Common.utils import (
@@ -55,6 +57,10 @@ from Evaluation.average_by_individual import (
     get_top_botom_date
 )
 
+from Evaluation.media_tempos_hist import (
+    run as run_media_tempos_hist
+)
+
 from Evaluation.average_comparison import (
     run as run_average_comparison
 )
@@ -87,6 +93,18 @@ from DTN.mobility_contacts import (
     run as run_contacts
 )
 
+from DTN.cluster_contacts_fixed_points import (
+    run as run_cluster_contacts
+)
+
+from DTN.find_contacts_between_nodes import (
+    run as run_find_contacts_between_nodes
+)
+
+from DTN.add_down_event import (
+    run as run_add_down_event
+)
+
 # data preparation
 
 file_rawdata = sys.argv [1]
@@ -114,9 +132,10 @@ print(f'{list_animals}')
 for current_animal in list_animals:
     run_preparation( current_animal, file_rawdata, file_rawdata_columns )
     run_average_by_individual( current_animal, file_rawdata, file_rawdata_columns )
+    run_media_tempos_hist( current_animal, file_rawdata)
     
 time.sleep(2)
-
+#sys.exit()
 
 #run_preparation( 93, file_rawdata, file_rawdata_columns )
 #run_preparation( 'G54907', file_rawdata, file_rawdata_columns )
@@ -128,9 +147,9 @@ time.sleep(2)
 tangara = file_rawdata.split('.')[-2]
 tangara = tangara.split('/')[-1]
 
-if tangara == 'tangara_mata_atlantica':
+#if tangara == 'tangara_mata_atlantica':
     #list_animals = ['E62718', 'E62726', 'OR34MGA', 'G21547', 'E62705', 'E57527', 'E49920', 'E62722', 'G56076' ]
-    list_animals = ['OR34MGA' ]
+#    list_animals = ['OR34MGA' ]
 #else:
 #    list_animals = [94]
 # E62724 loop
@@ -142,13 +161,14 @@ if tangara == 'tangara_mata_atlantica':
 #for current_animal in list_animals:
 #    trainer = main_training(current_animal, file_rawdata, file_rawdata_columns)
 
-nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
-sys.exit()
-
 ################ call for training models Nbeat and Nhits #########################################################
+
+#nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
+#sys.exit()
+
 #train_nbeats_model_single(current_animal, file_rawdata, file_rawdata_columns)
-train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
-sys.exit()
+#train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
+#sys.exit()
 ####################################################################################################################
 
 for current_animal in list_animals:
@@ -164,9 +184,7 @@ for current_animal in list_animals:
 
     run_interpolation_nhits(current_animal, len_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
 
-
-
-sys.exit()
+#sys.exit()
 
 
 '''
@@ -182,12 +200,12 @@ start_date, end_date = get_top_botom_date( 93 )
 run_interpolation_nhits(93, len_animal, start_date, end_date)
 '''
 
-'''
+
 for current_animal in list_animals:
 
     merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )
     merge_csvs( current_animal, 'N_HITS', file_rawdata, file_rawdata_columns )
-
+'''
 
 for current_animal in list_animals:
 
@@ -216,12 +234,19 @@ run_som(93, file_rawdata)
 run_mean_shift(93, file_rawdata)
 run_birch(93, file_rawdata)     
 
-sys.exit()
+#sys.exit()
 
 
-for current_animal in list_animals:
+#for current_animal in list_animals:
+#        run_plot_kmeans_som_birch_mean_shift(current_animal)
 
-        run_plot_kmeans_som_birch_mean_shift(current_animal)
+
+#for current_animal in list_animals:
+#        run_cluster_contacts(current_animal)
+
+#run_cluster_contacts(93, file_rawdata)
+#sys.exit()
+
 '''
 
 run_plot_kmeans_som_birch_mean_shift(93)
@@ -233,9 +258,12 @@ run_plot_kmeans_som_birch_mean_shift(93)
 pairs = create_pairs(list_animals)
 
 for pair in pairs:
-    run_contacts(pair[0], pair[1])
+    run_contacts(pair[0], pair[1], file_rawdata)
 
+for pair in pairs:
+    run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
+    run_add_down_event( f'{pair[0]}_{pair[1]}', file_rawdata )
 
-run_contacts(93, 94)
-run_contacts(95, 96)
-run_contacts(96, 97)
+#run_contacts(93, 94)
+#run_contacts(95, 96)
+#run_contacts(96, 97)
