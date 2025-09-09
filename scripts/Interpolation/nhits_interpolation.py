@@ -21,6 +21,10 @@ from Interpolation.nhits_trainer import (
     NHiTSTrainer
 )
 
+from Data_preparation.clear_outtliers import (
+    run as run_clear_outliers
+)
+
 from Interpolation.nhits_model import NHits
 
 # python3 12_nhits_interpolation_2.py 94 '1/22/15 17:31' '7/31/15 17:31'
@@ -71,7 +75,8 @@ def load_trained_model(current_animal, file_rawdata_name):
 
     return model
 
-def predict_between_dates(start_date, end_date, df, model, trainer, mask, num_steps=10):
+def predict_between_dates(start_date, end_date, df, model, trainer, mask, num_steps=1):
+#def predict_between_dates(start_date, end_date, df, model, trainer, mask, num_steps=10):
     """
     Predict future points using a trained model with proper scaling.
 
@@ -160,6 +165,15 @@ def getDataFromCSV( current_animal, file_rawdata_name ):
     
     df = pd.read_csv( file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
 
+    if 'jaguar' in file_rawdata_name:
+        df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Jaguar" )
+    else:
+        df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"] )
+
+    columns_to_save = ['ID', 'Timestamp', 'Longitude', 'Latitude']
+    file_path = os.path.join(results_dir, f'map_{current_animal}_outliers_less.csv')
+    df[columns_to_save].to_csv( file_path, index=False, header=False)
+
     # Limitar a 80% dos registros
     limit = int(TRAINNING_SET * len(df))
     df = df.iloc[:limit]
@@ -181,14 +195,15 @@ def run_mock():
     current_animal = sys.argv [1]
     run( current_animal )
 
-def run(    current_animal, 
-            len_animal, 
+def run(    current_animal,
             start_date, 
             end_date, 
             file_rawdata_name, 
             file_rawdata_columns ):
 
     df = getDataFromCSV( current_animal, file_rawdata_name )
+
+    len_animal_outliers_less = len(df)
 
     # Define your date range and input file
 
@@ -202,11 +217,12 @@ def run(    current_animal,
 
     results_dir = results_folder( file_rawdata_name )
 
-    file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
+    #file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
 
-    df = load_data( file_path, mask )  # Make sure this file exists
+    #df = load_data( file_path, mask )  # Make sure this file exists
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'], format=mask)
 
-    len_animal = int(len_animal)
+    len_animal = int(len_animal_outliers_less)
     predicted_df = pd.DataFrame()
 
     model = getNhitsModel()
@@ -218,7 +234,34 @@ def run(    current_animal,
     if start_date <= df.iloc[-1]['Timestamp']:
         print("Adjusting start_date to just after last known timestamp.")
         start_date = df.iloc[-1]['Timestamp'] + timedelta(hours=1)
-        
+    
+    print(f'********************************** len_animal {len_animal}  current_animal {current_animal} nhits')
+
+    while len(predicted_df) < len_animal:
+        # Ensure you predict only the remaining number of points
+        remaining_predictions = len_animal - len(predicted_df)
+        num_steps = min(remaining_predictions, 1)  # Predict at most 1 step, or the remaining points
+
+        new_predictions = predict_between_dates(start_date, end_date, df, model, trainer, mask, num_steps=num_steps)
+
+        if not new_predictions:
+            print("No valid predictions returned. Exiting interpolation loop.")
+            break  # Avoid infinite loop
+
+        # Ensure we don’t exceed the length we need
+        if len(predicted_df) + len(new_predictions) > len_animal:
+            new_predictions = new_predictions[:len_animal - len(predicted_df)]  # Trim excess predictions
+
+        new_predictions_df = pd.DataFrame(new_predictions, columns=['ID', 'Timestamp', 'Longitude', 'Latitude'])
+        predicted_df = pd.concat([predicted_df, new_predictions_df], ignore_index=True)
+
+        # Update df with new predictions for the next round
+        df = pd.concat([df, new_predictions_df], ignore_index=True)
+
+        # Update start_date for next round
+        start_date = pd.to_datetime(new_predictions_df.iloc[-1]['Timestamp'])
+
+    '''
     while len(predicted_df) < len_animal:
         new_predictions = predict_between_dates(start_date, end_date, df, model, trainer, mask, num_steps=20)
 
@@ -235,9 +278,14 @@ def run(    current_animal,
         # Update start_date for next round
         start_date = pd.to_datetime(new_predictions_df.iloc[-1]['Timestamp'])
 
+    '''
+
+    print(f'********************************** len(predicted_df) {len(predicted_df)}  current_animal {current_animal} nhits')
+
     # Save the predictions to a CSV file
     results_dir = results_folder( file_rawdata_name )
 
     file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits.csv')
 
+    create_clusterization_results(f'{results_dir}/Interpolation')
     save_to_csv(predicted_df, file_path)

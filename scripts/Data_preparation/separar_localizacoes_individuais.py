@@ -59,10 +59,9 @@ def run( current_animal, file_rawdata_name, file_rawdata_columns ):
                 list_animals [ row[ get_id_from_json(file_rawdata_columns, DataField.ID) ] ] = 'id'
 
                 line_count += 1
+        line_count -= 1
 
-        print(f'line_count total {line_count}')
-
-        #hiper_content.append( f'{file_rawdata_name} line_count total {line_count}' )
+        print(f'>>>>>>>>>>>>> line_count total {line_count} for animal {current_animal}')
 
     count_animal = 0
 

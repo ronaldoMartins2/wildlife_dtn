@@ -87,7 +87,6 @@ def evaluate_nbeats_model(model, df, file_rawdata_columns):
 
     return mae, rmse, mape
 
-
 def prepare_training_data(  #current_animal, 
                             df,
                             file_rawdata_name,
@@ -97,9 +96,9 @@ def prepare_training_data(  #current_animal,
         return None, None
 
     if 'jaguar' in file_rawdata_name:
-        df = run_clear_outliers(df, dataset_name="Jaguar")
+        df = run_clear_outliers(df, current_animal, file_rawdata_name, dataset_name="Jaguar")
     else:
-        df = run_clear_outliers(df, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"])
+        df = run_clear_outliers(df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"])
 
     print("Inside nbeat_trainer")
 

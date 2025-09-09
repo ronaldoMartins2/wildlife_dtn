@@ -133,7 +133,7 @@ for current_animal in list_animals:
     run_preparation( current_animal, file_rawdata, file_rawdata_columns )
     run_average_by_individual( current_animal, file_rawdata, file_rawdata_columns )
     run_media_tempos_hist( current_animal, file_rawdata)
-    
+
 time.sleep(2)
 #sys.exit()
 
@@ -178,64 +178,45 @@ for current_animal in list_animals:
     
     print(f'len_animal {len_animal} current_animal {current_animal} file_rawdata {file_rawdata}')
 
-    run_interpolation_nbeat(current_animal, number_of_predictions, len_animal, file_rawdata, file_rawdata_columns)
+    run_interpolation_nbeat(current_animal, number_of_predictions, file_rawdata, file_rawdata_columns)
 
     start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
 
-    run_interpolation_nhits(current_animal, len_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
+    run_interpolation_nhits(current_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
 
+#exit ()
 #sys.exit()
-
-
-'''
-number_of_predictions = 5
-len_animal = get_len_animal( 'G54907', file_rawdata )
-run_interpolation_nbeat( 'G54907', number_of_predictions, len_animal, file_rawdata, file_rawdata_columns)
-'''
-
-
-''''
-
-start_date, end_date = get_top_botom_date( 93 )
-run_interpolation_nhits(93, len_animal, start_date, end_date)
-'''
 
 
 for current_animal in list_animals:
 
     merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )
     merge_csvs( current_animal, 'N_HITS', file_rawdata, file_rawdata_columns )
-'''
+
+#exit()
+
 
 for current_animal in list_animals:
 
     calc_average_by_method( current_animal, 'N_BEATS', file_rawdata )
     calc_average_by_method( current_animal, 'N_HITS', file_rawdata )
 
+#run_average_comparison( len_animals, file_rawdata )
 
-run_average_comparison( len_animals, file_rawdata )
-'''
-
-#sys.exit()
+sys.exit()
 
 '''
-
 ############## CLUSTERIZATION ##############################
 # run clusterization kmeans
 
 #for current_animal in list_animals:
 
-    #run_kmeans(current_animal)
-    #run_som(current_animal)
+    #run_kmeans(current_animal, file_rawdata)
+    #run_som(current_animal, file_rawdata)
+    #run_mean_shift(93, file_rawdata)
+    #run_birch(93, file_rawdata)   
 
 '''
-run_kmeans(93, file_rawdata)
-run_som(93, file_rawdata)
-run_mean_shift(93, file_rawdata)
-run_birch(93, file_rawdata)     
-
-#sys.exit()
-
 
 #for current_animal in list_animals:
 #        run_plot_kmeans_som_birch_mean_shift(current_animal)
@@ -248,9 +229,6 @@ run_birch(93, file_rawdata)
 #sys.exit()
 
 '''
-
-run_plot_kmeans_som_birch_mean_shift(93)
-
 ############## #DTN Contacts ##################################
 #criar os conjunto dois a dois sem repetição
 
@@ -263,7 +241,3 @@ for pair in pairs:
 for pair in pairs:
     run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
     run_add_down_event( f'{pair[0]}_{pair[1]}', file_rawdata )
-
-#run_contacts(93, 94)
-#run_contacts(95, 96)
-#run_contacts(96, 97)

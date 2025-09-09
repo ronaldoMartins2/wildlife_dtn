@@ -32,7 +32,8 @@ def merge_csvs( current_animal, method, file_rawdata_name, file_rawdata_columns 
     # Define the results directory and file path
     results_dir = results_folder( file_rawdata_name )
 
-    file_path = os.path.join(results_dir, f'map_{current_animal}.csv')  # Path to the CSV file
+    #file_path = os.path.join(results_dir, f'map_{current_animal}.csv')  # Path to the CSV file
+    file_path = os.path.join(results_dir, f'map_{current_animal}_outliers_less_test_only.csv')  # Path to the CSV file
 
     # Check if the file exists
     if not os.path.exists(file_path):
@@ -40,7 +41,8 @@ def merge_csvs( current_animal, method, file_rawdata_name, file_rawdata_columns 
         return None
 
     # Read the CSV file into a DataFrame
-    df_raw = pd.read_csv(file_path)
+    df_raw = pd.read_csv(file_path, header=None)
+
     df_raw.columns = ['ID', 'DateTime', 'Longitude', 'Latitude']
 
     if method == 'N_BEATS':
@@ -56,7 +58,7 @@ def merge_csvs( current_animal, method, file_rawdata_name, file_rawdata_columns 
         return None
 
     # Read the CSV file into a DataFrame
-    df_interpolation = pd.read_csv(file_path)
+    df_interpolation = pd.read_csv(file_path, header=None)
     df_interpolation.columns = ['ID', 'DateTime', 'Longitude', 'Latitude']
 
     result = pd.concat([df_raw, df_interpolation], axis=0)
@@ -80,6 +82,15 @@ def merge_csvs( current_animal, method, file_rawdata_name, file_rawdata_columns 
     if method == 'N_HITS':    
         file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits_merged.csv')
 
+
+    hiper_content = []
+    hiper_content.append( f"Total merged {len(df_sorted)} método {method} animal {current_animal}" )
+
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+
+    with open(hiper_path, "a") as file:
+        for line in hiper_content:
+            file.write(line + '\n')    
 
     df_sorted[columns_to_save].to_csv( file_path, index=False, header=False)
 
