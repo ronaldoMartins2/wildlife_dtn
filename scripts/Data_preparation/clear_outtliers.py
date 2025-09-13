@@ -1,9 +1,10 @@
 import pandas as pd
+from Common.utils import results_folder
+import os
 
-#def run(current_animal, file_rawdata):
+def run(df, current_animal, file_rawdata_name, dataset_name="", exclude_cols=None):
+    hiper_content = []
 
-
-def run(df, dataset_name="", exclude_cols=None):
     if exclude_cols is None:
         exclude_cols = []
 
@@ -31,7 +32,17 @@ def run(df, dataset_name="", exclude_cols=None):
         upper_bound = Q3 + 1.5 * IQR
         df = df[(df[col] >= lower_bound) & (df[col] <= upper_bound)]
 
-    print(f"[{dataset_name}] Linhas restantes após remoção de outliers: {df.shape[0]}")
+    result_str = f"[{dataset_name}] Linhas restantes após remoção de outliers: {df.shape[0]} current_animal {current_animal}"
+    print(result_str)
+
+    hiper_content.append( result_str )
+
+    results_dir = results_folder(file_rawdata_name)
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+    with open(hiper_path, "a") as file:
+        for line in hiper_content:
+            file.write(line + '\n')
+
     return df
 
 def run_mock( ):

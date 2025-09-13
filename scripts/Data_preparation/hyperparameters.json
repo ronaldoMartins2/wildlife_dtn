@@ -1,7 +1,7 @@
 {
-    "output_dim": 1,
-    "hidden_dim": 64,
-    "num_blocks": 3,
+    "output_dim_nbeat": 1,
+    "hidden_dim_nbeat": 64,
+    "num_blocks_nbeat": 3,
 
     "input_dim_nhits": 3,
     "hidden_dim_nhits": 64,

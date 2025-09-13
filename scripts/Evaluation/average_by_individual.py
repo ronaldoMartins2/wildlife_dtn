@@ -102,13 +102,42 @@ def calc_average_by_method(current_animal, methods, file_rawdata_name):
 
     print(f'file_path >>>>>>>>>>>>>>>>>>>>>> {file_path}')
 
-    data = pd.read_csv(file_path, header=None)
+    #data = pd.read_csv(file_path, header=None)
 
+    # Read the CSV file (assuming no header)
+    df = pd.read_csv(file_path, header=None, names=['animal_id', 'datetime', 'longitude', 'latitude'])
+
+    # Convert datetime column to pandas datetime
+    df['datetime'] = pd.to_datetime(df['datetime'])
+
+    # Sort by datetime to ensure proper order
+    df = df.sort_values('datetime').reset_index(drop=True)
+
+    # Calculate time differences between consecutive records
+    time_diffs = df['datetime'].diff()
+
+    # Remove the first NaN value (no previous record to compare with)
+    time_diffs = time_diffs.dropna()
+
+    # Convert to hours
+    time_diffs_hours = time_diffs.dt.total_seconds() / 3600
+
+    # Calculate average interval in hours
+    average_interval_hours = time_diffs_hours.mean()
+
+    print(f"Average datetime interval: {average_interval_hours:.2f} hours")
+    print(f"Number of intervals: {len(time_diffs_hours)}")
+    print(f"Min interval: {time_diffs_hours.min():.2f} hours")
+    print(f"Max interval: {time_diffs_hours.max():.2f} hours")
+
+    append_to_csv(current_animal, average_interval_hours, file_to_save, method_to_save, file_rawdata_name )
+
+    '''
     # Convert the second column to datetime objects
     #data[1] = pd.to_datetime(data[1], format='%Y-%m-%d %H:%M:%S')
     data[1] = pd.to_datetime(data[1], format='%Y-%m-%d %H:%M:%S.%f', errors='coerce')
 
-    print(f' data[1] {data[1]}')
+    #print(f' data[1] {data[1]}')
 
     #data[1] = pd.to_datetime(data[1], format='%d/%m/%y %H:%M')
     #data[1] = pd.to_datetime(data[1], format='%m/%d/%y %H:%M')
@@ -130,6 +159,8 @@ def calc_average_by_method(current_animal, methods, file_rawdata_name):
 
     # Use the calculated average as average_nbeats for the append function
     append_to_csv(current_animal, average_hours, file_to_save, method_to_save, file_rawdata_name )
+
+    '''
 
 def get_len_animal(current_animal, file_rawdata_name):
     # Define the results directory and file path
