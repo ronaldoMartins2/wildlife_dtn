@@ -1,0 +1,30 @@
+# Ignorar ficheiros Python compilados
+*.pyc
+__pycache__/
+
+# Ignorar ambientes virtuais
+venv/
+env/
+
+# Ignorar ficheiros de log e temporários
+*.log
+*.tmp
+*.swp
+
+# Ignorar ficheiros de configuração do IDE (Exemplos)
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Ignorar caches e repositórios
+.DS_Store
+Thumbs.db
+
+# Ignorar credenciais ou dados sensíveis
+credentials.json
+secrets.yaml
+
+# Ignorar ficheiros gerados por ferramentas
+dist/
+build/
