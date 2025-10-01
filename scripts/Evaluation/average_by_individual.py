@@ -285,7 +285,7 @@ def append_to_csv(current_animal, average_nbeats, file_to_save, method_variable,
         new_row.to_csv(file_path, mode='w', header=True, index=False)
         print(f"Created new file and saved data for current_animal: {current_animal}")
     
-    '''
+    
     else:
         # If the file exists, read the existing data
         df_existing = pd.read_csv(file_path)
@@ -296,7 +296,7 @@ def append_to_csv(current_animal, average_nbeats, file_to_save, method_variable,
 
         # Save the updated DataFrame back to the CSV file
         df_existing.to_csv(file_path, index=False)
-    '''
+    
 
 def run( current_animal, file_rawdata_name, file_rawdata_columns ):
 

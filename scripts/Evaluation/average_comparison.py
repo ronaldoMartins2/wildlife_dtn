@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import json
 
 from Evaluation.average_by_individual import (
     get_average_by_animal_sorted,
@@ -14,6 +15,20 @@ from Common.utils import (
 )
 
 def run( len_animals, file_rawdata ):
+
+    # === JSON PARA LINGUAGEM ===
+    json_language = 'scripts/Data_preparation/hyperparameters.json'
+    with open(json_language, encoding='utf-8') as f:
+        lang_params = json.load(f)
+        language = lang_params["language"]
+
+    if language == 'PT_BR':
+        json_path = 'scripts/Data_preparation/language_PT_BR.json'
+    else:
+        json_path = 'scripts/Data_preparation/language_US_US.json'
+
+    with open(json_path, encoding='utf-8') as f:
+        lang = json.load(f)
 
     #raw_means = [11.9, 8.84, 100.4, 7.41, 31.26, 10.2, 2.78, 111.22]
     raw_means = get_average_by_animal_sorted( file_rawdata )
@@ -53,14 +68,16 @@ def run( len_animals, file_rawdata ):
     # Ajustando o gráfico para exibir as barras na vertical
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    bars1 = ax.barh(x - width, raw_means, width, label='Dados Brutos', align='center')
+    legend = lang["legend_average_comparison"]
+
+    bars1 = ax.barh(x - width, raw_means, width, label=legend, align='center')
     bars2 = ax.barh(x, nbeats_means, width, label='NBEATS', align='center')
     bars3 = ax.barh(x + width, nbeats_merged_means, width, label='NHITS', align='center')
 
     # Adicionar títulos e rótulos
-    ax.set_ylabel('Animais')
-    ax.set_xlabel('Média de Tempo entre Coletas')
-    ax.set_title(f'Comparação das Médias de Tempo entre Coletas - Dataset: {file_rawdata}')
+    ax.set_ylabel(lang["ylabel_average_comparison"])
+    ax.set_xlabel(lang["xlabel_average_comparison"])
+    ax.set_title(f'{lang["grafico_average_comparison"]} - Dataset: {file_rawdata}')
     ax.set_yticks(x)
     ax.set_yticklabels(labels)
     ax.legend()

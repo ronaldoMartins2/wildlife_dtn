@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import sys
 import matplotlib.pyplot as plt
+import json
 from minisom import MiniSom  # Import MiniSom for SOM
 import os
 from Common.utils import (
@@ -93,6 +94,20 @@ def run(current_animal, file_rawdata_name):
     cluster_map = {i: som.winner(coord) for i, coord in enumerate(coords)}
     clusters = np.array([cluster_map[i][0] for i in range(len(coords))])
 
+    # === JSON PARA LINGUAGEM ===
+    json_language = 'scripts/Data_preparation/hyperparameters.json'
+    with open(json_language, encoding='utf-8') as f:
+        lang_params = json.load(f)
+        language = lang_params["language"]
+
+    if language == 'PT_BR':
+        json_path = 'scripts/Data_preparation/language_PT_BR.json'
+    else:
+        json_path = 'scripts/Data_preparation/language_US_US.json'
+
+    with open(json_path, encoding='utf-8') as f:
+        lang = json.load(f)
+
     # Plotting
     plt.figure(figsize=(10, 6))
     for cluster_id in np.unique(clusters):
@@ -105,9 +120,9 @@ def run(current_animal, file_rawdata_name):
             alpha=0.7
         )
 
-    plt.title('SOM Clustering of GPS Coordinates')
-    plt.xlabel('Longitude')
-    plt.ylabel('Latitude')
+    plt.title(lang["grafico_SOM_individual"])
+    plt.xlabel(lang["xlabel_SOM_individual"])
+    plt.ylabel(lang["ylabel_SOM_individual"])
     plt.legend()
     plt.grid(True)
 

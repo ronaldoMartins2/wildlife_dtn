@@ -5,13 +5,18 @@ import time
 
 # environment preparation
 
-# pip3 install -r scripts/requirements.txt 
-
+# Primeiro passo
 # python3 -m venv venv
+
+# Segundo passo
 # source ./venv/bin/activate
 
 # to run
 
+# Terceiro passo
+# pip3 install -r scripts/requirements.txt
+
+# Quarto passo
 # inside wildlife_dtn folder
 # python3 scripts/Wildlife/app_wildlife.py rawdata/jaguar_mamiraua.csv rawdata/jaguar_columns.json
 # python3 scripts/Wildlife/app_wildlife.py rawdata/tangara_mata_atlantica.csv rawdata/tangara_columns.json
@@ -24,7 +29,7 @@ from Common.utils import (
     read_field_from_json,
     get_list_animals,
     merge_csvs,
-    create_pairs,
+    create_combinations,
     results_folder
 )
 
@@ -152,6 +157,7 @@ tangara = tangara.split('/')[-1]
 #    list_animals = ['OR34MGA' ]
 #else:
 #    list_animals = [94]
+
 # E62724 loop
 # G56068 empty
 
@@ -167,7 +173,7 @@ tangara = tangara.split('/')[-1]
 #sys.exit()
 
 #train_nbeats_model_single(current_animal, file_rawdata, file_rawdata_columns)
-#train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
+train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
 ####################################################################################################################
 
@@ -201,8 +207,8 @@ for current_animal in list_animals:
     calc_average_by_method( current_animal, 'N_BEATS', file_rawdata )
     calc_average_by_method( current_animal, 'N_HITS', file_rawdata )
 
-#run_average_comparison( len_animals, file_rawdata )
-
+#Graficio
+run_average_comparison( len_animals, file_rawdata )
 sys.exit()
 
 '''
@@ -213,9 +219,10 @@ sys.exit()
 
     #run_kmeans(current_animal, file_rawdata)
     #run_som(current_animal, file_rawdata)
-    #run_mean_shift(93, file_rawdata)
-    #run_birch(93, file_rawdata)   
+    #run_mean_shift(current_animal, file_rawdata)
+    #run_birch(current_animal, file_rawdata)
 
+#sys.exit()
 '''
 
 #for current_animal in list_animals:
@@ -233,7 +240,8 @@ sys.exit()
 #criar os conjunto dois a dois sem repetição
 
 '''
-pairs = create_pairs(list_animals)
+#Combinação sem repetições
+pairs = create_combinations(list_animals)
 
 for pair in pairs:
     run_contacts(pair[0], pair[1], file_rawdata)
