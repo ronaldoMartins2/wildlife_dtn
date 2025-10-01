@@ -19,6 +19,11 @@ def run(current_animal, file_rawdata_name):
 
     results_dir = results_folder(file_rawdata_name)
 
+    # === ADICIONE ESTA LINHA PARA DEFINIR A PASTA FINAL ===
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
+    # Garante que a pasta Clusterization exista
+    create_clusterization_results(cluster_output_dir)
+
     file_name = os.path.join(results_dir, f'map_{current_animal}.csv')
 
     # Read data from CSV
@@ -80,9 +85,10 @@ def run(current_animal, file_rawdata_name):
     centroids = kmeans.cluster_centers_
 
     # Save cluster coordinates to CSV
-    create_clusterization_results(f'{results_dir}/Clusterization')
+    create_clusterization_results(f'{results_dir}/Clusterization/')
     
-    output_file = os.path.join(results_dir, f'clusters_kmeans_{current_animal}.csv')
+    output_file = os.path.join(cluster_output_dir, f'clusters_kmeans_{current_animal}.csv')
+    #output_file = os.path.join(results_dir, f'clusters_kmeans_{current_animal}.csv')
 
     cluster_data = pd.DataFrame(centroids, columns=['Longitude', 'Latitude'])
     cluster_data.to_csv(output_file, index=False, header=None)
@@ -134,10 +140,12 @@ def run(current_animal, file_rawdata_name):
 
     # Save the plot as an image
 
-    create_clusterization_results(f'{results_dir}/Clusterization')
+    create_clusterization_results(f'{results_dir}/Clusterization/')
     #script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     #results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
-    file_name = os.path.join(results_dir, f'onca_{current_animal}_kmeans.png')
+
+    #file_name = os.path.join(results_dir, f'onca_{current_animal}_kmeans.png')
+    file_name = os.path.join(cluster_output_dir, f'onca_{current_animal}_kmeans.png')
     #plt.savefig(f'onca_{current_animal}_kmeans.png')
     plt.savefig(file_name)
 

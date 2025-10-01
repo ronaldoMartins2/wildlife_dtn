@@ -216,9 +216,9 @@ sys.exit()
 ############## CLUSTERIZATION ##############################
 # run clusterization kmeans
 
-#for current_animal in list_animals:
+for current_animal in list_animals:
 
-    #run_kmeans(current_animal, file_rawdata)
+    run_kmeans(current_animal, file_rawdata)
     #run_som(current_animal, file_rawdata)
     #run_mean_shift(93, file_rawdata)
     #run_birch(93, file_rawdata)   
