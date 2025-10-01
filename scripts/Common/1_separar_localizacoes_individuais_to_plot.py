@@ -12,6 +12,7 @@ from geopandas import GeoDataFrame
 import geodatasets
 import geopandas as gpd
 import matplotlib.pyplot as plt
+import json
 
 current_animal = sys.argv [1]
 
@@ -69,12 +70,11 @@ with open ( file_rawdata ) as csv_file :
     
     for row in csv_reader :
         if line_count == 0:
-            
+            #------------------- Abinadabe: Adicionei o pass para evitar erro de identação ---------------------
+            pass
             #print ( f' Column names are { ",". join ( row ) } ')
             #writer.writerow ( { 'lat': 'lat', 'long': 'lng' } )
-
-        else :
-
+        else:
             list_animals [ row[6] ] = 'id'
 
             if row[6] == current_animal :
@@ -127,6 +127,20 @@ gdf_data = GeoDataFrame(df, geometry=geometry)
 
 #print(f' world.columns {world.columns}')
 
+# === JSON PARA LINGUAGEM ===
+json_language = 'scripts/Data_preparation/hyperparameters.json'
+with open(json_language, encoding='utf-8') as f:
+    lang_params = json.load(f)
+    language = lang_params["language"]
+
+if language == 'PT_BR':
+    json_path = 'scripts/Data_preparation/language_PT_BR.json'
+else:
+    json_path = 'scripts/Data_preparation/language_US_US.json'
+
+with open(json_path, encoding='utf-8') as f:
+    lang = json.load(f)
+
 
 # Plot
 fig, ax = plt.subplots(figsize=(10, 6))
@@ -134,9 +148,9 @@ gdf_data.plot(ax=ax, color='lightgrey')  # Plot all geometries
 #amazonas.plot(ax=ax, color='green')   # Highlight Amazonas state
 
 
-plt.title(f'Geographic Distributions of onça locomation #{current_animal}')
-plt.xlabel('Longitude')
-plt.ylabel('Latitude')
+plt.title(f'{lang["grafico_separar_localizacoes_individuais"]} #{current_animal}')
+plt.xlabel(lang["xlabel_separar_localizacoes_individuais"])
+plt.ylabel(lang["ylabel_separar_localizacoes_individuais"])
 
 # Save the plot as an image
 plt.savefig(f'onca_{current_animal}.png')

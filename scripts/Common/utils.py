@@ -8,10 +8,51 @@ from Data_preparation.raw_data_integration import get_id_from_json
 
 interpolations_methods = ['N_BEATS', 'N_HITS']
 
+#Modifiquei a ordem das funções somente. Coloquei as funções que nao dependem da variavel global sobre elas.
+
+def get_contact_distance():
+    script_dir = os.path.dirname(os.path.abspath(__file__))  
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+
+    CONTACT_DISTANCE = read_field_from_json(hyperparam_path, "CONTACT_DISTANCE")
+
+    return CONTACT_DISTANCE
+
+def read_field_from_json(json_file, field_name):
+    """
+    Reads a specific field from a JSON file.
+
+    Args:
+    - json_file (str): Path to the JSON file.
+    - field_name (str): The name of the field whose value you want to retrieve.
+
+    Returns:
+    - The value of the field from the JSON file.
+    - If the field doesn't exist, returns None.
+    """
+    try:
+        # Open and load the JSON file
+        with open(json_file, 'r') as file:
+            data = json.load(file)
+        
+        # Check if the field exists in the loaded data
+        if field_name in data:
+            return data[field_name]
+        else:
+            print(f"Field '{field_name}' not found in the JSON file.")
+            return None
+    except FileNotFoundError:
+        print(f"File '{json_file}' not found.")
+        return None
+    except json.JSONDecodeError:
+        print(f"Error decoding the JSON file '{json_file}'.")
+        return None
+
 TRAINNING_SET = 0.8
 VALIDATION_SET = 0.1
 TESTING_SET = 0.1
-CONTACT_DISTANCE = 5000
+CONTACT_DISTANCE = get_contact_distance()
 
 def results_folder( file_rawdata_name ):
 
@@ -272,7 +313,7 @@ def create_clusterization_results(folder_name):
         print(f"Folder '{folder_path}' already exists")
         return False
 
-def create_pairs(elements):
+def create_combinations(elements):
     """
     Creates all possible pairs from the given set of elements.
     Each pair contains two different elements (no self-pairing).
@@ -283,6 +324,7 @@ def create_pairs(elements):
     Returns:
         List of tuples, where each tuple is a unique pair
     """
+    
     result = []
     elements_list = list(elements)
     

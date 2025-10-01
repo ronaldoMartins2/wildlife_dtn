@@ -1,4 +1,8 @@
 {
+    "language": "PT_BR",
+
+    "CONTACT_DISTANCE": 5000,
+
     "output_dim_nbeat": 1,
     "hidden_dim_nbeat": 64,
     "num_blocks_nbeat": 3,

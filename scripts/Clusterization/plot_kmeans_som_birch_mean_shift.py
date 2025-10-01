@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import sys
 import numpy as np
 import os
+import json
 from Common.utils import (
     create_clusterization_results
 )
@@ -56,6 +57,20 @@ def run(current_animal):
         print(f"No cluster data found for animal {current_animal}. Skipping plot generation.")
         return
 
+    # === JSON PARA LINGUAGEM ===
+    json_language = 'scripts/Data_preparation/hyperparameters.json'
+    with open(json_language, encoding='utf-8') as f:
+        lang_params = json.load(f)
+        language = lang_params["language"]
+
+    if language == 'PT_BR':
+        json_path = 'scripts/Data_preparation/language_PT_BR.json'
+    else:
+        json_path = 'scripts/Data_preparation/language_US_US.json'
+
+    with open(json_path, encoding='utf-8') as f:
+        lang = json.load(f)
+
     # Criar o gráfico
     plt.figure(figsize=(10, 6))
 
@@ -70,9 +85,16 @@ def run(current_animal):
                 # Caso contrário, use uma cor única para o algoritmo
                 plt.scatter(df['longitude'], df['latitude'], color=info['color'], label=f'{name} Points', alpha=0.6)
 
-    plt.xlabel("Longitude")
-    plt.ylabel("Latitude")
-    plt.title(f"Clusters e Centróides da Onça {current_animal}")
+    plt.xlabel(lang["xlabel_kmeans_individual"])
+    plt.ylabel(lang["ylabel_kmeans_individual"])
+    
+    if language == 'PT_BR':
+        plt.title(f"{lang['grafico_kmeans_individual']} da onça {current_animal}")
+    else:
+        plt.title(f"{lang['grafico_kmeans_individual']} of the jaguar {current_animal}")
+    
+    #plt.title(f"{lang['grafico_kmeans_individual']} da onça {current_animal}")
+
     plt.legend()
     plt.grid()
 

@@ -5,6 +5,7 @@ import re
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import os
+import json
 from Common.utils import (
     create_clusterization_results,
     results_folder,
@@ -87,6 +88,20 @@ def run(current_animal, file_rawdata_name):
     cluster_data.to_csv(output_file, index=False, header=None)
     print(f"Cluster centroids saved to {output_file}")
 
+    # === JSON PARA LINGUAGEM ===
+    json_language = 'scripts/Data_preparation/hyperparameters.json'
+    with open(json_language, encoding='utf-8') as f:
+        lang_params = json.load(f)
+        language = lang_params["language"]
+
+    if language == 'PT_BR':
+        json_path = 'scripts/Data_preparation/language_PT_BR.json'
+    else:
+        json_path = 'scripts/Data_preparation/language_US_US.json'
+
+    with open(json_path, encoding='utf-8') as f:
+        lang = json.load(f)
+
     # Plotting
     plt.figure(figsize=(10, 6))
 
@@ -111,9 +126,9 @@ def run(current_animal, file_rawdata_name):
     )
 
     # Add labels and legend
-    plt.title('K-Means Clustering of GPS Coordinates')
-    plt.xlabel('Longitude')
-    plt.ylabel('Latitude')
+    plt.title(lang["grafico_kmeans_individual"])
+    plt.xlabel(lang["xlabel_kmeans_individual"])
+    plt.ylabel(lang["ylabel_kmeans_individual"])
     plt.legend()
     plt.grid(True)
 

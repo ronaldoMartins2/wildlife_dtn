@@ -4,6 +4,7 @@ from sklearn.cluster import MeanShift
 import matplotlib.pyplot as plt
 import sys
 import os
+import json 
 from Common.utils import (
     create_clusterization_results,
     results_folder,
@@ -58,6 +59,20 @@ def run(current_animal, file_rawdata_name):
     df['Cluster'] = mean_shift.labels_
 
 
+    # === JSON PARA LINGUAGEM ===
+    json_language = 'scripts/Data_preparation/hyperparameters.json'
+    with open(json_language, encoding='utf-8') as f:
+        lang_params = json.load(f)
+        language = lang_params["language"]
+
+    if language == 'PT_BR':
+        json_path = 'scripts/Data_preparation/language_PT_BR.json'
+    else:
+        json_path = 'scripts/Data_preparation/language_US_US.json'
+
+    with open(json_path, encoding='utf-8') as f:
+        lang = json.load(f)
+
     # Step 4: Save Results to CSV
 
     create_clusterization_results('Results/Clusterization')
@@ -72,9 +87,9 @@ def run(current_animal, file_rawdata_name):
         cluster_points = df[df['Cluster'] == cluster]
         plt.scatter(cluster_points['Longitude'], cluster_points['Latitude'], label=f"Cluster {cluster}")
 
-    plt.xlabel('Longitude')
-    plt.ylabel('Latitude')
-    plt.title('Mean-Shift Clustering of Latitude and Longitude')
+    plt.xlabel(lang["xlabel_Mean_Shift"])
+    plt.ylabel(lang["ylabel_Mean_Shift"])
+    plt.title(lang["grafico_Mean_Shift"])
     plt.legend()
 
     create_clusterization_results('Results/Clusterization')
