@@ -173,7 +173,7 @@ tangara = tangara.split('/')[-1]
 #sys.exit()
 
 #train_nbeats_model_single(current_animal, file_rawdata, file_rawdata_columns)
-train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
+#train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
 ####################################################################################################################
 
@@ -209,21 +209,21 @@ for current_animal in list_animals:
 
 #Graficio
 run_average_comparison( len_animals, file_rawdata )
-sys.exit()
+#sys.exit()
 
-'''
+
 ############## CLUSTERIZATION ##############################
 # run clusterization kmeans
 
-#for current_animal in list_animals:
+for current_animal in list_animals:
 
-    #run_kmeans(current_animal, file_rawdata)
+    run_kmeans(current_animal, file_rawdata)
     #run_som(current_animal, file_rawdata)
     #run_mean_shift(current_animal, file_rawdata)
     #run_birch(current_animal, file_rawdata)
 
-#sys.exit()
-'''
+sys.exit()
+
 
 #for current_animal in list_animals:
 #        run_plot_kmeans_som_birch_mean_shift(current_animal)
