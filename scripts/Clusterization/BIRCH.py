@@ -20,6 +20,12 @@ from Common.utils import (
 def run(current_animal, file_rawdata_name):
 
     results_dir = results_folder(file_rawdata_name)
+
+    # === 1. DEFINIR O DIRETÓRIO DE CLUSTERIZAÇÃO CORRETO ===
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
+    
+    # Garante que a pasta Clusterization exista
+    create_clusterization_results(cluster_output_dir)
     
     file_name = os.path.join(results_dir, f'map_{current_animal}.csv')
 
@@ -63,7 +69,8 @@ def run(current_animal, file_rawdata_name):
 
     create_clusterization_results('Results/Clusterization')
 
-    output_csv_path = os.path.join(results_dir, f'clusters_birch_map_{current_animal}.csv')
+    #output_csv_path = os.path.join(results_dir, f'clusters_birch_map_{current_animal}.csv')
+    output_csv_path = os.path.join(cluster_output_dir, f'clusters_birch_map_{current_animal}.csv')
 
     df[['Longitude', 'Latitude', 'Cluster']].to_csv(output_csv_path, index=False, header=None)
     print(f"Clusters saved to {output_csv_path}")
@@ -98,7 +105,8 @@ def run(current_animal, file_rawdata_name):
 
     create_clusterization_results('Results/Clusterization')
 
-    file_name = os.path.join(results_dir, f'onca_{current_animal}_BIRCH.png')
+    #file_name = os.path.join(results_dir, f'onca_{current_animal}_BIRCH.png')
+    file_name = os.path.join(cluster_output_dir, f'onca_{current_animal}_BIRCH.png')
 
     hiper_content = []
     hiper_content.append( f"Hyper BIRCH threshold {threshold}" )
