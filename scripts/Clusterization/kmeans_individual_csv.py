@@ -81,7 +81,7 @@ def run(current_animal, file_rawdata_name):
     centroids = kmeans.cluster_centers_
 
     # Save cluster coordinates to CSV
-    create_clusterization_results(f'{results_dir}/Clusterization/')
+    create_clusterization_results(f'{results_dir}/Clusterization')
     
     output_file = os.path.join(cluster_output_dir, f'clusters_kmeans_{current_animal}.csv')
     #output_file = os.path.join(results_dir, f'clusters_kmeans_{current_animal}.csv')
@@ -136,7 +136,7 @@ def run(current_animal, file_rawdata_name):
 
     # Save the plot as an image
 
-    create_clusterization_results(f'{results_dir}/Clusterization/')
+    create_clusterization_results(f'{results_dir}/Clusterization')
     #script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     #results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
 
