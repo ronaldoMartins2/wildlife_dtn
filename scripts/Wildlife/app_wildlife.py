@@ -218,22 +218,26 @@ sys.exit()
 
 for current_animal in list_animals:
 
-    run_kmeans(current_animal, file_rawdata)
+    #run_kmeans(current_animal, file_rawdata)
 
     # === Ver run_som erro em dados ===
+<<<<<<< HEAD
     #run_som(current_animal, file_rawdata)
 <<<<<<< HEAD
     #run_mean_shift(93, file_rawdata)
     #run_birch(93, file_rawdata)   
 =======
+=======
+    run_som(current_animal, file_rawdata)
+>>>>>>> fabe8ca (Modificando diretorio resultado do script e saida em caso de falha)
     # =========
 
     #==== Ver run_mean_shift melhor pois esta gerando graficos com diversas legendas
     # deixando de dificil compreensão ==== 
-    run_mean_shift(current_animal, file_rawdata)
+    #run_mean_shift(current_animal, file_rawdata)
     # =========
 
-    run_birch(current_animal, file_rawdata)
+    #run_birch(current_animal, file_rawdata)
 
 sys.exit()
 >>>>>>> 43a7125 (Graficos funcionais na pipeline e nas duas linguas: BIRCH, Mean_shift, kmeans_individual)

@@ -22,6 +22,9 @@ def run(current_animal, file_rawdata_name):
 
     results_dir = results_folder(file_rawdata_name)
 
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
+    create_clusterization_results(cluster_output_dir)
+
     # TODO check if will use rawdata or interpolated data
     file_name = os.path.join(results_dir, f'map_{current_animal}.csv')
 
@@ -53,18 +56,22 @@ def run(current_animal, file_rawdata_name):
     coords = data_cleaned.iloc[:, [2, 3]].values
 
     # Save cleaned coordinates to CSV
-    create_clusterization_results('Results/Clusterization')
+    #create_clusterization_results('Results/Clusterization')
     
     file_name = os.path.join(results_dir, f'clusters_som_{current_animal}.csv')
 
     pd.DataFrame(coords).to_csv(file_name, index=False, header=None)
 
-    print(f"Coordinates saved to {file_name}")
+    output_csv_path = os.path.join(cluster_output_dir, f'clusters_som_{current_animal}.csv')
+    data_selected.to_csv(output_csv_path, index=False, header=None)
+    print(f"Coordinates saved to {output_csv_path}")
 
     # Check if coords has valid data
     if coords.shape[0] == 0:
-        print(f"Error: No valid coordinates left for SOM clustering for animal {current_animal}. Skipping.")
-        return
+        print("Error: No valid coordinates left for clustering.")
+        return  # Troquei sys.exit(1) por return
+        #sys.exit(1)
+    
 
     script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
@@ -128,9 +135,11 @@ def run(current_animal, file_rawdata_name):
 
     create_clusterization_results('Results/Clusterization')
 
-    file_name = os.path.join(results_dir, f'onca_{current_animal}_som.png')
-
-    plt.savefig(file_name)
+    #file_name = os.path.join(results_dir, f'onca_{current_animal}_som.png')
+    #plt.savefig(file_name)
+    
+    output_png_path = os.path.join(cluster_output_dir, f'onca_{current_animal}_som.png')
+    plt.savefig(output_png_path)
 
 def run_mock():
     current_animal = sys.argv [1]
