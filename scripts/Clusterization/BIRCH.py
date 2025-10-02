@@ -31,6 +31,11 @@ def run(current_animal, file_rawdata_name):
     scaler = StandardScaler()
     coordinates = scaler.fit_transform(df[['Longitude', 'Latitude']])
 
+    # Check if there are enough samples for clustering
+    if coordinates.shape[0] < 2:
+        print(f"Warning: Not enough data points ({coordinates.shape[0]}) for BIRCH clustering for animal {current_animal}. Skipping.")
+        return
+
     script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')

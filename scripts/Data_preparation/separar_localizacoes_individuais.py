@@ -23,7 +23,7 @@ def run( current_animal, file_rawdata_name, file_rawdata_columns ):
     file = open( output_file, 'w')
 
     fields = ( 'id', 'time', 'long', 'lat')
-    writer = csv . DictWriter( file, fieldnames = fields, lineterminator= '\n')
+    writer = csv.DictWriter( file, fieldnames = fields, lineterminator= '\n')
 
     mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
 
@@ -31,7 +31,7 @@ def run( current_animal, file_rawdata_name, file_rawdata_columns ):
     list_animals = { }
 
     actualTimeEvenStr = '1/1/2022 17:39'
-    actualTimeEven = dt . strptime ( actualTimeEvenStr, "%m/%d/%Y %H:%M" )
+    actualTimeEven = dt.strptime ( actualTimeEvenStr, "%m/%d/%Y %H:%M" )
 
     with open ( file_rawdata_name ) as csv_file :
 
@@ -51,7 +51,7 @@ def run( current_animal, file_rawdata_name, file_rawdata_columns ):
             if line_count == 0:
                 line_count += 1
             else :
-                currentTime = dt . strptime ( row[ get_id_from_json(file_rawdata_columns, DataField.DATETIME) ] , mask )
+                currentTime = dt.strptime ( row[ get_id_from_json(file_rawdata_columns, DataField.DATETIME) ] , mask )
 
                 if currentTime < actualTimeEven :
                     actualTimeEven = currentTime

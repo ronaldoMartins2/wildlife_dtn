@@ -102,6 +102,11 @@ def calc_average_by_method(current_animal, methods, file_rawdata_name):
 
     print(f'file_path >>>>>>>>>>>>>>>>>>>>>> {file_path}')
 
+    # Adiciona verificação para ver se o arquivo existe antes de tentar ler
+    if not os.path.exists(file_path):
+        print(f"Arquivo de merge não encontrado para o animal {current_animal} e método {methods}. Pulando.")
+        return
+
     #data = pd.read_csv(file_path, header=None)
 
     # Read the CSV file (assuming no header)
@@ -406,4 +411,3 @@ def run_mock( ):
         sys.exit(1)
 
     current_animal = sys.argv [1]
-

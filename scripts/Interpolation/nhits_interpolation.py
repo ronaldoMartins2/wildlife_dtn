@@ -12,7 +12,8 @@ from Common.utils import (
     create_clusterization_results,
     read_field_from_json,
     TRAINNING_SET,
-    results_folder
+    results_folder,
+    remove_nan_data
 )
 
 from Interpolation.nhits_trainer import (
@@ -165,10 +166,15 @@ def getDataFromCSV( current_animal, file_rawdata_name ):
     
     df = pd.read_csv( file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
 
-    if 'jaguar' in file_rawdata_name:
-        df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Jaguar" )
+    df = remove_nan_data(df, current_animal)
+
+    if len(df) != 0:
+        if 'jaguar' in file_rawdata_name:
+            df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Jaguar" )
+        else:
+            df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"] )
     else:
-        df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"] )
+        return pd.DataFrame()
 
     columns_to_save = ['ID', 'Timestamp', 'Longitude', 'Latitude']
     file_path = os.path.join(results_dir, f'map_{current_animal}_outliers_less.csv')
@@ -202,6 +208,10 @@ def run(    current_animal,
             file_rawdata_columns ):
 
     df = getDataFromCSV( current_animal, file_rawdata_name )
+
+    if df.empty:
+        print(f"DataFrame is empty for animal {current_animal}. Skipping NHITS interpolation.")
+        return
 
     len_animal_outliers_less = len(df)
 

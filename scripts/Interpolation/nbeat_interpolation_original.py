@@ -12,7 +12,6 @@ from Data_preparation.data_field import DataField
 from Common.utils import (
     create_clusterization_results,
     results_folder,
-    remove_nan_data
 )
 
 from Interpolation.nbeat_trainer import train_nbeats_model
@@ -36,16 +35,13 @@ def getDataFromCSV( current_animal, file_rawdata_name ):
     file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
 
     df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
-
-    df = remove_nan_data(df, current_animal)
-
-    if len(df) != 0:
-        if 'jaguar' in file_rawdata_name:
-            df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Jaguar" )
-        else:
-            df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"] )
+    
+    if 'jaguar' in file_rawdata_name:
+        # df = remove_null_data(df, current_animal, file_rawdata_name, dataset_name="Jaguar")
+        df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Jaguar" )
     else:
-        return pd.DataFrame()
+        # df = remove_null_data(df, current_animal, file_rawdata_name, dataset_name="Tangará")
+        df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"] )
 
     columns_to_save = ['ID', 'Timestamp', 'Longitude', 'Latitude']
     file_path = os.path.join(results_dir, f'map_{current_animal}_outliers_less.csv')
@@ -108,9 +104,9 @@ def run(    current_animal,
 
     len_animal_outliers_less = len(df)
 
-    if len(df) == 0:
+    if df.empty:
         print(f'df is empty {current_animal}-{file_rawdata_name}')
-        return None
+        return 
 
     '''
     if 'jaguar' in file_rawdata_name:

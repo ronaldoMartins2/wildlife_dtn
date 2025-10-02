@@ -57,6 +57,10 @@ def run(current_animal, file_rawdata_name):
     random_state = read_field_from_json(hyperparam_path, "random_state_kmeans")
     n_init = read_field_from_json(hyperparam_path, "n_init_kmeans")
 
+    # Adjust n_clusters if it's larger than the number of samples
+    if n_clusters > coords.shape[0]:
+        n_clusters = coords.shape[0]
+
     # Apply KMeans
     kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=n_init)
     kmeans.fit(coords)

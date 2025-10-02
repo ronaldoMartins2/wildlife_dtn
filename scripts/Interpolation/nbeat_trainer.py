@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import pandas as pd
 
-from Common.utils import results_folder, read_field_from_json, TRAINNING_SET
+from Common.utils import results_folder, read_field_from_json, TRAINNING_SET, remove_nan_data
 from Data_preparation.clear_outtliers import run as run_clear_outliers
 from Data_preparation.raw_data_integration import get_id_from_json
 from Data_preparation.data_field import DataField
@@ -94,11 +94,15 @@ def prepare_training_data(  #current_animal,
 
     if df.empty:
         return None, None
-
-    if 'jaguar' in file_rawdata_name:
-        df = run_clear_outliers(df, current_animal, file_rawdata_name, dataset_name="Jaguar")
-    else:
-        df = run_clear_outliers(df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"])
+    
+    df = remove_nan_data(df)
+    
+    # if 'jaguar' in file_rawdata_name:
+    #     df = remove_nan_data(df)
+    #     df = run_clear_outliers(df, current_animal, file_rawdata_name, dataset_name="Jaguar")
+    # else:
+    #     df = remove_nan_data(df)
+    #     df = run_clear_outliers(df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"])
 
     print("Inside nbeat_trainer")
 
@@ -204,8 +208,8 @@ def train_nbeats_model( df_train,
 
     input_dim = X_tensor.shape[1]
     output_dim = 1  # Force to 1 for single value prediction
-    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim")
-    num_blocks = read_field_from_json(hyperparam_path, "num_blocks")
+    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nbeat")
+    num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nbeat")
 
     print(f"Model architecture: input_dim={input_dim}, output_dim={output_dim}, hidden_dim={hidden_dim}, num_blocks={num_blocks}")
 

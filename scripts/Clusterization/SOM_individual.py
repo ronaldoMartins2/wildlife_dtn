@@ -48,22 +48,22 @@ def run(current_animal, file_rawdata_name):
     ]
 
     # Extract longitude and latitude
-    data_selected = data_cleaned.iloc[100:108, [2, 3]]
-    coords = data_selected.values
+    # Use all cleaned data instead of a fixed slice
+    coords = data_cleaned.iloc[:, [2, 3]].values
 
     # Save cleaned coordinates to CSV
     create_clusterization_results('Results/Clusterization')
     
     file_name = os.path.join(results_dir, f'clusters_som_{current_animal}.csv')
 
-    data_selected.to_csv(file_name, index=False, header=None)
+    pd.DataFrame(coords).to_csv(file_name, index=False, header=None)
 
     print(f"Coordinates saved to {file_name}")
 
     # Check if coords has valid data
     if coords.shape[0] == 0:
-        print("Error: No valid coordinates left for clustering.")
-        sys.exit(1)
+        print(f"Error: No valid coordinates left for SOM clustering for animal {current_animal}. Skipping.")
+        return
 
     script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'

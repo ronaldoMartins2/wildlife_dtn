@@ -16,7 +16,8 @@ from sklearn.preprocessing import MinMaxScaler
 from Common.utils import (
     TRAINNING_SET,
     results_folder,
-    read_field_from_json
+    read_field_from_json,
+    remove_nan_data 
 )
 
 def evaluate_nhits_model(model, df, file_rawdata_columns):
@@ -140,20 +141,49 @@ def load_data_for_training(current_animal, file_rawdata_name, file_rawdata_colum
     """
     results_dir = results_folder(file_rawdata_name)
     file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
-    
-    # Get datetime mask
-    mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
-    
-    # Load data
-    df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
-    df['Timestamp'] = pd.to_datetime(df['Timestamp'], format=mask)
-    
-    # Use training set percentage
-    limit = int(TRAINNING_SET * len(df))
-    df = df.iloc[:limit]
-    
-    return df
 
+    # # Get datetime mask
+    # mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
+    
+    # # Load data
+    # df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
+    # df['Timestamp'] = pd.to_datetime(df['Timestamp'], format=mask)
+    
+    # # Use training set percentage
+    # limit = int(TRAINNING_SET * len(df))
+    # df = df.iloc[:limit]
+
+    try:
+        # Load data
+        df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
+    except FileNotFoundError:
+        print(f"Warning: File not found for animal {current_animal}. Skipping.")
+        return pd.DataFrame()
+
+    # 1. Check if the CSV has at least 10 rows initially
+    if len(df) < 10:
+        print(f"Warning: CSV for animal {current_animal} has fewer than 10 rows. Skipping.")
+        return pd.DataFrame()
+
+    # 2. Remove rows with missing interesting data
+    df = remove_nan_data(df, current_animal)
+
+    # 3. Check if there are still enough rows after cleaning
+    if len(df) < 10:
+        print(f"Warning: After cleaning, animal {current_animal} has fewer than 10 valid rows. Skipping.")
+        return pd.DataFrame()
+
+    try:
+        # Get datetime mask and convert Timestamp
+        mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
+        df['Timestamp'] = pd.to_datetime(df['Timestamp'], format=mask, errors='coerce')
+        df.dropna(subset=['Timestamp'], inplace=True) # Drop rows where conversion failed
+    except Exception as e:
+        print(f"Warning: Could not process timestamps for animal {current_animal}. Error: {e}. Skipping.")
+        return pd.DataFrame()
+
+    return df
+ 
 def getModelPath( file_rawdata_name ):
 
     results_dir = results_folder(file_rawdata_name)

@@ -1,6 +1,7 @@
 import json
 import csv
 import os
+import numpy as np
 import pandas as pd
 from Data_preparation.data_field import DataField
 from Data_preparation.raw_data_integration import get_id_from_json
@@ -27,72 +28,172 @@ def results_folder( file_rawdata_name ):
 
     return results_dir
 
-def merge_csvs( current_animal, method, file_rawdata_name, file_rawdata_columns ):
+# def merge_csvs( current_animal, method, file_rawdata_name, file_rawdata_columns ):
 
-    # Define the results directory and file path
-    results_dir = results_folder( file_rawdata_name )
+#     # Define the results directory and file path
+#     results_dir = results_folder( file_rawdata_name )
 
-    #file_path = os.path.join(results_dir, f'map_{current_animal}.csv')  # Path to the CSV file
-    file_path = os.path.join(results_dir, f'map_{current_animal}_outliers_less_test_only.csv')  # Path to the CSV file
+#     #file_path = os.path.join(results_dir, f'map_{current_animal}.csv')  # Path to the CSV file
+#     file_path = os.path.join(results_dir, f'map_{current_animal}_outliers_less_test_only.csv')  # Path to the CSV file
 
-    # Check if the file exists
-    if not os.path.exists(file_path):
-        print(f"File {file_path} not found.")
-        return None
+#     # Check if the file exists
+#     if not os.path.exists(file_path):
+#         print(f"File {file_path} not found.")
+#         return None
 
-    # Read the CSV file into a DataFrame
-    df_raw = pd.read_csv(file_path, header=None)
+#     # Read the CSV file into a DataFrame
+#     df_raw = pd.read_csv(file_path, header=None)
 
-    df_raw.columns = ['ID', 'DateTime', 'Longitude', 'Latitude']
+#     df_raw.columns = ['ID', 'DateTime', 'Longitude', 'Latitude']
+
+#     if method == 'N_BEATS':
+#         file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')  # Path to the CSV file
+
+#     if method == 'N_HITS':
+#         file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits.csv')  # Path to the CSV file
+
+
+#     # Check if the file exists
+#     if not os.path.exists(file_path):
+#         print(f"File {file_path} not found.")
+#         return None
+
+#     # Read the CSV file into a DataFrame
+#     df_interpolation = pd.read_csv(file_path, header=None)
+#     df_interpolation.columns = ['ID', 'DateTime', 'Longitude', 'Latitude']
+
+#     result = pd.concat([df_raw, df_interpolation], axis=0)
+
+#     # Convert the 'DateTime' column to datetime type
+#     #result['DateTime'] = pd.to_datetime(result['DateTime'], format='%d/%m/%y %H:%M')
+#     mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
+
+#     result['DateTime'] = pd.to_datetime(result['DateTime'], format=mask)
+
+#     # Sort the DataFrame by the 'DateTime' column
+#     df_sorted = result.sort_values(by='DateTime')
+
+#     columns_to_save = ['ID', 'DateTime', 'Longitude', 'Latitude']
+
+#     results_dir = results_folder( file_rawdata_name )
+
+#     if method == 'N_BEATS':    
+#         file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats_merged.csv')
+
+#     if method == 'N_HITS':    
+#         file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits_merged.csv')
+
+
+#     hiper_content = []
+#     hiper_content.append( f"Total merged {len(df_sorted)} método {method} animal {current_animal}" )
+
+#     hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+
+#     with open(hiper_path, "a") as file:
+#         for line in hiper_content:
+#             file.write(line + '\n')    
+
+#     df_sorted[columns_to_save].to_csv( file_path, index=False, header=False)
+
+
+def _read_and_clean(path):
+    # Check if file exists and is not empty
+    if not os.path.exists(path) or os.path.getsize(path) == 0:
+        print(f"File {path} not found or is empty. Skipping.")
+        return pd.DataFrame(columns=['ID','DateTime','Longitude','Latitude'])
+
+    # Read flexibly; some files may contain more than 4 columns
+    try:
+        df = pd.read_csv(path, header=None, dtype=str, on_bad_lines='skip')
+    except pd.errors.EmptyDataError:
+        print(f"File {path} is empty (EmptyDataError). Skipping.")
+        return pd.DataFrame(columns=['ID','DateTime','Longitude','Latitude'])
+    # Keep only the first 4 columns (ID, DateTime, Longitude, Latitude)
+    if df.shape[1] < 4:
+        print(f"{path}: fewer than 4 columns found. Ignored.")
+        return pd.DataFrame(columns=['ID','DateTime','Longitude','Latitude'])
+    df = df.iloc[:, :4].copy()
+    df.columns = ['ID', 'DateTime', 'Longitude', 'Latitude']
+
+    # Normalize blanks/whitespace to NaN
+    for c in ['ID', 'DateTime', 'Longitude', 'Latitude']:
+        df[c] = df[c].astype(str).str.strip()
+        df[c] = df[c].replace(r'^\s*$', np.nan, regex=True)
+
+    # Drop rows with missing essential fields
+    df = df.dropna(subset=['ID', 'DateTime', 'Longitude', 'Latitude'])
+
+    # Coerce coordinates to numeric and drop invalid
+    df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
+    df['Latitude']  = pd.to_numeric(df['Latitude'],  errors='coerce')
+    df = df.dropna(subset=['Longitude', 'Latitude'])
+
+    return df
+
+def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
+    """
+    Merge raw and interpolated CSV data for a given animal.
+    Cleans rows with missing/blank/whitespace values in ID, DateTime, Longitude, or Latitude,
+    and ensures Longitude/Latitude are numeric. Skips saving if fewer than 10 valid rows remain.
+    Saves the merged result sorted by DateTime.
+
+    Args:
+        current_animal (str): Identifier of the animal.
+        method (str): Interpolation method ("N_BEATS" or "N_HITS").
+        file_rawdata_name (str): Path to the raw data file (used for results folder naming).
+        file_rawdata_columns (str): Path to JSON with column mapping information (for datetime mask).
+
+    Returns:
+        None
+    """
+
+    results_dir = results_folder(file_rawdata_name)
+    raw_path = os.path.join(results_dir, f'map_{current_animal}_outliers_less_test_only.csv')
+
+    df_raw = _read_and_clean(raw_path)
 
     if method == 'N_BEATS':
-        file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')  # Path to the CSV file
-
-    if method == 'N_HITS':
-        file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits.csv')  # Path to the CSV file
-
-
-    # Check if the file exists
-    if not os.path.exists(file_path):
-        print(f"File {file_path} not found.")
+        interp_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')
+    elif method == 'N_HITS':
+        interp_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits.csv')
+    else:
+        print(f"Unknown method '{method}'.")
         return None
 
-    # Read the CSV file into a DataFrame
-    df_interpolation = pd.read_csv(file_path, header=None)
-    df_interpolation.columns = ['ID', 'DateTime', 'Longitude', 'Latitude']
+    df_interp = _read_and_clean(interp_path)
 
-    result = pd.concat([df_raw, df_interpolation], axis=0)
+    # Concatenate and validate minimum rows (after cleaning)
+    result = pd.concat([df_raw, df_interp], axis=0, ignore_index=True)
 
-    # Convert the 'DateTime' column to datetime type
-    #result['DateTime'] = pd.to_datetime(result['DateTime'], format='%d/%m/%y %H:%M')
+    if len(result) < 10:
+        print(f"Merged dataset has fewer than 10 valid rows. Skipped.")
+        return None
+
+    # Parse datetime using mask from JSON
     mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
+    result['DateTime'] = pd.to_datetime(result['DateTime'], format=mask, errors='coerce')
+    result = result.dropna(subset=['DateTime'])
 
-    result['DateTime'] = pd.to_datetime(result['DateTime'], format=mask)
+    if len(result) < 10:
+        print(f"After DateTime parsing, fewer than 10 valid rows remain. Skipped.")
+        return None
 
-    # Sort the DataFrame by the 'DateTime' column
-    df_sorted = result.sort_values(by='DateTime')
-
+    # Sort and save
+    result = result.sort_values(by='DateTime')
     columns_to_save = ['ID', 'DateTime', 'Longitude', 'Latitude']
 
-    results_dir = results_folder( file_rawdata_name )
+    if method == 'N_BEATS':
+        out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats_merged.csv')
+    else:
+        out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits_merged.csv')
 
-    if method == 'N_BEATS':    
-        file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats_merged.csv')
+    # Log
+    hiper_path = os.path.join(results_dir, 'hiperparameters.txt')
+    with open(hiper_path, "a") as f:
+        f.write(f"Total merged {len(result)} method {method} animal {current_animal}\n")
 
-    if method == 'N_HITS':    
-        file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits_merged.csv')
-
-
-    hiper_content = []
-    hiper_content.append( f"Total merged {len(df_sorted)} método {method} animal {current_animal}" )
-
-    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
-
-    with open(hiper_path, "a") as file:
-        for line in hiper_content:
-            file.write(line + '\n')    
-
-    df_sorted[columns_to_save].to_csv( file_path, index=False, header=False)
+    # Save without NaN
+    result[columns_to_save].to_csv(out_path, index=False, header=False)
 
 
 def read_field_from_json(json_file, field_name):
@@ -125,26 +226,39 @@ def read_field_from_json(json_file, field_name):
         print(f"Error decoding the JSON file '{json_file}'.")
         return None
 
-
 def get_list_animals(file_name, file_rawdata_columns):
-    # Open the CSV file
-    with open(file_name, newline='') as csvfile:
-        reader = csv.DictReader(csvfile)
-        
-        # Create a set to store unique IDs
-        ids = set()
-        
-        # Iterate through each row and add the ID to the set
-        for row in reader:
-            #ids.add(row['individual.local.identifier (ID)'])
+    """
+    Lê um CSV com pandas e retorna a lista de IDs únicos
+    """
+    # Lê o CSV inteiro em um DataFrame
+    df = pd.read_csv(file_name)
 
-            STR_ID = row[ get_id_from_json(file_rawdata_columns, DataField.ID) ]
-            STR_ID = STR_ID.replace(' ', '')
+    # Obtém a coluna correta do JSON de configuração
+    col_id = get_id_from_json(file_rawdata_columns, DataField.ID)
 
-            ids.add( STR_ID )
+    # Remove espaços em branco e extrai IDs únicos
+    ids = df[col_id].astype(str).str.replace(' ', '').unique().tolist()
+
+    return ids
+
+def remove_nan_data(df, current_animal=None):
+    # 1. Check if the CSV has at least 10 rows initially
+    if len(df) < 10:
+        print(f"Warning: CSV for animal {current_animal} has fewer than 10 rows. Skipping.")
+        return pd.DataFrame()
     
-    # Convert the set back to a list before returning
-    return list(ids)
+    # 2. Remove rows with missing interesting data
+    essential_cols = ['ID', 'Timestamp', 'Longitude', 'Latitude']
+    # Replace empty strings with NaN to be dropped
+    df[essential_cols] = df[essential_cols].replace(r'^\s*$', np.nan, regex=True)
+    df.dropna(subset=essential_cols, inplace=True)
+
+    # 3. Check if there are still enough rows after cleaning
+    if len(df) < 10:
+        print(f"Warning: After cleaning, animal {current_animal} has fewer than 10 valid rows. Skipping.")
+        return pd.DataFrame()
+    
+    return df
 
 def create_clusterization_results(folder_name):
     script_dir = os.path.dirname(os.path.abspath(__file__)) 

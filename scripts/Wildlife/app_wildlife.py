@@ -3,14 +3,14 @@ import sys
 import os
 import time
 
-# environment preparation
-
-# pip3 install -r scripts/requirements.txt 
+# ========== environment preparation ==========
 
 # python3 -m venv venv
 # source ./venv/bin/activate
 
-# to run
+# pip3 install -r scripts/requirements.txt 
+
+# ========== to run ==========
 
 # inside wildlife_dtn folder
 # python3 scripts/Wildlife/app_wildlife.py rawdata/jaguar_mamiraua.csv rawdata/jaguar_columns.json
@@ -105,7 +105,7 @@ from DTN.add_down_event import (
     run as run_add_down_event
 )
 
-# data preparation
+# ========== data preparation ==========
 
 file_rawdata = sys.argv [1]
 file_rawdata_columns = sys.argv [2]
@@ -114,11 +114,11 @@ results_dir = results_folder(file_rawdata)
 hiper_path = os.path.join(results_dir, 'hiperparameters.txt')
 
 # Check if the file exists before trying to delete it
-if os.path.exists(hiper_path):
-    os.remove(hiper_path)
-    print(f"Deleted: {hiper_path}")
-else:
-    print(f"No file found at: {hiper_path}")
+# if os.path.exists(hiper_path):
+#     os.remove(hiper_path)
+#     print(f"Deleted: {hiper_path}")
+# else:
+#     print(f"No file found at: {hiper_path}")
 
 list_animals = get_list_animals( file_rawdata, file_rawdata_columns )
 
@@ -129,13 +129,13 @@ print(f' list_animals { len_animals }')
 print(f'{list_animals}')
 
 
-for current_animal in list_animals:
-    run_preparation( current_animal, file_rawdata, file_rawdata_columns )
-    run_average_by_individual( current_animal, file_rawdata, file_rawdata_columns )
-    run_media_tempos_hist( current_animal, file_rawdata)
+# for current_animal in list_animals:
+#     run_preparation( current_animal, file_rawdata, file_rawdata_columns )
+#     run_average_by_individual( current_animal, file_rawdata, file_rawdata_columns )
+#     run_media_tempos_hist( current_animal, file_rawdata)
 
 time.sleep(2)
-#sys.exit()
+# sys.exit()
 
 #run_preparation( 93, file_rawdata, file_rawdata_columns )
 #run_preparation( 'G54907', file_rawdata, file_rawdata_columns )
@@ -163,70 +163,67 @@ tangara = tangara.split('/')[-1]
 
 ################ call for training models Nbeat and Nhits #########################################################
 
-#nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
-#sys.exit()
+# nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
+# sys.exit()
 
 #train_nbeats_model_single(current_animal, file_rawdata, file_rawdata_columns)
-#train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
-#sys.exit()
+# train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
+# sys.exit()
 ####################################################################################################################
 
-for current_animal in list_animals:
-    #TODO review number_of_predictions 
-    number_of_predictions = 5
-    len_animal = get_len_animal( current_animal, file_rawdata )
+# for current_animal in list_animals:
+#     #TODO review number_of_predictions 
+#     number_of_predictions = 5
+#     len_animal = get_len_animal( current_animal, file_rawdata )
     
-    print(f'len_animal {len_animal} current_animal {current_animal} file_rawdata {file_rawdata}')
+#     print(f'len_animal {len_animal} current_animal {current_animal} file_rawdata {file_rawdata}')
 
-    run_interpolation_nbeat(current_animal, number_of_predictions, file_rawdata, file_rawdata_columns)
+#     run_interpolation_nbeat(current_animal, number_of_predictions, file_rawdata, file_rawdata_columns)
 
-    start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
+#     start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
 
-    run_interpolation_nhits(current_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
+#     run_interpolation_nhits(current_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
 
 #exit ()
-#sys.exit()
+# sys.exit()
 
 
-for current_animal in list_animals:
-
-    merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )
-    merge_csvs( current_animal, 'N_HITS', file_rawdata, file_rawdata_columns )
+# for current_animal in list_animals:
+#     merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )
+#     merge_csvs( current_animal, 'N_HITS', file_rawdata, file_rawdata_columns )
 
 #exit()
 
 
-for current_animal in list_animals:
+# for current_animal in list_animals:
 
-    calc_average_by_method( current_animal, 'N_BEATS', file_rawdata )
-    calc_average_by_method( current_animal, 'N_HITS', file_rawdata )
+#     calc_average_by_method( current_animal, 'N_BEATS', file_rawdata )
+#     calc_average_by_method( current_animal, 'N_HITS', file_rawdata )
 
 #run_average_comparison( len_animals, file_rawdata )
 
-sys.exit()
+# sys.exit()
 
-'''
+
 ############## CLUSTERIZATION ##############################
 # run clusterization kmeans
 
-#for current_animal in list_animals:
-
-    #run_kmeans(current_animal, file_rawdata)
-    #run_som(current_animal, file_rawdata)
-    #run_mean_shift(93, file_rawdata)
-    #run_birch(93, file_rawdata)   
-
-'''
-
-#for current_animal in list_animals:
-#        run_plot_kmeans_som_birch_mean_shift(current_animal)
+for current_animal in list_animals:
+    run_kmeans(current_animal, file_rawdata)
+    run_som(current_animal, file_rawdata)
+    # run_mean_shift(current_animal, file_rawdata)
+    # run_birch(current_animal, file_rawdata)   
 
 
-#for current_animal in list_animals:
-#        run_cluster_contacts(current_animal)
+for current_animal in list_animals:
+       run_plot_kmeans_som_birch_mean_shift(current_animal)
 
-#run_cluster_contacts(93, file_rawdata)
-#sys.exit()
+
+for current_animal in list_animals:
+       run_cluster_contacts(current_animal)
+
+run_cluster_contacts(current_animal, file_rawdata)
+sys.exit()
 
 '''
 ############## #DTN Contacts ##################################
