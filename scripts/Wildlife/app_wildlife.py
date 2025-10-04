@@ -216,26 +216,16 @@ run_average_comparison( len_animals, file_rawdata )
 # run clusterization kmeans
 
 for current_animal in list_animals:
-
-    #run_kmeans(current_animal, file_rawdata)
-
-    # === Ver run_som erro em dados ===
+    run_kmeans(current_animal, file_rawdata)
     run_som(current_animal, file_rawdata)
-    # =========
+    run_mean_shift(current_animal, file_rawdata)
+    run_birch(current_animal, file_rawdata)
 
-    #==== Ver run_mean_shift melhor pois esta gerando graficos com diversas legendas
-    # deixando de dificil compreensão ==== 
-    #run_mean_shift(current_animal, file_rawdata)
-    # =========
+    run_plot_kmeans_som_birch_mean_shift(current_animal)
 
-    #run_birch(current_animal, file_rawdata)
+    
 
 sys.exit()
-
-
-#for current_animal in list_animals:
-#        run_plot_kmeans_som_birch_mean_shift(current_animal)
-
 
 #for current_animal in list_animals:
 #        run_cluster_contacts(current_animal)
