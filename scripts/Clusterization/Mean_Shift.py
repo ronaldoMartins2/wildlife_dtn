@@ -17,17 +17,21 @@ from Common.utils import (
 # Step 1: Load Data from Data_preparation folder
 
 def run(current_animal, file_rawdata_name):
+    # --- CAMINHO DE ENTRADA (para ler os dados) ---
+    input_results_dir = results_folder(file_rawdata_name)
+    input_file_path = os.path.join(input_results_dir, f'map_{current_animal}.csv')
 
-    results_dir = results_folder(file_rawdata_name)
-    # === 1. DEFINIR O DIRETÓRIO DE CLUSTERIZAÇÃO CORRETO ===
-    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
-    
-    # Garante que a pasta Clusterization exista
+    # --- CAMINHO DE SAÍDA (para salvar os resultados) ---
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_main_dir = os.path.join(script_dir, '..', 'Results')
+    cluster_output_dir = os.path.join(output_main_dir, 'Clusterization')
     create_clusterization_results(cluster_output_dir)
 
-    file_name = os.path.join(results_dir, f'map_{current_animal}.csv')
+    if not os.path.exists(input_file_path):
+        print(f"Error: Input file not found at {input_file_path}")
+        return
 
-    data = pd.read_csv(file_name, header=None, names=['id', 'Timestamp', 'Longitude', 'Latitude'])
+    data = pd.read_csv(file_rawdata_name, header=None, names=['id', 'Timestamp', 'Longitude', 'Latitude'])
     data = data[:100]
     df = pd.DataFrame(data, columns=["ID", "Timestamp", "Longitude", "Latitude"])
 
@@ -53,41 +57,26 @@ def run(current_animal, file_rawdata_name):
         print(f"Warning: Not enough data points ({coordinates.shape[0]}) for Mean-Shift clustering for animal {current_animal}. Skipping.")
         return
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
+    # Carrega hiperparâmetros
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
     bandwidth = read_field_from_json(hyperparam_path, "bandwidth")
 
-    # Step 3: Apply Mean-Shift
-    mean_shift = MeanShift(bandwidth=bandwidth)  # Adjust bandwidth as necessary
+    mean_shift = MeanShift(bandwidth=bandwidth)
     mean_shift.fit(coordinates)
     df['Cluster'] = mean_shift.labels_
 
-
-    # === JSON PARA LINGUAGEM ===
-    json_language = 'scripts/Data_preparation/hyperparameters.json'
-    with open(json_language, encoding='utf-8') as f:
-        lang_params = json.load(f)
-        language = lang_params["language"]
-
-    if language == 'PT_BR':
-        json_path = 'scripts/Data_preparation/language_PT_BR.json'
-    else:
-        json_path = 'scripts/Data_preparation/language_US_US.json'
-
-    with open(json_path, encoding='utf-8') as f:
-        lang = json.load(f)
-
-    # Step 4: Save Results to CSV
-
-    create_clusterization_results('Results/Clusterization')
-    #output_csv_path = os.path.join(results_dir, f'clusters_mean_shift_map_{current_animal}.csv')
+    # Salva resultados no diretório de saída correto
     output_csv_path = os.path.join(cluster_output_dir, f'clusters_mean_shift_map_{current_animal}.csv')
-
     df[['Longitude', 'Latitude', 'Cluster']].to_csv(output_csv_path, index=False, header=None)
     print(f"Clusters saved to {output_csv_path}")
 
-    # Step 5: Visualize Clusters
+    # Carrega idioma
+    json_path = f'scripts/Data_preparation/language_{read_field_from_json(hyperparam_path, "language")}.json'
+    with open(json_path, encoding='utf-8') as f:
+        lang = json.load(f)
+
+    # Plota e salva o gráfico
     plt.figure(figsize=(8, 6))
     for cluster in np.unique(df['Cluster']):
         cluster_points = df[df['Cluster'] == cluster]
@@ -97,25 +86,19 @@ def run(current_animal, file_rawdata_name):
     plt.ylabel(lang["ylabel_Mean_Shift"])
     plt.title(lang["grafico_Mean_Shift"])
     plt.legend()
+    plt.grid(True)
 
-    create_clusterization_results('Results/Clusterization')
+    output_png_path = os.path.join(cluster_output_dir, f'onca_{current_animal}_mean_shift.png')
+    plt.savefig(output_png_path)
+    plt.close() # Fecha a figura
+    print(f"Plot saved to {output_png_path}")
 
-    #file_name = os.path.join(results_dir, f'onca_{current_animal}_mean_shift.png')
-    file_name = os.path.join(cluster_output_dir, f'onca_{current_animal}_mean_shift.png')
-
-    hiper_content = []
-    hiper_content.append( f"Hyper Mean-Shift bandwidth {bandwidth}" )
-    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
+    hiper_content = [f"Hyper Mean-Shift bandwidth {bandwidth}"]
+    hiper_path = os.path.join(output_main_dir, f'hiperparameters.txt')
     with open(hiper_path, "a") as file:
-        for line in hiper_content:
-            file.write(line + '\n')
-
-
-    # salvar conforme id da onça
-    plt.savefig(file_name)
+        file.write(hiper_content[0] + '\n')
 
 def run_mock():
-    current_animal = sys.argv [1]
-    file_rawdata_name = sys.argv [2]
-
-    run( current_animal, file_rawdata_name)
+    current_animal = sys.argv[1]
+    file_rawdata_name = sys.argv[2]
+    run(current_animal, file_rawdata_name)

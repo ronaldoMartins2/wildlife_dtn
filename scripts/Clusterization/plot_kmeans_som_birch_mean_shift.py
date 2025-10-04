@@ -5,7 +5,8 @@ import numpy as np
 import os
 import json
 from Common.utils import (
-    create_clusterization_results
+    create_clusterization_results,
+    read_field_from_json
 )
 
 # plot_kmeans_som_birch_mean_shift 
@@ -16,98 +17,86 @@ from Common.utils import (
 # python3 plot_kmeans_som_birch_mean_shift.py 94 
 
 def run(current_animal):
+    # --- CONSTRUÇÃO CORRETA DOS CAMINHOS ---
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Navega para o diretório pai ('..') e depois entra em 'Results' e 'Clusterization'
+    results_dir = os.path.join(script_dir, '..', 'Results', 'Clusterization')
+    
+    # Garante que a pasta de destino para o gráfico exista
+    create_clusterization_results(results_dir)
 
-    create_clusterization_results('Results/Clusterization')
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
-
+    # Define os caminhos completos para cada arquivo de dados
     kmeans_data_file = os.path.join(results_dir, f"clusters_kmeans_{current_animal}.csv")
     som_data_file = os.path.join(results_dir, f"clusters_som_{current_animal}.csv")
     birch_data_file = os.path.join(results_dir, f"clusters_birch_map_{current_animal}.csv")
     mean_shift_data_file = os.path.join(results_dir, f"clusters_mean_shift_map_{current_animal}.csv")
 
-    # Dicionário para armazenar os dados carregados e seus metadados
-    cluster_data = {
-        'K-Means': {'file': kmeans_data_file, 'data': None, 'color': 'blue'},
-        'SOM': {'file': som_data_file, 'data': None, 'color': 'green'},
-        'BIRCH': {'file': birch_data_file, 'data': None, 'color': 'red'},
-        'Mean-Shift': {'file': mean_shift_data_file, 'data': None, 'color': 'purple'}
+    # --- LEITURA DOS DADOS COM VERIFICAÇÃO ---
+    data_sources = {
+        "K-Means": kmeans_data_file,
+        "SOM": som_data_file,
+        "BIRCH": birch_data_file,
+        "Mean-Shift": mean_shift_data_file
     }
-
-    # Tentar carregar os dados para cada algoritmo
-    for name, info in cluster_data.items():
-        file_path = info['file']
-        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+    
+    loaded_data = {}
+    for name, path in data_sources.items():
+        # AQUI ESTÁ A VERIFICAÇÃO: só tenta ler o arquivo se ele existir
+        if os.path.exists(path):
             try:
-                df = pd.read_csv(file_path, header=None)
-                # K-Means e SOM salvam Longitude, Latitude, Label
-                # BIRCH e Mean-Shift salvam Longitude, Latitude, Cluster
-                if df.shape[1] >= 2:
-                    df.columns = ['longitude', 'latitude', 'label'][:df.shape[1]]
-                    info['data'] = df
-                else:
-                    print(f"Warning: File '{file_path}' for {name} has fewer than 2 columns. Skipping.")
-            except pd.errors.EmptyDataError:
-                print(f"Warning: File '{file_path}' for {name} is empty. Skipping.")
-        else:
-            print(f"Warning: File '{file_path}' for {name} not found or is empty. Skipping.")
+                df = pd.read_csv(path, header=None)
+                if df.empty:
+                    print(f"Aviso: Arquivo de dados para '{name}' está vazio para o animal {current_animal}. Pulando plotagem.")
+                    continue
 
-    # Verificar se algum dado foi carregado
-    if not any(info['data'] is not None for info in cluster_data.values()):
-        print(f"No cluster data found for animal {current_animal}. Skipping plot generation.")
+                if df.shape[1] == 2:
+                    df.columns = ['longitude', 'latitude']
+                elif df.shape[1] == 3:
+                    df.columns = ['longitude', 'latitude', 'label']
+                loaded_data[name] = df
+            except Exception as e:
+                print(f"Erro ao ler o arquivo {path}: {e}")
+        else:
+            print(f"Aviso: Arquivo de dados para '{name}' não encontrado para o animal {current_animal}. Pulando plotagem.")
+
+    if not loaded_data:
+        print(f"Nenhum dado de clusterização encontrado para o animal {current_animal}. Não é possível gerar o gráfico.")
         return
 
-    # === JSON PARA LINGUAGEM ===
-    json_language = 'scripts/Data_preparation/hyperparameters.json'
-    with open(json_language, encoding='utf-8') as f:
-        lang_params = json.load(f)
-        language = lang_params["language"]
-
-    if language == 'PT_BR':
-        json_path = 'scripts/Data_preparation/language_PT_BR.json'
-    else:
-        json_path = 'scripts/Data_preparation/language_US_US.json'
-
+    # --- GERAÇÃO DO GRÁFICO ---
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+    language = read_field_from_json(hyperparam_path, "language")
+    json_path = os.path.join(data_prep_dir, f'language_{language}.json')
     with open(json_path, encoding='utf-8') as f:
         lang = json.load(f)
 
-    # Criar o gráfico
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(12, 8))
 
-    # Plotar os pontos para cada algoritmo que teve dados carregados
-    for name, info in cluster_data.items():
-        if info['data'] is not None:
-            df = info['data']
-            # Usar a coluna 'label' para colorir os pontos, se existir
-            if 'label' in df.columns:
-                plt.scatter(df['longitude'], df['latitude'], c=df['label'], label=f'{name} Clusters', alpha=0.6, cmap='viridis')
-            else:
-                # Caso contrário, use uma cor única para o algoritmo
-                plt.scatter(df['longitude'], df['latitude'], color=info['color'], label=f'{name} Points', alpha=0.6)
+    # Plota os dados de cada algoritmo que foi carregado com sucesso
+    if "K-Means" in loaded_data:
+        plt.scatter(loaded_data["K-Means"]['longitude'], loaded_data["K-Means"]['latitude'], label='K-Means', marker='o', s=100)
+    if "SOM" in loaded_data:
+        plt.scatter(loaded_data["SOM"]['longitude'], loaded_data["SOM"]['latitude'], label='SOM', marker='x', s=100)
+    if "BIRCH" in loaded_data:
+        plt.scatter(loaded_data["BIRCH"]['longitude'], loaded_data["BIRCH"]['latitude'], label='BIRCH', marker='s', s=50, alpha=0.7)
+    if "Mean-Shift" in loaded_data:
+        plt.scatter(loaded_data["Mean-Shift"]['longitude'], loaded_data["Mean-Shift"]['latitude'], label='Mean-Shift', marker='^', s=50, alpha=0.7)
 
     plt.xlabel(lang["xlabel_kmeans_individual"])
     plt.ylabel(lang["ylabel_kmeans_individual"])
     
-    if language == 'PT_BR':
-        plt.title(f"{lang['grafico_kmeans_individual']} da onça {current_animal}")
-    else:
-        plt.title(f"{lang['grafico_kmeans_individual']} of the jaguar {current_animal}")
+    title_key = "grafico_comparacao_cluster"
+    title_text = lang.get(title_key, "Comparativo de Clusterização para a Onça")
+    plt.title(f"{title_text} {current_animal}")
     
-    #plt.title(f"{lang['grafico_kmeans_individual']} da onça {current_animal}")
-
     plt.legend()
-    plt.grid()
-
-    create_clusterization_results('Results/Clusterization')
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    results_dir = os.path.join(script_dir, '..', 'Results/Clusterization')  # Navigate to the parent directory and into 'Results'
-    file_name = os.path.join(results_dir,f'onca_{current_animal}_clusterization_comparizon.png')
-
-    # Save the plot as an image
-    plt.savefig(file_name)
-    # Fechar a figura para liberar memória
+    plt.grid(True)
+    
+    output_file_name = os.path.join(results_dir, f'onca_{current_animal}_clusterization_comparison.png')
+    plt.savefig(output_file_name)
     plt.close()
-    print(f"Plot saved to {file_name}")
+    print(f"Gráfico comparativo salvo em: {output_file_name}")
 
 def run_mock():
     current_animal = sys.argv [1]
