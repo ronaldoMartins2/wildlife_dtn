@@ -25,7 +25,18 @@ def run(current_animal, file_rawdata_name):
 
     data = raw_data[:100]
 
-    df = pd.DataFrame(data, columns=["ID", "Timestamp", "Longitude", "Latitude"])
+    # Coerce coordinates to numeric, turning invalid values into NaN
+    data['Longitude'] = pd.to_numeric(data['Longitude'], errors='coerce')
+    data['Latitude'] = pd.to_numeric(data['Latitude'], errors='coerce')
+
+    # Drop rows with NaN in Longitude or Latitude and zero coordinates
+    df = data.dropna(subset=['Longitude', 'Latitude'])
+    df = df[(df['Longitude'] != 0) & (df['Latitude'] != 0)]
+
+    # Check if there's any data left after cleaning
+    if df.empty:
+        print(f"Warning: No valid data points for BIRCH clustering for animal {current_animal}. Skipping.")
+        return
 
     # Step 2: Standardize Latitude and Longitude
     scaler = StandardScaler()
