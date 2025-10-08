@@ -50,7 +50,8 @@
     "xlabel_dispersao": "Longitude",
     "ylabel_dispersao": "Latitude",
 
-    "grafico_dispersao_geral_titulo": "Padrão de movimentação espacial geral de Panthera onca",
+    "grafico_dispersao_geral_jaguar_titulo": "Padrão de movimentação espacial geral de Panthera onca",
+    "grafico_dispersao_geral_tangara_titulo": "Padrão de movimentação espacial geral de Tangara",
     "xlabel_dispersao_geral": "Longitude",
     "ylabel_dispersao_geral": "Latitude"
 
