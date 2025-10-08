@@ -51,7 +51,11 @@
     "ylabel_dispersao": "Latitude",
 
     "grafico_dispersao_geral_jaguar_titulo": "Padrão de movimentação espacial geral de Panthera onca",
-    "grafico_dispersao_geral_tangara_titulo": "Padrão de movimentação espacial geral de Tangara",
+    "grafico_dispersao_geral_jaguar_subtitulo": "Dados georreferenciados obtidos por monitoramento de onças-pintadas em áreas de floresta da Reserva de Desenvolvimento Sustentável Mamirauá (RDS Mamirauá), na Amazônia brasileira.",
+    "grafico_dispersao_geral_jaguar_rodape": "Os dados de localização foram coletados por meio de colares GPS com o objetivo de estudar padrões de movimentação, território e comportamento.",
+    "grafico_dispersao_geral_tangara_titulo": "Padrão de movimentação espacial de aves da ordem passeriformes",
+    "grafico_dispersao_geral_tangara_subtitulo": "Dados georreferenciados obtidos por receptores e radiotransmissores em indivíduos das espécies:\n Chiroxiphia caudata (Tangará-dançarino);\n Pyriglena leucoptera (Olhos-de-fogo-do-sul);\n Sclerurus scansor (Vira-folhas-vermelhos);\n Serinus canaria f. domestica (Canário-doméstico)",
+    "grafico_dispersao_geral_tangara_rodape": "As aves foram monitoradas por meio de radiotransmissores, permitindo o registro de suas trajetórias e padrões de uso do espaço.",
     "xlabel_dispersao_geral": "Longitude",
     "ylabel_dispersao_geral": "Latitude"
 

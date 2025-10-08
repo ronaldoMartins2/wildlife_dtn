@@ -71,9 +71,10 @@ def plot_jaguar():
     )
 
     # Títulos e legendas
-    title_key = "grafico_dispersao_geral_jaguar_titulo"
-    title_text = lang[title_key]
-    plt.title(title_text)
+    plt.title(lang["grafico_dispersao_geral_jaguar_titulo"])
+    plt.suptitle(lang["grafico_dispersao_geral_jaguar_subtitulo"])
+    plt.figtext(0.5, 0.01, lang["grafico_dispersao_geral_jaguar_rodape"], ha='center', fontsize=10)
+
     plt.xlabel(lang["xlabel_dispersao_geral"])
     plt.ylabel(lang["ylabel_dispersao_geral"])
     plt.grid(True)
@@ -150,6 +151,9 @@ def plot_tangara():
         label=labels
     )
     plt.title(lang["grafico_dispersao_geral_tangara_titulo"])
+    plt.suptitle(lang["grafico_dispersao_geral_tangara_subtitulo"])
+
+    plt.figtext(0.5, 0.01, lang["grafico_dispersao_geral_tangara_rodape"], ha='center', fontsize=10)
     plt.xlabel(lang["xlabel_dispersao_geral"])
     plt.ylabel(lang["ylabel_dispersao_geral"])
     plt.grid(True)

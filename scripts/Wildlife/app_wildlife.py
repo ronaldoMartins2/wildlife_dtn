@@ -225,6 +225,7 @@ run_average_comparison( len_animals, file_rawdata )
 
 #Rodando Dispersao Geral dos animais: Tangara e Jaguar
 run_all_dispersion()
+sys.exit()
 
 for current_animal in list_animals:
     run_kmeans(current_animal, file_rawdata)
