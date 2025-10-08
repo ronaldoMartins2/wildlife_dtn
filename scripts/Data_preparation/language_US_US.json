@@ -47,7 +47,11 @@
     "ylabel_RNN_LSTM": "Latitude", 
 
     "grafico_dispersao_geral_jaguar_titulo": "Geographic Dispersion of Jaguar",
-    "grafico_dispersao_geral_tangara_titulo": "Geographic Dispersion of Tangara",
+    "grafico_dispersao_geral_jaguar_subtitulo": "Georeferenced data obtained from monitoring jaguars in forest areas of the Mamirauá Sustainable Development Reserve (RDS Mamirauá), in the Brazilian Amazon.",
+    "grafico_dispersao_geral_jaguar_rodape": "The location data were collected through GPS collars with the aim of studying movement patterns, territory, and behavior.",
+    "grafico_dispersao_geral_tangara_titulo": "Spatial movement pattern of passerine birds",
+    "grafico_dispersao_geral_tangara_subtitulo": "Georeferenced data obtained from receivers and radio transmitters in individuals of the species: Chiroxiphia caudata (Blue Manakin);\n Pyriglena leucoptera (White-shouldered Fire-eye);\n Sclerurus scansor (Short-billed Leaftosser);\n Serinus canaria f. domestica (Domestic Canary)\n",
+    "grafico_dispersao_geral_tangara_rodape": "The birds were monitored using radio transmitters, allowing the recording of their trajectories and space use patterns.",
     "xlabel_dispersao_geral": "Longitude",
     "ylabel_dispersao_geral": "Latitude"
 
