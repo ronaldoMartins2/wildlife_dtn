@@ -44,6 +44,14 @@
     "grafico_RNN_LSTM_1": "Dados brutos: latitude vs longitude",
     "grafico_RNN_LSTM_2": "RNN LSTM previsto vs real: latitude vs longitude",
     "xlabel_RNN_LSTM": "Longitude",
-    "ylabel_RNN_LSTM": "Latitude"
+    "ylabel_RNN_LSTM": "Latitude",
+
+    "grafico_dispersao_titulo": "Padrão de movimentação espacial de Panthera onca",
+    "xlabel_dispersao": "Longitude",
+    "ylabel_dispersao": "Latitude",
+
+    "grafico_dispersao_geral_titulo": "Padrão de movimentação espacial geral de Panthera onca",
+    "xlabel_dispersao_geral": "Longitude",
+    "ylabel_dispersao_geral": "Latitude"
 
 }

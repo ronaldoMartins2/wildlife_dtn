@@ -95,7 +95,15 @@ from Clusterization.BIRCH import (
 
 from Clusterization.plot_kmeans_som_birch_mean_shift import (
     run as run_plot_kmeans_som_birch_mean_shift
-)   
+)
+
+from Clusterization.plot_dispersion import (
+    run as run_dispersion_plot
+)
+
+from Clusterization.plot_dispersion_geral import (
+    run_geral as run_dispersion_geral
+)
 
 from DTN.mobility_contacts import (
     run as run_contacts
@@ -216,18 +224,29 @@ sys.exit()
 ############## CLUSTERIZATION ##############################
 # run clusterization kmeans
 
+#for current_animal in list_animals:
+    #print(f"--- Gerando Gráfico de Dispersão para o animal {current_animal} ---")
+    #run_dispersion_plot(current_animal, file_rawdata)
+
+run_dispersion_geral()
+sys.exit()
+
 for current_animal in list_animals:
+    print(f"--- Gerando Gráfico de Dispersão para o animal {current_animal} ---")
+    run_dispersion_plot(current_animal, file_rawdata)
 
-    #run_kmeans(current_animal, file_rawdata)
-
-    # === Ver run_som erro em dados ===
+    run_kmeans(current_animal, file_rawdata)
     run_som(current_animal, file_rawdata)
-    # =========
+    run_mean_shift(current_animal, file_rawdata)
+    run_birch(current_animal, file_rawdata)
 
-    
+for current_animal in list_animals:
+    run_plot_kmeans_som_birch_mean_shift(current_animal)
 
 sys.exit()
 
+#for current_animal in list_animals:
+#   run_cluster_contacts(current_animal)
 
 #for current_animal in list_animals:
 #        run_plot_kmeans_som_birch_mean_shift(current_animal)
@@ -253,4 +272,3 @@ for pair in pairs:
 for pair in pairs:
     run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
     run_add_down_event( f'{pair[0]}_{pair[1]}', file_rawdata )
-'''
