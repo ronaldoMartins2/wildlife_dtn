@@ -102,7 +102,7 @@ from Clusterization.plot_dispersion import (
 )
 
 from Clusterization.plot_dispersion_geral import (
-    run_geral as run_dispersion_geral
+    run_all_dispersion as run_all_dispersion
 )
 
 from DTN.mobility_contacts import (
@@ -224,17 +224,10 @@ sys.exit()
 ############## CLUSTERIZATION ##############################
 # run clusterization kmeans
 
-#for current_animal in list_animals:
-    #print(f"--- Gerando Gráfico de Dispersão para o animal {current_animal} ---")
-    #run_dispersion_plot(current_animal, file_rawdata)
-
-run_dispersion_geral()
-sys.exit()
+#Rodando Dispersao Geral dos animais: Tangara e Jaguar
+run_all_dispersion()
 
 for current_animal in list_animals:
-    print(f"--- Gerando Gráfico de Dispersão para o animal {current_animal} ---")
-    run_dispersion_plot(current_animal, file_rawdata)
-
     run_kmeans(current_animal, file_rawdata)
     run_som(current_animal, file_rawdata)
     run_mean_shift(current_animal, file_rawdata)

@@ -44,6 +44,11 @@
     "grafico_RNN_LSTM_1": "Raw Data: Latitude vs Longitude",
     "grafico_RNN_LSTM_2": "RNN LSTM Predicted vs Actual: Latitude vs Longitude",
     "xlabel_RNN_LSTM": "Longitude",
-    "ylabel_RNN_LSTM": "Latitude"
+    "ylabel_RNN_LSTM": "Latitude", 
+
+    "grafico_dispersao_geral_jaguar_titulo": "Geographic Dispersion of Jaguar",
+    "grafico_dispersao_geral_tangara_titulo": "Geographic Dispersion of Tangara",
+    "xlabel_dispersao_geral": "Longitude",
+    "ylabel_dispersao_geral": "Latitude"
 
 }
