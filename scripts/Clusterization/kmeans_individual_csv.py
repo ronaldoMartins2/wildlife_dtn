@@ -10,6 +10,11 @@ from Common.utils import (
     results_folder,
     read_field_from_json
 )
+def run_all(file_rawdata_name):
+    
+
+
+    pass
 
 def run(current_animal, file_rawdata_name):
     
@@ -92,8 +97,8 @@ def run(current_animal, file_rawdata_name):
     plt.figure(figsize=(10, 6))
     plt.scatter(coords[:, 0], coords[:, 1], c=kmeans.labels_, cmap='viridis', alpha=0.7, label='Data Points')
     plt.scatter(centroids[:, 0], centroids[:, 1], color='red', marker='x', s=100, label='Centroids')
-    
-    plt.title(lang["grafico_kmeans_individual"])
+
+    plt.title(f"{lang['grafico_kmeans_individual']} - Clusters: {n_clusters}")
     plt.xlabel(lang["xlabel_kmeans_individual"])
     plt.ylabel(lang["ylabel_kmeans_individual"])
     plt.legend()

@@ -71,7 +71,11 @@ def run(current_animal, file_rawdata_name):
     learning_rate = read_field_from_json(hyperparam_path, "learning_rate_SOM")
     ephocs = read_field_from_json(hyperparam_path, "ephocs_SOM")
 
-    som = MiniSom(8, 8, coords.shape[1], sigma, learning_rate)
+    som = MiniSom(8, 8, coords.shape[1], sigma, learning_rate) # 64 clusters máximos
+    #som = MiniSom(8, 4, coords.shape[1], sigma, learning_rate)  # 8x4 = 32 neurônios
+    #som = MiniSom(4, 4, coords.shape[1], sigma, learning_rate)  # 16 clusters máximos
+    #som = MiniSom(4, 2, coords.shape[1], sigma, learning_rate)  # 8 neurônios (clusters máx.)
+
     som.random_weights_init(coords)
     som.train_random(coords, ephocs)
     

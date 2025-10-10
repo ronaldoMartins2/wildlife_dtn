@@ -1,5 +1,5 @@
 {
-    "language": "US_US",
+    "language": "PT_BR",
 
     "CONTACT_DISTANCE": 5000,
 
@@ -28,6 +28,8 @@
     "n_init_kmeans": 10,
 
     "bandwidth": 0.001,
+
+    "BIRCH_NCLUSTERS": 16,
 
     "threshold": 0.5
 }

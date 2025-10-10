@@ -33,8 +33,10 @@ from Common.utils import (
     get_list_animals,
     merge_csvs,
     create_combinations,
-    results_folder
-)
+    results_folder,
+    merge_all_interpolations_nbeat,
+    merge_all_interpolations_nhits
+    )
 
 from Data_preparation.separar_localizacoes_individuais import (
     run as run_preparation
@@ -78,7 +80,8 @@ from Common.utils import (
 )
 
 from Clusterization.kmeans_individual_csv import (
-    run as run_kmeans
+    run as run_kmeans,
+    run_all as run_all_kmeans
 )
 
 from Clusterization.SOM_individual import (
@@ -225,14 +228,32 @@ sys.exit()
 # run clusterization kmeans
 
 #Rodando Dispersao Geral dos animais: Tangara e Jaguar
-run_all_dispersion()
+#Criando csv das coordenadas interpoladas
+merge_all_interpolations_nbeat(file_rawdata)
+merge_all_interpolations_nhits(file_rawdata)
 sys.exit()
 
+file_interpolated_nbeats = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nbeats_all.csv' )
+file_interpolated_nhits = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nhits_all.csv' )
+
+#Roda kmeans para todos os animais
+run_all_kmeans(file_interpolated_nbeats)
+run_all_kmeans(file_interpolated_nhits)
+#run_som_all(file_rawdata)
+#run_mean_shift_all(file_rawdata)
+#run_birch_all(file_rawdata)
+
+#Roda dispersao geral para todos os animais Raw data
+run_all_dispersion()
+
+#Antigo
+'''
 for current_animal in list_animals:
     run_kmeans(current_animal, file_rawdata)
     run_som(current_animal, file_rawdata)
     run_mean_shift(current_animal, file_rawdata)
     run_birch(current_animal, file_rawdata)
+'''
 
 for current_animal in list_animals:
     run_plot_kmeans_som_birch_mean_shift(current_animal)
