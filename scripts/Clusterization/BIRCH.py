@@ -48,8 +48,10 @@ def run(current_animal, file_rawdata_name):
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
     threshold = read_field_from_json(hyperparam_path, "threshold")    
+    n_clusters = read_field_from_json(hyperparam_path, "BIRCH_NCLUSTERS")
 
-    birch_model = Birch(n_clusters=None, threshold=threshold)
+    #birch_model = Birch(n_clusters=None, threshold=threshold)
+    birch_model = Birch(n_clusters=n_clusters, threshold=threshold)
     df['Cluster'] = birch_model.fit_predict(coordinates)
 
     # Salva resultados no diretório de saída correto

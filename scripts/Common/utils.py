@@ -202,3 +202,43 @@ def append_variables_to_file(up, down, filename="variables.txt"):
 
         file.write(f"{up}\n")
         file.write(f"{down}\n")
+
+def merge_all_interpolations_nbeat(file_rawdata):
+    """
+    Junta todos os arquivos map_{animal}_interpolation_nbeats_merged.csv em um único arquivo.
+    """
+    results_dir = results_folder(file_rawdata)
+    interpolation_dir = os.path.join(results_dir, "Interpolation")
+    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nbeats_merged.csv")]
+
+    if not files:
+        print("Nenhum arquivo nbeats encontrado para merge.")
+        return
+
+    dfs = [pd.read_csv(os.path.join(interpolation_dir, f), header=None) for f in files]
+    df_merged = pd.concat(dfs, ignore_index=True)
+    animal_name = os.path.basename(file_rawdata).split('.')[0]
+    output_path = os.path.join(interpolation_dir, f"map_{animal_name}_interpolation_nbeats_all.csv")
+    df_merged.to_csv(output_path, index=False, header=False)
+
+    print(f"Arquivo gerado: {output_path}")
+
+def merge_all_interpolations_nhits(file_rawdata):
+    """
+    Junta todos os arquivos map_{animal}_interpolation_nhits_merged.csv em um único arquivo.
+    """
+    results_dir = results_folder(file_rawdata)
+    interpolation_dir = os.path.join(results_dir, "Interpolation")
+    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nhits_merged.csv")]
+
+    if not files:
+        print("Nenhum arquivo nhits encontrado para merge.")
+        return
+    
+    dfs = [pd.read_csv(os.path.join(interpolation_dir, f), header=None) for f in files]
+    df_merged = pd.concat(dfs, ignore_index=True)
+    animal_name = os.path.basename(file_rawdata).split('.')[0]
+    output_path = os.path.join(interpolation_dir, f"map_{animal_name}_interpolation_nhits_all.csv")
+    df_merged.to_csv(output_path, index=False, header=False)
+    
+    print(f"Arquivo gerado: {output_path}")
