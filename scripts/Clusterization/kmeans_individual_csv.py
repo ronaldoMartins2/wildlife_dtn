@@ -10,11 +10,65 @@ from Common.utils import (
     results_folder,
     read_field_from_json
 )
-def run_all(file_rawdata_name):
+def run_all(file_rawdata_name, output_prefix):
     
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_main_dir = os.path.join(script_dir, '..', 'Results')
+    cluster_output_dir = os.path.join(output_main_dir, 'Clusterization')
+    create_clusterization_results(cluster_output_dir)
 
+    if not os.path.exists(file_rawdata_name):
+        print(f"Error: Input file not found at {file_rawdata_name}")
+        return
 
-    pass
+    data = pd.read_csv(file_rawdata_name, header=None)
+    data.iloc[:, 2] = pd.to_numeric(data.iloc[:, 2], errors='coerce')
+    data.iloc[:, 3] = pd.to_numeric(data.iloc[:, 3], errors='coerce')
+    data_cleaned = data.dropna(subset=[2, 3])
+    data_cleaned = data_cleaned[
+        (data_cleaned.iloc[:, 2] >= -180) & (data_cleaned.iloc[:, 2] <= 180) &
+        (data_cleaned.iloc[:, 3] >= -90) & (data_cleaned.iloc[:, 3] <= 90)
+    ]
+    coords = data_cleaned.iloc[:, [2, 3]].values
+
+    if coords.shape[0] == 0:
+        print("No valid coordinates for clustering.")
+        return
+
+    # Hiperparâmetros
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+    n_clusters = read_field_from_json(hyperparam_path, "n_clusters_kmeans")
+    random_state = read_field_from_json(hyperparam_path, "random_state_kmeans")
+    n_init = read_field_from_json(hyperparam_path, "n_init_kmeans")
+
+    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=n_init)
+    kmeans.fit(coords)
+    centroids = kmeans.cluster_centers_
+
+    # Salva centroides
+    output_file_csv = os.path.join(cluster_output_dir, f'clusters_kmeans_{output_prefix}.csv')
+    pd.DataFrame(centroids, columns=['Longitude', 'Latitude']).to_csv(output_file_csv, index=False, header=None)
+    print(f"Cluster centroids saved to {output_file_csv}")
+
+    # Gráfico
+    language = read_field_from_json(hyperparam_path, "language")
+    json_path = os.path.join(data_prep_dir, f'language_{language}.json')
+    with open(json_path, encoding='utf-8') as f:
+        lang = json.load(f)
+
+    plt.figure(figsize=(10, 6))
+    plt.scatter(coords[:, 0], coords[:, 1], c=kmeans.labels_, cmap='viridis', alpha=0.7, label='Data Points')
+    plt.scatter(centroids[:, 0], centroids[:, 1], color='red', marker='x', s=100, label='Centroids')
+    plt.title(f"{lang['grafico_kmeans_individual']} - Clusters: {n_clusters} - {output_prefix.capitalize()}")
+    plt.xlabel(lang["xlabel_kmeans_individual"])
+    plt.ylabel(lang["ylabel_kmeans_individual"])
+    plt.legend()
+    plt.grid(True)
+    output_file_png = os.path.join(cluster_output_dir, f'kmeans_{output_prefix}.png')
+    plt.savefig(output_file_png)
+    plt.close()
+    print(f"Plot saved to {output_file_png}")
 
 def run(current_animal, file_rawdata_name):
     

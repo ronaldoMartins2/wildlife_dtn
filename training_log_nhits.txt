@@ -122,3 +122,110 @@ Epoch  39/200: Train Loss = 0.001982, Val Loss = 0.004507
 Epoch  40/200: Train Loss = 0.001891, Val Loss = 0.004551
 Epoch  41/200 | Train Loss: 0.001937 | Val Loss: 0.004509 | Train MAE: 129.9796 | Val MAE: 177.1022 | TimeDiff MAPE: 26921.56%/10796.60%
 Early stopping at epoch 41
+Epoch   1/200 | Train Loss: 0.154195 | Val Loss: 0.004808 | Train MAE: 61.0023 | Val MAE: 116.8977 | TimeDiff MAPE: 3696.66%/1559.33%
+Epoch   2/200: Train Loss = 0.001784, Val Loss = 0.004658
+Epoch   3/200: Train Loss = 0.001748, Val Loss = 0.004551
+Epoch   4/200: Train Loss = 0.001762, Val Loss = 0.004495
+Epoch   5/200: Train Loss = 0.001727, Val Loss = 0.004490
+Epoch   6/200: Train Loss = 0.001752, Val Loss = 0.004511
+Epoch   7/200: Train Loss = 0.001752, Val Loss = 0.004458
+Epoch   8/200: Train Loss = 0.001770, Val Loss = 0.004473
+Epoch   9/200: Train Loss = 0.001744, Val Loss = 0.004654
+Epoch  10/200: Train Loss = 0.001742, Val Loss = 0.004873
+Epoch  11/200: Train Loss = 0.001801, Val Loss = 0.004457
+Epoch  12/200: Train Loss = 0.001753, Val Loss = 0.004463
+Epoch  13/200: Train Loss = 0.001791, Val Loss = 0.004732
+Epoch  14/200: Train Loss = 0.001811, Val Loss = 0.004473
+Epoch  15/200: Train Loss = 0.001792, Val Loss = 0.004531
+Epoch  16/200: Train Loss = 0.001785, Val Loss = 0.004482
+Epoch  17/200: Train Loss = 0.001803, Val Loss = 0.004500
+Epoch  18/200: Train Loss = 0.001802, Val Loss = 0.004464
+Epoch  19/200: Train Loss = 0.001779, Val Loss = 0.005014
+Epoch  20/200: Train Loss = 0.001831, Val Loss = 0.004485
+Epoch  21/200 | Train Loss: 0.001790 | Val Loss: 0.004447 | Train MAE: 36.7150 | Val MAE: 85.4206 | TimeDiff MAPE: 3550.53%/1490.22%
+Epoch  22/200: Train Loss = 0.001825, Val Loss = 0.004509
+Epoch  23/200: Train Loss = 0.001791, Val Loss = 0.004757
+Epoch  24/200: Train Loss = 0.001949, Val Loss = 0.004498
+Epoch  25/200: Train Loss = 0.001868, Val Loss = 0.004538
+Epoch  26/200: Train Loss = 0.001775, Val Loss = 0.004506
+Epoch  27/200: Train Loss = 0.001806, Val Loss = 0.004476
+Epoch  28/200: Train Loss = 0.001761, Val Loss = 0.004539
+Epoch  29/200: Train Loss = 0.001876, Val Loss = 0.004495
+Epoch  30/200: Train Loss = 0.001840, Val Loss = 0.004488
+Epoch  31/200: Train Loss = 0.001762, Val Loss = 0.005858
+Epoch  32/200: Train Loss = 0.001920, Val Loss = 0.004536
+Epoch  33/200: Train Loss = 0.001823, Val Loss = 0.004719
+Epoch  34/200: Train Loss = 0.001933, Val Loss = 0.004762
+Epoch  35/200: Train Loss = 0.001833, Val Loss = 0.004557
+Epoch  36/200: Train Loss = 0.001821, Val Loss = 0.004510
+Epoch  37/200: Train Loss = 0.001841, Val Loss = 0.004922
+Epoch  38/200: Train Loss = 0.001930, Val Loss = 0.004652
+Epoch  39/200: Train Loss = 0.001862, Val Loss = 0.005085
+Epoch  40/200: Train Loss = 0.001839, Val Loss = 0.004626
+Epoch  41/200 | Train Loss: 0.001895 | Val Loss: 0.004480 | Train MAE: 49.0030 | Val MAE: 96.9551 | TimeDiff MAPE: 26579.16%/10666.11%
+Early stopping at epoch 41
+Epoch   1/300 | Train Loss: 0.167209 | Val Loss: 0.005189 | Train MAE: 93.3173 | Val MAE: 153.9075 | TimeDiff MAPE: 32639.31%/13114.34%
+Epoch   2/300: Train Loss = 0.001831, Val Loss = 0.004945
+Epoch   3/300: Train Loss = 0.001782, Val Loss = 0.004875
+Epoch   4/300: Train Loss = 0.001765, Val Loss = 0.005056
+Epoch   5/300: Train Loss = 0.001765, Val Loss = 0.004780
+Epoch   6/300: Train Loss = 0.001779, Val Loss = 0.004586
+Epoch   7/300: Train Loss = 0.001777, Val Loss = 0.004539
+Epoch   8/300: Train Loss = 0.001766, Val Loss = 0.004565
+Epoch   9/300: Train Loss = 0.001778, Val Loss = 0.004539
+Epoch  10/300: Train Loss = 0.001766, Val Loss = 0.004544
+Epoch  11/300: Train Loss = 0.001822, Val Loss = 0.004536
+Epoch  12/300: Train Loss = 0.001776, Val Loss = 0.004687
+Epoch  13/300: Train Loss = 0.001823, Val Loss = 0.004525
+Epoch  14/300: Train Loss = 0.001774, Val Loss = 0.004614
+Epoch  15/300: Train Loss = 0.001794, Val Loss = 0.004632
+Epoch  16/300: Train Loss = 0.001782, Val Loss = 0.004527
+Epoch  17/300: Train Loss = 0.001809, Val Loss = 0.004707
+Epoch  18/300: Train Loss = 0.001829, Val Loss = 0.004640
+Epoch  19/300: Train Loss = 0.001814, Val Loss = 0.004559
+Epoch  20/300: Train Loss = 0.001816, Val Loss = 0.004632
+Epoch  21/300 | Train Loss: 0.001813 | Val Loss: 0.004725 | Train MAE: 93.1893 | Val MAE: 146.2715 | TimeDiff MAPE: 6599.80%/2716.10%
+Epoch  22/300: Train Loss = 0.001800, Val Loss = 0.004574
+Epoch  23/300: Train Loss = 0.001801, Val Loss = 0.004807
+Epoch  24/300: Train Loss = 0.001840, Val Loss = 0.004542
+Epoch  25/300: Train Loss = 0.001783, Val Loss = 0.004632
+Epoch  26/300: Train Loss = 0.001875, Val Loss = 0.004596
+Epoch  27/300: Train Loss = 0.001832, Val Loss = 0.004734
+Epoch  28/300: Train Loss = 0.001828, Val Loss = 0.004543
+Epoch  29/300: Train Loss = 0.001846, Val Loss = 0.004643
+Epoch  30/300: Train Loss = 0.001823, Val Loss = 0.004523
+Epoch  31/300: Train Loss = 0.001833, Val Loss = 0.004672
+Epoch  32/300: Train Loss = 0.001897, Val Loss = 0.004610
+Epoch  33/300: Train Loss = 0.001815, Val Loss = 0.004538
+Epoch  34/300: Train Loss = 0.001840, Val Loss = 0.004513
+Epoch  35/300: Train Loss = 0.001802, Val Loss = 0.004580
+Epoch  36/300: Train Loss = 0.001902, Val Loss = 0.004595
+Epoch  37/300: Train Loss = 0.001956, Val Loss = 0.004545
+Epoch  38/300: Train Loss = 0.001923, Val Loss = 0.004509
+Epoch  39/300: Train Loss = 0.001846, Val Loss = 0.004688
+Epoch  40/300: Train Loss = 0.001834, Val Loss = 0.004818
+Epoch  41/300 | Train Loss: 0.001872 | Val Loss: 0.004727 | Train MAE: 244.0362 | Val MAE: 295.5979 | TimeDiff MAPE: 6505.93%/2677.24%
+Epoch  42/300: Train Loss = 0.001917, Val Loss = 0.004497
+Epoch  43/300: Train Loss = 0.001878, Val Loss = 0.004554
+Epoch  44/300: Train Loss = 0.001899, Val Loss = 0.004477
+Epoch  45/300: Train Loss = 0.001835, Val Loss = 0.004690
+Epoch  46/300: Train Loss = 0.001847, Val Loss = 0.004854
+Epoch  47/300: Train Loss = 0.001884, Val Loss = 0.004599
+Epoch  48/300: Train Loss = 0.001879, Val Loss = 0.004634
+Epoch  49/300: Train Loss = 0.001936, Val Loss = 0.004635
+Epoch  50/300: Train Loss = 0.001845, Val Loss = 0.005001
+Epoch  51/300: Train Loss = 0.001916, Val Loss = 0.004683
+Epoch  52/300: Train Loss = 0.001892, Val Loss = 0.004565
+Epoch  53/300: Train Loss = 0.001827, Val Loss = 0.004753
+Epoch  54/300: Train Loss = 0.001823, Val Loss = 0.004840
+Epoch  55/300: Train Loss = 0.001992, Val Loss = 0.004525
+Epoch  56/300: Train Loss = 0.001807, Val Loss = 0.004657
+Epoch  57/300: Train Loss = 0.001873, Val Loss = 0.004633
+Epoch  58/300: Train Loss = 0.001851, Val Loss = 0.004614
+Epoch  59/300: Train Loss = 0.001840, Val Loss = 0.004720
+Epoch  60/300: Train Loss = 0.001962, Val Loss = 0.004520
+Epoch  61/300 | Train Loss: 0.001817 | Val Loss: 0.004732 | Train MAE: 316.8924 | Val MAE: 366.3069 | TimeDiff MAPE: 16940.05%/6887.24%
+Epoch  62/300: Train Loss = 0.001879, Val Loss = 0.004590
+Epoch  63/300: Train Loss = 0.001806, Val Loss = 0.004508
+Epoch  64/300: Train Loss = 0.001835, Val Loss = 0.004988
+Early stopping at epoch 64

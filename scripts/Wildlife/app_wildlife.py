@@ -231,14 +231,15 @@ sys.exit()
 #Criando csv das coordenadas interpoladas
 merge_all_interpolations_nbeat(file_rawdata)
 merge_all_interpolations_nhits(file_rawdata)
-sys.exit()
 
 file_interpolated_nbeats = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nbeats_all.csv' )
 file_interpolated_nhits = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nhits_all.csv' )
 
 #Roda kmeans para todos os animais
-run_all_kmeans(file_interpolated_nbeats)
-run_all_kmeans(file_interpolated_nhits)
+run_all_kmeans(file_interpolated_nbeats, 'nbeats')
+run_all_kmeans(file_interpolated_nhits, 'nhits')
+sys.exit()
+
 #run_som_all(file_rawdata)
 #run_mean_shift_all(file_rawdata)
 #run_birch_all(file_rawdata)
