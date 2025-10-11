@@ -9,9 +9,9 @@
 
     "input_dim_nhits": 3,
     "hidden_dim_nhits": 64,
-    "num_blocks_nhits": 4,
-    "num_hierarchies_nhits": 3,
-    "epochs_nhits": 200,
+    "num_blocks_nhits": 5,
+    "num_hierarchies_nhits": 4,
+    "epochs_nhits": 300,
     "lr_nhits": 0.001,
     "patience_nhits": 20,
     "sequence_length_nhits": 20,
