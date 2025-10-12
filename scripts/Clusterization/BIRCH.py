@@ -16,6 +16,80 @@ from Common.utils import (
 # exemplo de execução
 # python3 11_BIRCH.py 93
 
+def run_all(file_rawdata_name, output_prefix):
+    # --- CAMINHO DE SAÍDA (para salvar os resultados) ---
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_main_dir = os.path.join(script_dir, '..', 'Results')
+    cluster_output_dir = os.path.join(output_main_dir, 'Clusterization')
+    create_clusterization_results(cluster_output_dir)
+
+    # --- LEITURA E LIMPEZA DOS DADOS ---
+    if not os.path.exists(file_rawdata_name):
+        print(f"Error: Input file not found at {file_rawdata_name}")
+        return
+
+    data = pd.read_csv(file_rawdata_name, header=None)
+
+    # Assume longitude = coluna 2, latitude = coluna 3
+    data.iloc[:, 2] = pd.to_numeric(data.iloc[:, 2], errors='coerce')
+    data.iloc[:, 3] = pd.to_numeric(data.iloc[:, 3], errors='coerce')
+    data_cleaned = data.dropna(subset=[2, 3])
+    data_cleaned = data_cleaned[
+        (data_cleaned.iloc[:, 2] >= -180) & (data_cleaned.iloc[:, 2] <= 180) &
+        (data_cleaned.iloc[:, 3] >= -90) & (data_cleaned.iloc[:, 3] <= 90)
+    ]
+    
+    if data_cleaned.empty:
+        print(f"Error: No valid coordinates for clustering in {file_rawdata_name}.")
+        return
+
+    # Padroniza os dados
+    scaler = StandardScaler()
+    coordinates = scaler.fit_transform(data_cleaned.iloc[:, [2, 3]])
+
+    # Carrega hiperparâmetros
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+    threshold = read_field_from_json(hyperparam_path, "threshold")
+    n_clusters = read_field_from_json(hyperparam_path, "BIRCH_NCLUSTERS")
+
+    birch_model = Birch(n_clusters=n_clusters, threshold=threshold)
+    clusters = birch_model.fit_predict(coordinates)
+    data_cleaned['Cluster'] = clusters
+
+    # Salva resultados
+    output_csv_path = os.path.join(cluster_output_dir, f'clusters_birch_{output_prefix}.csv')
+    data_cleaned.iloc[:, [2, 3] + [data_cleaned.columns.get_loc('Cluster')]].to_csv(output_csv_path, index=False, header=None)
+    print(f"Clusters saved to {output_csv_path}")
+
+    # Carrega idioma
+    language = read_field_from_json(hyperparam_path, "language")
+    json_path = os.path.join(data_prep_dir, f'language_{language}.json')
+    with open(json_path, encoding='utf-8') as f:
+        lang = json.load(f)
+
+    # Plota e salva o gráfico
+    plt.figure(figsize=(10, 6))
+    for cluster_id in np.unique(clusters):
+        cluster_data = data_cleaned[data_cleaned['Cluster'] == cluster_id]
+        plt.scatter(cluster_data.iloc[:, 2], cluster_data.iloc[:, 3], label=f"Cluster {cluster_id}")
+
+    plt.title(f"{lang['grafico_BIRCH']} - Clusters: {n_clusters} - {output_prefix.capitalize()}")
+    plt.xlabel(lang["xlabel_BIRCH"])
+    plt.ylabel(lang["ylabel_BIRCH"])
+    plt.legend()
+    plt.grid()
+
+    output_png_path = os.path.join(cluster_output_dir, f'birch_{output_prefix}.png')
+    plt.savefig(output_png_path)
+    plt.close()
+    print(f"Plot saved to {output_png_path}")
+
+    # Salva hiperparâmetros usados
+    hiper_content = [f"Hyper BIRCH threshold {threshold}"]
+    hiper_path = os.path.join(output_main_dir, f'hiperparameters.txt')
+    with open(hiper_path, "a") as file:
+        file.write(hiper_content[0] + '\n')
 
 def run(current_animal, file_rawdata_name):
     # --- CAMINHO DE ENTRADA (para ler os dados) ---
