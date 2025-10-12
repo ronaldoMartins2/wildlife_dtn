@@ -19,25 +19,6 @@ def get_contact_distance():
 
     return CONTACT_DISTANCE
 
-def remove_nan_data(df, current_animal=None):
-    # 1. Check if the CSV has at least 10 rows initially
-    if len(df) < 10:
-        print(f"Warning: CSV for animal {current_animal} has fewer than 10 rows. Skipping.")
-        return pd.DataFrame()
-    
-    # 2. Remove rows with missing interesting data
-    essential_cols = ['ID', 'Timestamp', 'Longitude', 'Latitude']
-    # Replace empty strings with NaN to be dropped
-    df[essential_cols] = df[essential_cols].replace(r'^\s*$', np.nan, regex=True)
-    df.dropna(subset=essential_cols, inplace=True)
-
-    # 3. Check if there are still enough rows after cleaning
-    if len(df) < 10:
-        print(f"Warning: After cleaning, animal {current_animal} has fewer than 10 valid rows. Skipping.")
-        return pd.DataFrame()
-    
-    return df
-
 def read_field_from_json(json_file, field_name):
     """
     Reads a specific field from a JSON file.
