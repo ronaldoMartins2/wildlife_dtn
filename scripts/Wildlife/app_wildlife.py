@@ -32,7 +32,8 @@ from Common.utils import (
     create_combinations,
     results_folder,
     merge_all_interpolations_nbeat,
-    merge_all_interpolations_nhits
+    merge_all_interpolations_nhits,
+    remove_nan_data
     )
 
 from Data_preparation.separar_localizacoes_individuais import (
@@ -82,15 +83,18 @@ from Clusterization.kmeans_individual_csv import (
 )
 
 from Clusterization.SOM_individual import (
-    run as run_som
+    run as run_som,
+    run_all as run_som_all
 )
 
 from Clusterization.Mean_Shift import (
-    run as run_mean_shift
+    run as run_mean_shift,
+    run_all as run_mean_shift_all
 )
 
 from Clusterization.BIRCH import (
-    run as run_birch
+    run as run_birch,
+    run_all as run_birch_all
 )
 
 from Clusterization.plot_kmeans_som_birch_mean_shift import (
@@ -237,11 +241,17 @@ file_interpolated_nhits = os.path.join( results_folder(file_rawdata), 'Interpola
 #Roda kmeans para todos os animais
 run_all_kmeans(file_interpolated_nbeats, 'nbeats')
 run_all_kmeans(file_interpolated_nhits, 'nhits')
+run_birch_all(file_interpolated_nbeats, 'nbeats')
+run_birch_all(file_interpolated_nhits, 'nhits')
+run_som_all(file_interpolated_nbeats, 'nbeats')
+run_som_all(file_interpolated_nhits, 'nhits')
+run_mean_shift_all(file_interpolated_nbeats, 'nbeats')
+run_mean_shift_all(file_interpolated_nhits, 'nhits')
 sys.exit()
 
-#run_som_all(file_rawdata)
-#run_mean_shift_all(file_rawdata)
-#run_birch_all(file_rawdata)
+#run_som_all(file_interpolated_nbeats, 'nbeats')
+#run_mean_shift_all(file_interpolated_nbeats, 'nbeats')
+#run_birch_all(file_interpolated_nbeats, 'nbeats')
 
 #Roda dispersao geral para todos os animais Raw data
 run_all_dispersion()
