@@ -57,10 +57,18 @@ def run_all(file_rawdata_name, output_prefix):
     clusters = birch_model.fit_predict(coordinates)
     data_cleaned['Cluster'] = clusters
 
-    # Salva resultados
+    # Salva resultados dos clusters
     output_csv_path = os.path.join(cluster_output_dir, f'clusters_birch_{output_prefix}.csv')
     data_cleaned.iloc[:, [2, 3] + [data_cleaned.columns.get_loc('Cluster')]].to_csv(output_csv_path, index=False, header=None)
     print(f"Clusters saved to {output_csv_path}")
+
+    # Salva centroides dos subclusters
+    centroids = birch_model.subcluster_centers_
+    # Inverte a padronização para voltar ao espaço original
+    centroids_original = scaler.inverse_transform(centroids)
+    output_centroids_csv = os.path.join(cluster_output_dir, f'centroids_birch_{output_prefix}.csv')
+    pd.DataFrame(centroids_original, columns=['Longitude', 'Latitude']).to_csv(output_centroids_csv, index=False, header=None)
+    print(f"Centroids saved to {output_centroids_csv}")
 
     # Carrega idioma
     language = read_field_from_json(hyperparam_path, "language")
@@ -73,6 +81,9 @@ def run_all(file_rawdata_name, output_prefix):
     for cluster_id in np.unique(clusters):
         cluster_data = data_cleaned[data_cleaned['Cluster'] == cluster_id]
         plt.scatter(cluster_data.iloc[:, 2], cluster_data.iloc[:, 3], label=f"Cluster {cluster_id}")
+
+    # Adiciona centroides ao gráfico
+    #plt.scatter(centroids[:, 0], centroids[:, 1], color='red', marker='x', s=100, label='Centroids')
 
     plt.title(f"{lang['grafico_BIRCH']} - Clusters: {n_clusters} - {output_prefix.capitalize()}")
     plt.xlabel(lang["xlabel_BIRCH"])
