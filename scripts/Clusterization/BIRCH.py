@@ -62,12 +62,19 @@ def run_all(file_rawdata_name, output_prefix):
     data_cleaned.iloc[:, [2, 3] + [data_cleaned.columns.get_loc('Cluster')]].to_csv(output_csv_path, index=False, header=None)
     print(f"Clusters saved to {output_csv_path}")
 
-    # Salva centroides dos subclusters
-    centroids = birch_model.subcluster_centers_
-    # Inverte a padronização para voltar ao espaço original
-    centroids_original = scaler.inverse_transform(centroids)
+    # Após ajustar o modelo
+    labels = birch_model.labels_
+    coords_original = scaler.inverse_transform(coordinates)
+    centroids_final = []
+    for cluster_id in np.unique(labels):
+        cluster_points = coords_original[labels == cluster_id]
+        centroid = cluster_points.mean(axis=0)
+        centroids_final.append(centroid)
+    centroids_final = np.array(centroids_final)
+
+    # Salva apenas os centroides finais
     output_centroids_csv = os.path.join(cluster_output_dir, f'centroids_birch_{output_prefix}.csv')
-    pd.DataFrame(centroids_original, columns=['Longitude', 'Latitude']).to_csv(output_centroids_csv, index=False, header=None)
+    pd.DataFrame(centroids_final, columns=['Longitude', 'Latitude']).to_csv(output_centroids_csv, index=False, header=None)
     print(f"Centroids saved to {output_centroids_csv}")
 
     # Carrega idioma
@@ -82,10 +89,10 @@ def run_all(file_rawdata_name, output_prefix):
         cluster_data = data_cleaned[data_cleaned['Cluster'] == cluster_id]
         plt.scatter(cluster_data.iloc[:, 2], cluster_data.iloc[:, 3], label=f"Cluster {cluster_id}")
 
-    # Adiciona centroides ao gráfico
-    #plt.scatter(centroids[:, 0], centroids[:, 1], color='red', marker='x', s=100, label='Centroids')
+    # Adiciona centroides ao gráfico (corrigido!)
+    plt.scatter(centroids_final[:, 0], centroids_final[:, 1], color='red', marker='x', s=100, label='Centroids')
 
-    plt.title(f"{lang['grafico_BIRCH']} - Clusters: {n_clusters} - {output_prefix.capitalize()}")
+    plt.title(f"{lang['grafico_BIRCH']} - Clusters: {n_clusters} - Centroids:  - {output_prefix.capitalize()}")
     plt.xlabel(lang["xlabel_BIRCH"])
     plt.ylabel(lang["ylabel_BIRCH"])
     plt.legend()

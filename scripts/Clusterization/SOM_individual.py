@@ -92,16 +92,31 @@ def run_all(file_rawdata_name, output_prefix):
     pd.DataFrame(centroids, columns=['Longitude', 'Latitude']).to_csv(output_centroids_csv, index=False, header=None)
     print(f"Centroids saved to {output_centroids_csv}")
 
+    # Calcula os centroides reais dos clusters (média dos pontos atribuídos a cada neurônio)
+    cluster_assignments = [som.winner(coord) for coord in coords]
+    unique_neurons = list(set(cluster_assignments))
+    centroids_real = []
+    for neuron in unique_neurons:
+        points = np.array([coords[i] for i in range(len(coords)) if cluster_assignments[i] == neuron])
+        if len(points) > 0:
+            centroids_real.append(points.mean(axis=0))
+    centroids_real = np.array(centroids_real)
+
+    # Salva os centroides reais dos clusters
+    output_centroids_csv = os.path.join(cluster_output_dir, f'centroids_som_{output_prefix}.csv')
+    pd.DataFrame(centroids_real, columns=['Longitude', 'Latitude']).to_csv(output_centroids_csv, index=False, header=None)
+    print(f"Centroids saved to {output_centroids_csv}")
+
     # Plota e salva o gráfico
     plt.figure(figsize=(10, 6))
     for cluster_id in np.unique(clusters):
         cluster_points = coords[clusters == cluster_id]
-        plt.scatter(cluster_points[:, 0], cluster_points[:, 1], label=f'Centroíde {cluster_id}', alpha=0.7)
+        plt.scatter(cluster_points[:, 0], cluster_points[:, 1], label=f'Cluster {cluster_id}', alpha=0.7)
 
-    # Adiciona centroides ao gráfico
-    plt.scatter(centroids[:, 0], centroids[:, 1], color='red', marker='x', s=100, label='Centroids')
+    # Adiciona centroides reais ao gráfico
+    plt.scatter(centroids_real[:, 0], centroids_real[:, 1], color='red', marker='x', s=100, label='Centroids')
 
-    plt.title(f"{lang['grafico_SOM_individual']} - Clusters: {som_x * som_y} - {output_prefix.capitalize()} - Centroids: {len(centroids)}")
+    plt.title(f"{lang['grafico_SOM_individual']} - Clusters: {len(centroids_real)} - Centroids: {len(centroids_real)} - {output_prefix.capitalize()}")
     plt.xlabel(lang["xlabel_SOM_individual"])
     plt.ylabel(lang["ylabel_SOM_individual"])
     plt.legend()

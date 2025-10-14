@@ -248,10 +248,10 @@ run_som_all(file_interpolated_nhits, 'nhits')
 #Por enquanto desabilitado
 #run_mean_shift_all(file_interpolated_nbeats, 'nbeats')
 #run_mean_shift_all(file_interpolated_nhits, 'nhits')
-sys.exit()
 
 #Roda dispersao geral para todos os animais Raw data
 run_all_dispersion()
+sys.exit()
 
 for current_animal in list_animals:
     run_plot_kmeans_som_birch_mean_shift(current_animal)
