@@ -87,7 +87,7 @@ def run_all(file_rawdata_name, output_prefix):
     plt.figure(figsize=(10, 6))
     for cluster_id in np.unique(clusters):
         cluster_data = data_cleaned[data_cleaned['Cluster'] == cluster_id]
-        plt.scatter(cluster_data.iloc[:, 2], cluster_data.iloc[:, 3], label=f"Cluster {cluster_id}")
+        plt.scatter(cluster_data.iloc[:, 2], cluster_data.iloc[:, 3], label=f"Cluster {cluster_id + 1}")
 
     # Adiciona centroides ao gráfico (corrigido!)
     plt.scatter(centroids_final[:, 0], centroids_final[:, 1], color='red', marker='x', s=100, label='Centroids')

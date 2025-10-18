@@ -111,7 +111,7 @@ def run_all(file_rawdata_name, output_prefix):
     plt.figure(figsize=(10, 6))
     for cluster_id in np.unique(clusters):
         cluster_points = coords[clusters == cluster_id]
-        plt.scatter(cluster_points[:, 0], cluster_points[:, 1], label=f'Cluster {cluster_id}', alpha=0.7)
+        plt.scatter(cluster_points[:, 0], cluster_points[:, 1], label=f'Cluster {cluster_id + 1}', alpha=0.7)
 
     # Adiciona centroides reais ao gráfico
     plt.scatter(centroids_real[:, 0], centroids_real[:, 1], color='red', marker='x', s=100, label='Centroids')

@@ -196,17 +196,17 @@ tangara = tangara.split('/')[-1]
 ####################################################################################################################
 
 for current_animal in list_animals:
-     #TODO review number_of_predictions 
-     number_of_predictions = 5
-     len_animal = get_len_animal( current_animal, file_rawdata )
+    #TODO review number_of_predictions 
+    number_of_predictions = 5
+    len_animal = get_len_animal( current_animal, file_rawdata )
    
-     print(f'len_animal {len_animal} current_animal {current_animal} file_rawdata {file_rawdata}')
+    print(f'len_animal {len_animal} current_animal {current_animal} file_rawdata {file_rawdata}')
 
-     run_interpolation_nbeat(current_animal, number_of_predictions, file_rawdata, file_rawdata_columns)
+    run_interpolation_nbeat(current_animal, number_of_predictions, file_rawdata, file_rawdata_columns)
 
-     start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
+    start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
 
-     run_interpolation_nhits(current_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
+    run_interpolation_nhits(current_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
 #exit ()
 #sys.exit()
 
