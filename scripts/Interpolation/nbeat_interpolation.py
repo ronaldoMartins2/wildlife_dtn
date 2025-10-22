@@ -1,6 +1,7 @@
 import pandas as pd
 import torch
 import torch.nn as nn
+import numpy as np
 from datetime import timedelta
 import sys
 import os
@@ -240,6 +241,7 @@ def run(    current_animal,
         return pd.DataFrame(new_data, columns=['ID', 'Timestamp', 'Longitude', 'Latitude', 'Time Difference (hours)', 'Prev Time Difference (hours)'])
     '''
 
+    #Funcionando
     def predict_between_dates(start_date, end_date, df, file_rawdata_columns, model, num_steps=5, max_rows=None):
         new_data = []
         current_timestamp = start_date
