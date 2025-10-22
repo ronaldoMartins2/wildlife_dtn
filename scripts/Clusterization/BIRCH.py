@@ -13,14 +13,21 @@ from Common.utils import (
     read_field_from_json
 )
 
+def extract_folder_name(file_rawdata):
+    """Extrai o nome da pasta do file_rawdata_name"""
+    file_name = file_rawdata.split('/')
+    file_name = file_name[-1].split('.')[0]
+    return file_name
+
 # exemplo de execução
 # python3 11_BIRCH.py 93
 
-def run_all(file_rawdata_name, output_prefix):
+def run_all(file_rawdata_name, file_rawdata, output_prefix):
     # --- CAMINHO DE SAÍDA (para salvar os resultados) ---
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_main_dir = os.path.join(script_dir, '..', 'Results')
-    cluster_output_dir = os.path.join(output_main_dir, 'Clusterization')
+    folder_name = extract_folder_name(file_rawdata)
+    results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
     create_clusterization_results(cluster_output_dir)
 
     # --- LEITURA E LIMPEZA DOS DADOS ---
@@ -111,7 +118,7 @@ def run_all(file_rawdata_name, output_prefix):
 
     # Salva hiperparâmetros usados
     hiper_content = [f"Hyper BIRCH threshold {threshold}"]
-    hiper_path = os.path.join(output_main_dir, f'hiperparameters.txt')
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
     with open(hiper_path, "a") as file:
         file.write(hiper_content[0] + '\n')
 
@@ -122,8 +129,9 @@ def run(current_animal, file_rawdata_name):
 
     # --- CAMINHO DE SAÍDA (para salvar os resultados) ---
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_main_dir = os.path.join(script_dir, '..', 'Results')
-    cluster_output_dir = os.path.join(output_main_dir, 'Clusterization')
+    folder_name = extract_folder_name(file_rawdata_name)
+    results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
     create_clusterization_results(cluster_output_dir)
     
     if not os.path.exists(input_file_path):
@@ -183,7 +191,7 @@ def run(current_animal, file_rawdata_name):
     print(f"Plot saved to {output_png_path}")
 
     hiper_content = [f"Hyper BIRCH threshold {threshold}"]
-    hiper_path = os.path.join(output_main_dir, f'hiperparameters.txt')
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
     with open(hiper_path, "a") as file:
         file.write(hiper_content[0] + '\n')
 

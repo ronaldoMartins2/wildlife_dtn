@@ -10,11 +10,19 @@ from Common.utils import (
     results_folder,
     read_field_from_json
 )
-def run_all(file_rawdata_name, output_prefix):
+
+def extract_folder_name(file_rawdata):
+    """Extrai o nome da pasta do file_rawdata_name"""
+    file_name = file_rawdata.split('/')
+    file_name = file_name[-1].split('.')[0]
+    return file_name
+def run_all(file_rawdata_name, file_rawdata, output_prefix):
     
+    # Define o caminho para SALVAR os resultados usando o nome extraído de file_rawdata (dataset original)
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_main_dir = os.path.join(script_dir, '..', 'Results')
-    cluster_output_dir = os.path.join(output_main_dir, 'Clusterization')
+    folder_name = extract_folder_name(file_rawdata)
+    results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
     create_clusterization_results(cluster_output_dir)
 
     if not os.path.exists(file_rawdata_name):
@@ -36,6 +44,7 @@ def run_all(file_rawdata_name, output_prefix):
         return
 
     # Hiperparâmetros
+    script_dir = os.path.dirname(os.path.abspath(__file__))
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
     n_clusters = read_field_from_json(hyperparam_path, "n_clusters_kmeans")
@@ -79,10 +88,11 @@ def run(current_animal, file_rawdata_name):
     input_results_dir = results_folder(file_rawdata_name)
     input_file_path = os.path.join(input_results_dir, f'map_{current_animal}.csv')
 
-    # Define o caminho para SALVAR os resultados
+    # Define o caminho para SALVAR os resultados usando o nome extraído do file_rawdata_name
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_main_dir = os.path.join(script_dir, '..', 'Results')
-    cluster_output_dir = os.path.join(output_main_dir, 'Clusterization')
+    folder_name = extract_folder_name(file_rawdata_name)
+    results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
     create_clusterization_results(cluster_output_dir)
 
     # --- LEITURA E LIMPEZA DOS DADOS ---
@@ -114,6 +124,7 @@ def run(current_animal, file_rawdata_name):
 
     # --- CLUSTERIZAÇÃO K-MEANS ---
     # Carrega os hiperparâmetros
+    script_dir = os.path.dirname(os.path.abspath(__file__))
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
     n_clusters = read_field_from_json(hyperparam_path, "n_clusters_kmeans")
@@ -132,7 +143,7 @@ def run(current_animal, file_rawdata_name):
         f"Hyper kmeans random_state {random_state}",
         f"Hyper kmeans n_init {n_init}"
     ]
-    hiper_path = os.path.join(output_main_dir, 'hiperparameters.txt') # Salva no diretório geral de resultados
+    hiper_path = os.path.join(results_dir, 'hiperparameters.txt') # Salva no diretório de resultados específico
     with open(hiper_path, "a") as file:
         for line in hiper_content:
             file.write(line + '\n')

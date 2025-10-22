@@ -11,6 +11,12 @@ from Common.utils import (
     read_field_from_json
 )
 
+def extract_folder_name(file_rawdata):
+    """Extrai o nome da pasta do file_rawdata_name"""
+    file_name = file_rawdata.split('/')
+    file_name = file_name[-1].split('.')[0]
+    return file_name
+
 # pip install minisom
 
 # python3 -m venv venv
@@ -18,11 +24,12 @@ from Common.utils import (
 
 # python3 7_SOM_individual.py 94
 
-def run_all(file_rawdata_name, output_prefix):
+def run_all(file_rawdata_name, file_rawdata, output_prefix):
     # --- CAMINHO DE SAÍDA (para salvar os resultados) ---
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_main_dir = os.path.join(script_dir, '..', 'Results')
-    cluster_output_dir = os.path.join(output_main_dir, 'Clusterization')
+    folder_name = extract_folder_name(file_rawdata)
+    results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
     create_clusterization_results(cluster_output_dir)
 
     if not os.path.exists(file_rawdata_name):
@@ -75,7 +82,7 @@ def run_all(file_rawdata_name, output_prefix):
         f"Hyper SOM learning_rate {learning_rate}",
         f"Hyper SOM ephocs {ephocs}"
     ]
-    hiper_path = os.path.join(output_main_dir, f'hiperparameters.txt')
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
     with open(hiper_path, "a") as file:
         for line in hiper_content:
             file.write(line + '\n')
@@ -140,8 +147,9 @@ def run(current_animal, file_rawdata_name):
 
     # --- CAMINHO DE SAÍDA (para salvar os resultados) ---
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_main_dir = os.path.join(script_dir, '..', 'Results')
-    cluster_output_dir = os.path.join(output_main_dir, 'Clusterization')
+    folder_name = extract_folder_name(file_rawdata_name)
+    results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
     create_clusterization_results(cluster_output_dir)
 
     if not os.path.exists(input_file_path):
@@ -201,7 +209,7 @@ def run(current_animal, file_rawdata_name):
         f"Hyper SOM learning_rate {learning_rate}",
         f"Hyper SOM ephocs {ephocs}"
     ]
-    hiper_path = os.path.join(output_main_dir, f'hiperparameters.txt')
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
     with open(hiper_path, "a") as file:
         for line in hiper_content:
             file.write(line + '\n')

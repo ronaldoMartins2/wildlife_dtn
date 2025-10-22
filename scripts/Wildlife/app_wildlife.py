@@ -238,20 +238,20 @@ file_interpolated_nbeats = os.path.join( results_folder(file_rawdata), 'Interpol
 file_interpolated_nhits = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nhits_all.csv' )
 
 #Roda kmeans para todos os animais
-run_all_kmeans(file_interpolated_nbeats, 'nbeats')
-run_all_kmeans(file_interpolated_nhits, 'nhits')
-run_birch_all(file_interpolated_nbeats, 'nbeats')
-run_birch_all(file_interpolated_nhits, 'nhits')
-run_som_all(file_interpolated_nbeats, 'nbeats')
-run_som_all(file_interpolated_nhits, 'nhits')
+run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
+run_all_kmeans(file_interpolated_nhits, file_rawdata, 'nhits')
+run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
+run_birch_all(file_interpolated_nhits, file_rawdata, 'nhits')
+run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
+run_som_all(file_interpolated_nhits, file_rawdata, 'nhits')
 
 #Por enquanto desabilitado
 #run_mean_shift_all(file_interpolated_nbeats, 'nbeats')
 #run_mean_shift_all(file_interpolated_nhits, 'nhits')
 
-#Roda dispersao geral para todos os animais Raw data
-run_all_dispersion()
-#sys.exit()
+#Roda dispersao geral para o dataset atual
+run_all_dispersion(file_rawdata)
+sys.exit()
 
 for current_animal in list_animals:
     run_plot_kmeans_som_birch_mean_shift(current_animal)
