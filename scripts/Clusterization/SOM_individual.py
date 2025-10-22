@@ -51,7 +51,9 @@ def run_all(file_rawdata_name, output_prefix):
 
     # Salva as coordenadas usadas no diretório de saída correto
     output_csv_path = os.path.join(cluster_output_dir, f'clusters_som_{output_prefix}.csv')
-    data_cleaned.iloc[:, [2, 3]].to_csv(output_csv_path, index=False, header=None)
+    df_coords = data_cleaned.iloc[:, [2, 3]].copy()
+    df_coords.insert(0, 'Index', range(1, len(df_coords) + 1))  # começa por 1
+    df_coords.to_csv(output_csv_path, index=False, header=None)
     print(f"Coordinates saved to {output_csv_path}")
 
     # Carrega hiperparâmetros
@@ -88,9 +90,11 @@ def run_all(file_rawdata_name, output_prefix):
     # Após treinar o SOM
     # Salva os centroides (pesos dos neurônios) em CSV
     centroids = som.get_weights().reshape(-1, coords.shape[1])  # shape: (som_x*som_y, 2)
-    output_centroids_csv = os.path.join(cluster_output_dir, f'centroids_som_{output_prefix}.csv')
-    pd.DataFrame(centroids, columns=['Longitude', 'Latitude']).to_csv(output_centroids_csv, index=False, header=None)
-    print(f"Centroids saved to {output_centroids_csv}")
+    output_centroids_neurons = os.path.join(cluster_output_dir, f'centroids_som_neurons_{output_prefix}.csv')
+    df_neurons = pd.DataFrame(centroids, columns=['Longitude', 'Latitude']).reset_index().rename(columns={'index': 'Index'})
+    df_neurons['Index'] = df_neurons['Index'] + 1  # começa por 1
+    df_neurons.to_csv(output_centroids_neurons, index=False, header=None)
+    print(f"Neuron weights saved to {output_centroids_neurons}")
 
     # Calcula os centroides reais dos clusters (média dos pontos atribuídos a cada neurônio)
     cluster_assignments = [som.winner(coord) for coord in coords]
@@ -104,7 +108,9 @@ def run_all(file_rawdata_name, output_prefix):
 
     # Salva os centroides reais dos clusters
     output_centroids_csv = os.path.join(cluster_output_dir, f'centroids_som_{output_prefix}.csv')
-    pd.DataFrame(centroids_real, columns=['Longitude', 'Latitude']).to_csv(output_centroids_csv, index=False, header=None)
+    df_centroids_real = pd.DataFrame(centroids_real, columns=['Longitude', 'Latitude']).reset_index().rename(columns={'index': 'Index'})
+    df_centroids_real['Index'] = df_centroids_real['Index'] + 1  # começa por 1
+    df_centroids_real.to_csv(output_centroids_csv, index=False, header=None)
     print(f"Centroids saved to {output_centroids_csv}")
 
     # Plota e salva o gráfico
@@ -170,7 +176,9 @@ def run(current_animal, file_rawdata_name):
 
     # Salva as coordenadas usadas no diretório de saída correto
     output_csv_path = os.path.join(cluster_output_dir, f'clusters_som_{current_animal}.csv')
-    data_selected.to_csv(output_csv_path, index=False, header=None)
+    df_out = data_selected.copy()
+    df_out.insert(0, 'Index', range(1, len(df_out) + 1))  # começa por 1
+    df_out.to_csv(output_csv_path, index=False, header=None)
     print(f"Coordinates saved to {output_csv_path}")
 
     # Carrega hiperparâmetros

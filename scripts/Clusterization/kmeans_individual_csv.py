@@ -47,8 +47,10 @@ def run_all(file_rawdata_name, output_prefix):
     centroids = kmeans.cluster_centers_
 
     # Salva centroides
-    output_file_csv = os.path.join(cluster_output_dir, f'clusters_kmeans_{output_prefix}.csv')
-    pd.DataFrame(centroids, columns=['Longitude', 'Latitude']).to_csv(output_file_csv, index=False, header=None)
+    output_file_csv = os.path.join(cluster_output_dir, f'centroids_kmeans_{output_prefix}.csv')
+    df_centroids = pd.DataFrame(centroids, columns=['Longitude', 'Latitude']).reset_index().rename(columns={'index': 'Index'})
+    df_centroids['Index'] = df_centroids['Index'] + 1  # começa por 1
+    df_centroids.to_csv(output_file_csv, index=False, header=None)
     print(f"Cluster centroids saved to {output_file_csv}")
 
     # Gráfico
@@ -137,7 +139,9 @@ def run(current_animal, file_rawdata_name):
 
     # Salva as coordenadas dos centroides em um arquivo CSV
     output_file_csv = os.path.join(cluster_output_dir, f'clusters_kmeans_{current_animal}.csv')
-    pd.DataFrame(centroids, columns=['Longitude', 'Latitude']).to_csv(output_file_csv, index=False, header=None)
+    df_centroids = pd.DataFrame(centroids, columns=['Longitude', 'Latitude']).reset_index().rename(columns={'index': 'Index'})
+    df_centroids['Index'] = df_centroids['Index'] + 1  # começa por 1
+    df_centroids.to_csv(output_file_csv, index=False, header=None)
     print(f"Cluster centroids saved to {output_file_csv}")
 
     # --- GERAÇÃO DO GRÁFICO ---

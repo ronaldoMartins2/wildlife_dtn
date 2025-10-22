@@ -59,9 +59,12 @@ def run_all(file_rawdata_name, output_prefix):
 
     # Salva resultados dos clusters
     output_csv_path = os.path.join(cluster_output_dir, f'clusters_birch_{output_prefix}.csv')
-    data_cleaned.iloc[:, [2, 3] + [data_cleaned.columns.get_loc('Cluster')]].to_csv(output_csv_path, index=False, header=None)
+    # adiciona índice (começando em 1) como primeira coluna antes de salvar
+    df_clusters = data_cleaned.iloc[:, [2, 3] + [data_cleaned.columns.get_loc('Cluster')]].copy()
+    df_clusters.insert(0, 'Index', range(1, len(df_clusters) + 1))
+    df_clusters.to_csv(output_csv_path, index=False, header=None)
     print(f"Clusters saved to {output_csv_path}")
-
+ 
     # Após ajustar o modelo
     labels = birch_model.labels_
     coords_original = scaler.inverse_transform(coordinates)
@@ -71,10 +74,13 @@ def run_all(file_rawdata_name, output_prefix):
         centroid = cluster_points.mean(axis=0)
         centroids_final.append(centroid)
     centroids_final = np.array(centroids_final)
-
+ 
     # Salva apenas os centroides finais
     output_centroids_csv = os.path.join(cluster_output_dir, f'centroids_birch_{output_prefix}.csv')
-    pd.DataFrame(centroids_final, columns=['Longitude', 'Latitude']).to_csv(output_centroids_csv, index=False, header=None)
+    # adiciona índice (começando em 1) aos centroides
+    df_centroids = pd.DataFrame(centroids_final, columns=['Longitude', 'Latitude']).reset_index().rename(columns={'index': 'Index'})
+    df_centroids['Index'] = df_centroids['Index'] + 1
+    df_centroids.to_csv(output_centroids_csv, index=False, header=None)
     print(f"Centroids saved to {output_centroids_csv}")
 
     # Carrega idioma
@@ -148,7 +154,10 @@ def run(current_animal, file_rawdata_name):
 
     # Salva resultados no diretório de saída correto
     output_csv_path = os.path.join(cluster_output_dir, f'clusters_birch_map_{current_animal}.csv')
-    df[['Longitude', 'Latitude', 'Cluster']].to_csv(output_csv_path, index=False, header=None)
+    # adiciona índice (começando em 1) como primeira coluna antes de salvar
+    df_out = df[['Longitude', 'Latitude', 'Cluster']].copy()
+    df_out.insert(0, 'Index', range(1, len(df_out) + 1))
+    df_out.to_csv(output_csv_path, index=False, header=None)
     print(f"Clusters saved to {output_csv_path}")
 
     # Carrega idioma

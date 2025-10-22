@@ -7,7 +7,7 @@ from Common.utils import (
     results_folder
 )
 
-def run(current_animal, file_rawdata_name):
+def run(current_animal, file_rawdata_name, output_prefix):
 
     # --- Parâmetros ---
     distancia_limite_m = 400  # metros
@@ -19,16 +19,17 @@ def run(current_animal, file_rawdata_name):
     results_dir = results_folder( file_rawdata_name )
     csv_path = os.path.join(results_dir, f'map_{current_animal}.csv')
     df = pd.read_csv( csv_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
+    arquivo_clusters = os.path.join(results_dir, '..', 'Clusterization', f'clusters_som_{output_prefix}.csv')
 
     # --- Leitura e padronização ---
     #df_onca = pd.read_csv(arquivo_onca, header=None)
     df_onca = df
 
-    '''    
+
     df_clusters = pd.read_csv(arquivo_clusters, header=None)
 
     #df_onca.columns = ['id', 'timestamp', 'longitude', 'latitude']
-    df_clusters.columns = ['longitude', 'latitude', 'cluster_id']
+    df_clusters.columns = ['cluster_id','longitude', 'latitude']
 
     # --- Processar contatos ---
     contatos = []
@@ -61,4 +62,3 @@ def run(current_animal, file_rawdata_name):
 
     print(f"Arquivo gerado: {nome_saida}")
 
-    '''
