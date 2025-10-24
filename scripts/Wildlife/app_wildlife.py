@@ -251,7 +251,7 @@ run_som_all(file_interpolated_nhits, file_rawdata, 'nhits')
 
 #Roda dispersao geral para o dataset atual
 run_all_dispersion(file_rawdata)
-sys.exit()
+#sys.exit()
 
 for current_animal in list_animals:
     run_plot_kmeans_som_birch_mean_shift(current_animal)
@@ -266,7 +266,7 @@ for current_animal in list_animals:
 
 
 for current_animal in list_animals:
-    run_cluster_contacts(current_animal, file_rawdata, 'nbeats')
+    run_cluster_contacts(current_animal, file_rawdata)
 
 #run_cluster_contacts(current_animal, file_rawdata)
 sys.exit()

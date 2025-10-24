@@ -22,3 +22,9 @@
 [jaguar_mamiraua] Epoch  60 | Loss: 68099256.0000 | Train MAE: 3070.3452 | Train RMSE: 8252.2104 | Train MAPE: 4563.98%
 [jaguar_mamiraua] Epoch  80 | Loss: 68089232.0000 | Train MAE: 3071.5740 | Train RMSE: 8251.5773 | Train MAPE: 6981.88%
 [jaguar_mamiraua] Epoch  99 | Loss: 68081136.0000 | Train MAE: 3078.2578 | Train RMSE: 8251.1008 | Train MAPE: 10932.80%
+[tangara_mata_atlantica] Epoch   0 | Loss: 3436.8181 | Train MAE: 5.2996 | Train RMSE: 58.5787 | Train MAPE: 2145.51%
+[tangara_mata_atlantica] Epoch  20 | Loss: 3430.3093 | Train MAE: 5.5694 | Train RMSE: 58.5688 | Train MAPE: 2385.25%
+[tangara_mata_atlantica] Epoch  40 | Loss: 3429.2126 | Train MAE: 5.7666 | Train RMSE: 58.5594 | Train MAPE: 2550.49%
+[tangara_mata_atlantica] Epoch  60 | Loss: 3428.2026 | Train MAE: 5.8316 | Train RMSE: 58.5505 | Train MAPE: 2606.05%
+[tangara_mata_atlantica] Epoch  80 | Loss: 3426.7324 | Train MAE: 5.8588 | Train RMSE: 58.5369 | Train MAPE: 2635.50%
+[tangara_mata_atlantica] Epoch  99 | Loss: 3424.1304 | Train MAE: 5.7606 | Train RMSE: 58.5153 | Train MAPE: 2557.72%
