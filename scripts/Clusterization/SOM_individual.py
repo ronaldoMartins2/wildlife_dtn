@@ -11,6 +11,12 @@ from Common.utils import (
     read_field_from_json
 )
 
+def extract_folder_name(file_rawdata):
+    """Extrai o nome da pasta do file_rawdata_name"""
+    file_name = file_rawdata.split('/')
+    file_name = file_name[-1].split('.')[0]
+    return file_name
+
 # pip install minisom
 
 # python3 -m venv venv
@@ -18,11 +24,12 @@ from Common.utils import (
 
 # python3 7_SOM_individual.py 94
 
-def run_all(file_rawdata_name, output_prefix):
+def run_all(file_rawdata_name, file_rawdata, output_prefix):
     # --- CAMINHO DE SAÍDA (para salvar os resultados) ---
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_main_dir = os.path.join(script_dir, '..', 'Results')
-    cluster_output_dir = os.path.join(output_main_dir, 'Clusterization')
+    folder_name = extract_folder_name(file_rawdata)
+    results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
     create_clusterization_results(cluster_output_dir)
 
     if not os.path.exists(file_rawdata_name):
@@ -51,7 +58,9 @@ def run_all(file_rawdata_name, output_prefix):
 
     # Salva as coordenadas usadas no diretório de saída correto
     output_csv_path = os.path.join(cluster_output_dir, f'clusters_som_{output_prefix}.csv')
-    data_cleaned.iloc[:, [2, 3]].to_csv(output_csv_path, index=False, header=None)
+    df_coords = data_cleaned.iloc[:, [2, 3]].copy()
+    df_coords.insert(0, 'Index', range(1, len(df_coords) + 1))  # começa por 1
+    df_coords.to_csv(output_csv_path, index=False, header=None)
     print(f"Coordinates saved to {output_csv_path}")
 
     # Carrega hiperparâmetros
@@ -66,13 +75,14 @@ def run_all(file_rawdata_name, output_prefix):
     som = MiniSom(som_x, som_y, coords.shape[1], sigma, learning_rate)
     som.random_weights_init(coords)
     som.train_random(coords, ephocs)
+    
 
     hiper_content = [
         f"Hyper SOM sigma {sigma}",
         f"Hyper SOM learning_rate {learning_rate}",
         f"Hyper SOM ephocs {ephocs}"
     ]
-    hiper_path = os.path.join(output_main_dir, f'hiperparameters.txt')
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
     with open(hiper_path, "a") as file:
         for line in hiper_content:
             file.write(line + '\n')
@@ -84,13 +94,42 @@ def run_all(file_rawdata_name, output_prefix):
     with open(json_path, encoding='utf-8') as f:
         lang = json.load(f)
 
+    # Após treinar o SOM
+    # Salva os centroides (pesos dos neurônios) em CSV
+    centroids = som.get_weights().reshape(-1, coords.shape[1])  # shape: (som_x*som_y, 2)
+    output_centroids_neurons = os.path.join(cluster_output_dir, f'centroids_som_neurons_{output_prefix}.csv')
+    df_neurons = pd.DataFrame(centroids, columns=['Longitude', 'Latitude']).reset_index().rename(columns={'index': 'Index'})
+    df_neurons['Index'] = df_neurons['Index'] + 1  # começa por 1
+    df_neurons.to_csv(output_centroids_neurons, index=False, header=None)
+    print(f"Neuron weights saved to {output_centroids_neurons}")
+
+    # Calcula os centroides reais dos clusters (média dos pontos atribuídos a cada neurônio)
+    cluster_assignments = [som.winner(coord) for coord in coords]
+    unique_neurons = list(set(cluster_assignments))
+    centroids_real = []
+    for neuron in unique_neurons:
+        points = np.array([coords[i] for i in range(len(coords)) if cluster_assignments[i] == neuron])
+        if len(points) > 0:
+            centroids_real.append(points.mean(axis=0))
+    centroids_real = np.array(centroids_real)
+
+    # Salva os centroides reais dos clusters
+    output_centroids_csv = os.path.join(cluster_output_dir, f'centroids_som_{output_prefix}.csv')
+    df_centroids_real = pd.DataFrame(centroids_real, columns=['Longitude', 'Latitude']).reset_index().rename(columns={'index': 'Index'})
+    df_centroids_real['Index'] = df_centroids_real['Index'] + 1  # começa por 1
+    df_centroids_real.to_csv(output_centroids_csv, index=False, header=None)
+    print(f"Centroids saved to {output_centroids_csv}")
+
     # Plota e salva o gráfico
     plt.figure(figsize=(10, 6))
     for cluster_id in np.unique(clusters):
         cluster_points = coords[clusters == cluster_id]
-        plt.scatter(cluster_points[:, 0], cluster_points[:, 1], label=f'Centroíde {cluster_id}', alpha=0.7)
+        plt.scatter(cluster_points[:, 0], cluster_points[:, 1], label=f'Cluster {cluster_id + 1}', alpha=0.7)
 
-    plt.title(f"{lang['grafico_SOM_individual']} - Clusters: {som_x * som_y} - {output_prefix.capitalize()}")
+    # Adiciona centroides reais ao gráfico
+    plt.scatter(centroids_real[:, 0], centroids_real[:, 1], color='red', marker='x', s=100, label='Centroids')
+
+    plt.title(f"{lang['grafico_SOM_individual']} - Clusters: {len(centroids_real)} - Centroids: {len(centroids_real)} - {output_prefix.capitalize()}")
     plt.xlabel(lang["xlabel_SOM_individual"])
     plt.ylabel(lang["ylabel_SOM_individual"])
     plt.legend()
@@ -108,8 +147,9 @@ def run(current_animal, file_rawdata_name):
 
     # --- CAMINHO DE SAÍDA (para salvar os resultados) ---
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_main_dir = os.path.join(script_dir, '..', 'Results')
-    cluster_output_dir = os.path.join(output_main_dir, 'Clusterization')
+    folder_name = extract_folder_name(file_rawdata_name)
+    results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
     create_clusterization_results(cluster_output_dir)
 
     if not os.path.exists(input_file_path):
@@ -144,7 +184,9 @@ def run(current_animal, file_rawdata_name):
 
     # Salva as coordenadas usadas no diretório de saída correto
     output_csv_path = os.path.join(cluster_output_dir, f'clusters_som_{current_animal}.csv')
-    data_selected.to_csv(output_csv_path, index=False, header=None)
+    df_out = data_selected.copy()
+    df_out.insert(0, 'Index', range(1, len(df_out) + 1))  # começa por 1
+    df_out.to_csv(output_csv_path, index=False, header=None)
     print(f"Coordinates saved to {output_csv_path}")
 
     # Carrega hiperparâmetros
@@ -167,7 +209,7 @@ def run(current_animal, file_rawdata_name):
         f"Hyper SOM learning_rate {learning_rate}",
         f"Hyper SOM ephocs {ephocs}"
     ]
-    hiper_path = os.path.join(output_main_dir, f'hiperparameters.txt')
+    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
     with open(hiper_path, "a") as file:
         for line in hiper_content:
             file.write(line + '\n')

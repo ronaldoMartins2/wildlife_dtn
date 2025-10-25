@@ -4,7 +4,12 @@ import os
 import json
 from Common.utils import create_clusterization_results, read_field_from_json
 
-def plot_jaguar():
+def extract_folder_name(file_rawdata):
+    file_name = file_rawdata.split('/')
+    file_name = file_name[-1].split('.')[0]
+    return file_name
+
+def plot_jaguar(file_rawdata=None):
     """
     Este script carrega a base de dados original, limpa os dados e gera
     um gráfico de dispersão para os dados da jaguatirica.
@@ -14,11 +19,20 @@ def plot_jaguar():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     rawdata_dir = os.path.join(script_dir, '..', '..', 'rawdata')
     
-    input_csv_path = os.path.join(rawdata_dir, 'jaguar_mamiraua.csv')
-    input_json_path = os.path.join(rawdata_dir, 'jaguar_columns.json')
+    base_name = extract_folder_name(file_rawdata) if file_rawdata else 'jaguar_mamiraua'
+    input_csv_path = os.path.join(rawdata_dir, f'{base_name}.csv')
+    # Seleciona JSON adequado
+    if base_name == 'jaguar_mamiraua':
+        json_name = 'jaguar_columns.json'
+    elif base_name == 'tangara_mata_atlantica':
+        json_name = 'tangara_columns.json'
+    else:
+        json_name = f'{base_name}_columns.json'
+    input_json_path = os.path.join(rawdata_dir, json_name)
 
     output_main_dir = os.path.join(script_dir, '..', 'Results')
-    cluster_output_dir = os.path.join(output_main_dir, 'Clusterization')
+    results_dir = os.path.join(output_main_dir, base_name)
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
     create_clusterization_results(cluster_output_dir)
 
     # --- LEITURA E PREPARAÇÃO DOS DADOS ---
@@ -80,12 +94,12 @@ def plot_jaguar():
     plt.grid(True)
     plt.legend()
 
-    output_file_png = os.path.join(cluster_output_dir, 'dispersao_geral_jaguar.png')
+    output_file_png = os.path.join(cluster_output_dir, f'dispersao_geral_{base_name}.png')
     plt.savefig(output_file_png, dpi=300)
     plt.close()
     print(f"Gráfico Jaguar salvo em: {output_file_png}")
 
-def plot_tangara():
+def plot_tangara(file_rawdata=None):
     """
     Este script carrega a base de dados original, limpa os dados e gera
     um gráfico de dispersão para os dados da tangará.
@@ -95,11 +109,19 @@ def plot_tangara():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     rawdata_dir = os.path.join(script_dir, '..', '..', 'rawdata')
     
-    input_csv_path = os.path.join(rawdata_dir, 'tangara_mata_atlantica.csv')
-    input_json_path = os.path.join(rawdata_dir, 'tangara_columns.json')
+    base_name = extract_folder_name(file_rawdata) if file_rawdata else 'tangara_mata_atlantica'
+    input_csv_path = os.path.join(rawdata_dir, f'{base_name}.csv')
+    if base_name == 'tangara_mata_atlantica':
+        json_name = 'tangara_columns.json'
+    elif base_name == 'jaguar_mamiraua':
+        json_name = 'jaguar_columns.json'
+    else:
+        json_name = f'{base_name}_columns.json'
+    input_json_path = os.path.join(rawdata_dir, json_name)
 
     output_main_dir = os.path.join(script_dir, '..', 'Results')
-    cluster_output_dir = os.path.join(output_main_dir, 'Clusterization')
+    results_dir = os.path.join(output_main_dir, base_name)
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
     create_clusterization_results(cluster_output_dir)
 
     # --- LEITURA E PREPARAÇÃO DOS DADOS ---
@@ -159,14 +181,29 @@ def plot_tangara():
     plt.ylabel(lang["ylabel_dispersao_geral"])
     plt.grid(True)
     plt.legend()
-    output_file_png = os.path.join(cluster_output_dir, 'dispersao_geral_tangara.png')
+    output_file_png = os.path.join(cluster_output_dir, f'dispersao_geral_{base_name}.png')
     plt.savefig(output_file_png, dpi=300)
     plt.close()
     print(f"Gráfico Tangara salvo em: {output_file_png}")
 
-def run_all_dispersion():
-    plot_jaguar()
-    plot_tangara()
+def run_all_dispersion(file_rawdata=None):
+    '''
+    if file_rawdata:
+        base_name = extract_folder_name(file_rawdata)
+        if base_name.startswith('jaguar'):
+            plot_jaguar(file_rawdata)
+        elif base_name.startswith('tangara'):
+            plot_tangara(file_rawdata)
+        else:
+            # Tenta ambos com base no nome detectado
+            plot_jaguar(file_rawdata)
+    else:
+        plot_jaguar()
+        plot_tangara()
+    '''
+    
+    plot_jaguar('jaguar_mamiraua')
+    plot_tangara('tangara_mata_atlantica')
 
 if __name__ == "__main__":
     run_all_dispersion()

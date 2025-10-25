@@ -128,6 +128,11 @@ def predict_between_dates(start_date, end_date, df, model, trainer, mask, num_st
         predicted_longitude = output_unscaled[0][1]
         predicted_latitude = output_unscaled[0][2]
 
+        # Verificação de latitude e longitude válidas
+        if not (-90 <= predicted_latitude <= 90) or not (-180 <= predicted_longitude <= 180):
+            print(f"Predição inválida: latitude {predicted_latitude}, longitude {predicted_longitude}. Interrompendo predições.")
+            break
+
         # Stop if prediction is invalid
         if predicted_time_diff <= 0:
             print("Predicted time difference too small or negative. Stopping predictions.")

@@ -99,14 +99,31 @@ def run(current_animal, file_rawdata_name):
         print(f"Error: Input file not found at {input_file_path}")
         return
 
-    data = pd.read_csv(input_file_path, header=None, names=['id', 'Timestamp', 'Longitude', 'Latitude'])
-    
-    if data.empty:
-        print(f"Error for animal {current_animal}: Input file is empty.")
-        return
-        
-    df = data[:100].copy()
+    data = pd.read_csv(file_rawdata_name, header=None, names=['id', 'Timestamp', 'Longitude', 'Latitude'])
+    data = data[:100]
+    df = pd.DataFrame(data, columns=["ID", "Timestamp", "Longitude", "Latitude"])
+
+    # Coerce coordinates to numeric, turning invalid values into NaN
+    df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
+    df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
+
+    # Convert Timestamp to numeric (optional, for time-based clustering)
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'], format='%Y-%m-%d %H:%M:%S', errors='coerce')
+    # Drop rows with NaN in Longitude or Latitude
+    df.dropna(subset=['Longitude', 'Latitude'], inplace=True)
+
+    df['TimeNumeric'] = (df['Timestamp'] - df['Timestamp'].min()).dt.total_seconds()
+    # Remove rows with zero coordinates
+    df = df[(df['Longitude'] != 0) & (df['Latitude'] != 0)]
+
+    # Step 2: Prepare Data for Clustering (Longitude, Latitude)
     coordinates = df[['Longitude', 'Latitude']].values
+    coordinates = df[['Longitude', 'Latitude']].iloc[:100].values
+
+    # Check if there are enough samples for clustering
+    if coordinates.shape[0] < 2:
+        print(f"Warning: Not enough data points ({coordinates.shape[0]}) for Mean-Shift clustering for animal {current_animal}. Skipping.")
+        return
 
     # Carrega hiperparâmetros
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
