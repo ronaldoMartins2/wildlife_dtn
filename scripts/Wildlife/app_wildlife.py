@@ -36,7 +36,8 @@ from Common.utils import (
     results_folder,
     merge_all_interpolations_nbeat,
     merge_all_interpolations_nhits,
-    remove_nan_data
+    remove_nan_data, 
+    merge_maps
     )
 
 from Data_preparation.separar_localizacoes_individuais import (
@@ -231,13 +232,15 @@ for current_animal in list_animals:
 
 #Rodando Dispersao Geral dos animais: Tangara e Jaguar
 #Criando csv das coordenadas interpoladas
+
+merge_maps(file_rawdata, list_animals)
 merge_all_interpolations_nbeat(file_rawdata)
 merge_all_interpolations_nhits(file_rawdata)
 
 file_interpolated_nbeats = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nbeats_all.csv' )
 file_interpolated_nhits = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nhits_all.csv' )
+file_marged = os.path.join(results_folder(file_rawdata), f'map_{tangara}_all_animals.csv')
 
-#Roda kmeans para todos os animais
 run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
 run_all_kmeans(file_interpolated_nhits, file_rawdata, 'nhits')
 run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
@@ -264,9 +267,10 @@ for current_animal in list_animals:
 #for current_animal in list_animals:
 #        run_plot_kmeans_som_birch_mean_shift(current_animal)
 
+run_cluster_contacts(current_animal, file_rawdata)
 
-for current_animal in list_animals:
-    run_cluster_contacts(current_animal, file_rawdata)
+#for current_animal in list_animals:
+#    run_cluster_contacts(current_animal, file_rawdata, tangara)
 
 #run_cluster_contacts(current_animal, file_rawdata)
 sys.exit()
