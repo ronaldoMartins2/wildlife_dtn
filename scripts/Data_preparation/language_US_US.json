@@ -1,0 +1,58 @@
+{
+    "grafico_gap_medio": "Histogram of Gaps between Records",
+    "xlabel_gap_medio": "Time Interval (seconds)",
+    "ylabel_gap_medio": "Frequency",
+
+    "grafico_mlp_forecast": "MLP Predicted Mobility Path",
+    "xlabel_mlp_forecast": "Longitude",
+    "ylabel_mlp_forecast": "Latitude",
+
+    "grafico_BIRCH": "BIRCH Clustering: Latitude vs Longitude",
+    "xlabel_BIRCH": "Longitude",
+    "ylabel_BIRCH": "Latitude",
+
+    "grafico_kmeans_individual": "K-Means Clustering of GPS Coordinates",
+    "xlabel_kmeans_individual": "Longitude",
+    "ylabel_kmeans_individual": "Latitude",
+
+    "grafico_Mean_Shift": "Mean-Shift Clustering of Latitude and Longitude",
+    "xlabel_Mean_Shift": "Longitude",
+    "ylabel_Mean_Shift": "Latitude",
+
+    "grafico_plot_kmeans_som_birch_mean_shift": "Clusters and Centroids",
+    "xlabel_plot_kmeans_som_birch_mean_shift": "Longitude",
+    "ylabel_plot_kmeans_som_birch_mean_shift": "Latitude",
+
+    "grafico_SOM_individual": "SOM Clustering of GPS Coordinates",
+    "xlabel_SOM_individual": "Longitude",
+    "ylabel_SOM_individual": "Latitude",
+
+    "grafico_separar_localizacoes_individuais": "Geographic Distributions of onça locomation",
+    "xlabel_separar_localizacoes_individuais": "Longitude",
+    "ylabel_separar_localizacoes_individuais": "Latitude",
+
+    "grafico_average_comparison": "Comparison of Average Time between Collections",
+    "xlabel_average_comparison": "Average Time between Collections",
+    "ylabel_average_comparison": "Animals",
+    "legend_average_comparison": "Raw Data",
+
+    "grafico_RNN_GRU_plot1": "Raw Data: Latitude vs Longitude",
+    "grafico_RNN_GRU_plot2": "RNN GRU Predicted vs Actual: Latitude vs Longitude",
+    "xlabel_RNN_GRU_plot": "Longitude",
+    "ylabel_RNN_GRU_plot": "Latitude",
+
+    "grafico_RNN_LSTM_1": "Raw Data: Latitude vs Longitude",
+    "grafico_RNN_LSTM_2": "RNN LSTM Predicted vs Actual: Latitude vs Longitude",
+    "xlabel_RNN_LSTM": "Longitude",
+    "ylabel_RNN_LSTM": "Latitude", 
+
+    "grafico_dispersao_geral_jaguar_titulo": "Geographic Dispersion of Jaguar",
+    "grafico_dispersao_geral_jaguar_subtitulo": "Georeferenced data obtained from monitoring jaguars in forest areas of the Mamirauá Sustainable Development Reserve (RDS Mamirauá), in the Brazilian Amazon.",
+    "grafico_dispersao_geral_jaguar_rodape": "The location data were collected through GPS collars with the aim of studying movement patterns, territory, and behavior.",
+    "grafico_dispersao_geral_tangara_titulo": "Spatial movement pattern of passerine birds",
+    "grafico_dispersao_geral_tangara_subtitulo": "Georeferenced data obtained from receivers and radio transmitters in individuals of the species: Chiroxiphia caudata (Blue Manakin);\n Pyriglena leucoptera (White-shouldered Fire-eye);\n Sclerurus scansor (Short-billed Leaftosser);\n Serinus canaria f. domestica (Domestic Canary)\n",
+    "grafico_dispersao_geral_tangara_rodape": "The birds were monitored using radio transmitters, allowing the recording of their trajectories and space use patterns.",
+    "xlabel_dispersao_geral": "Longitude",
+    "ylabel_dispersao_geral": "Latitude"
+
+}

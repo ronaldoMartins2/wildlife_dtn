@@ -1,0 +1,62 @@
+{
+    "grafico_gap_medio": "Histograma dos Gaps entre Registros",
+    "xlabel_gap_medio": "Intervalo de tempo (segundos)",
+    "ylabel_gap_medio": "Frequência",
+
+    "grafico_mlp_forecast": "Caminho de mobilidade previsto MLP",
+    "xlabel_mlp_forecast": "Longitude",
+    "ylabel_mlp_forecast": "Latitude",
+
+    "grafico_BIRCH": "Agrupamento BIRCH: Latitude vs Longitude",
+    "xlabel_BIRCH": "Longitude",
+    "ylabel_BIRCH": "Latitude",
+
+    "grafico_kmeans_individual": "Agrupamento K-Means de Coordenadas GPS",
+    "xlabel_kmeans_individual": "Longitude",
+    "ylabel_kmeans_individual": "Latitude",
+
+    "grafico_Mean_Shift": "Agrupamento de deslocamento médio de latitude e longitude",
+    "xlabel_Mean_Shift": "Longitude",
+    "ylabel_Mean_Shift": "Latitude",
+
+    "grafico_plot_kmeans_som_birch_mean_shift": "Clusters e Centróides",
+    "xlabel_plot_kmeans_som_birch_mean_shift": "Longitude",
+    "ylabel_plot_kmeans_som_birch_mean_shift": "Latitude",
+
+    "grafico_SOM_individual": "Agrupamento SOM de coordenadas GPS",
+    "xlabel_SOM_individual": "Longitude",
+    "ylabel_SOM_individual": "Latitude",
+
+    "grafico_separar_localizacoes_individuais": "Distribuições geográficas da localização da onça",
+    "xlabel_separar_localizacoes_individuais": "Longitude",
+    "ylabel_separar_localizacoes_individuais": "Latitude",
+
+    "grafico_average_comparison": "Comparação das Médias de Tempo entre Coletas",
+    "xlabel_average_comparison": "Média de Tempo entre Coletas",
+    "ylabel_average_comparison": "Animais",
+    "legend_average_comparison": "Dados Brutos",
+
+    "grafico_RNN_GRU_plot1": "Dados brutos: latitude vs longitude",
+    "grafico_RNN_GRU_plot2": "RNN GRU previsto vs real: latitude vs longitude",
+    "xlabel_RNN_GRU_plot": "Longitude",
+    "ylabel_RNN_GRU_plot": "Latitude",
+
+    "grafico_RNN_LSTM_1": "Dados brutos: latitude vs longitude",
+    "grafico_RNN_LSTM_2": "RNN LSTM previsto vs real: latitude vs longitude",
+    "xlabel_RNN_LSTM": "Longitude",
+    "ylabel_RNN_LSTM": "Latitude",
+
+    "grafico_dispersao_titulo": "Padrão de movimentação espacial de Panthera onca",
+    "xlabel_dispersao": "Longitude",
+    "ylabel_dispersao": "Latitude",
+
+    "grafico_dispersao_geral_jaguar_titulo": "Padrão de movimentação espacial geral de Panthera onca",
+    "grafico_dispersao_geral_jaguar_subtitulo": "Dados georreferenciados obtidos por monitoramento de onças-pintadas em áreas de floresta da Reserva de Desenvolvimento Sustentável Mamirauá (RDS Mamirauá), na Amazônia brasileira.",
+    "grafico_dispersao_geral_jaguar_rodape": "Os dados de localização foram coletados por meio de colares GPS com o objetivo de estudar padrões de movimentação, território e comportamento.",
+    "grafico_dispersao_geral_tangara_titulo": "Padrão de movimentação espacial de aves da ordem passeriformes",
+    "grafico_dispersao_geral_tangara_subtitulo": "Dados georreferenciados obtidos por receptores e radiotransmissores em indivíduos das espécies:\n Chiroxiphia caudata (Tangará-dançarino);\n Pyriglena leucoptera (Olhos-de-fogo-do-sul);\n Sclerurus scansor (Vira-folhas-vermelhos);\n Serinus canaria f. domestica (Canário-doméstico)",
+    "grafico_dispersao_geral_tangara_rodape": "As aves foram monitoradas por meio de radiotransmissores, permitindo o registro de suas trajetórias e padrões de uso do espaço.",
+    "xlabel_dispersao_geral": "Longitude",
+    "ylabel_dispersao_geral": "Latitude"
+
+}

@@ -8,10 +8,70 @@ from Data_preparation.raw_data_integration import get_id_from_json
 
 interpolations_methods = ['N_BEATS', 'N_HITS']
 
+#Modifiquei a ordem das funções somente. Coloquei as funções que nao dependem da variavel global sobre elas.
+
+def get_contact_distance():
+    script_dir = os.path.dirname(os.path.abspath(__file__))  
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+
+    CONTACT_DISTANCE = read_field_from_json(hyperparam_path, "CONTACT_DISTANCE")
+
+    return CONTACT_DISTANCE
+
+def remove_nan_data(df, current_animal=None):
+    # 1. Check if the CSV has at least 10 rows initially
+    if len(df) < 10:
+        print(f"Warning: CSV for animal {current_animal} has fewer than 10 rows. Skipping.")
+        return pd.DataFrame()
+    
+    # 2. Remove rows with missing interesting data
+    essential_cols = ['ID', 'Timestamp', 'Longitude', 'Latitude']
+    # Replace empty strings with NaN to be dropped
+    df[essential_cols] = df[essential_cols].replace(r'^\s*$', np.nan, regex=True)
+    df.dropna(subset=essential_cols, inplace=True)
+
+    # 3. Check if there are still enough rows after cleaning
+    if len(df) < 10:
+        print(f"Warning: After cleaning, animal {current_animal} has fewer than 10 valid rows. Skipping.")
+        return pd.DataFrame()
+    
+    return df
+
+def read_field_from_json(json_file, field_name):
+    """
+    Reads a specific field from a JSON file.
+
+    Args:
+    - json_file (str): Path to the JSON file.
+    - field_name (str): The name of the field whose value you want to retrieve.
+
+    Returns:
+    - The value of the field from the JSON file.
+    - If the field doesn't exist, returns None.
+    """
+    try:
+        # Open and load the JSON file
+        with open(json_file, 'r') as file:
+            data = json.load(file)
+        
+        # Check if the field exists in the loaded data
+        if field_name in data:
+            return data[field_name]
+        else:
+            print(f"Field '{field_name}' not found in the JSON file.")
+            return None
+    except FileNotFoundError:
+        print(f"File '{json_file}' not found.")
+        return None
+    except json.JSONDecodeError:
+        print(f"Error decoding the JSON file '{json_file}'.")
+        return None
+
 TRAINNING_SET = 0.8
 VALIDATION_SET = 0.1
 TESTING_SET = 0.1
-CONTACT_DISTANCE = 5000
+CONTACT_DISTANCE = get_contact_distance()
 
 def results_folder( file_rawdata_name ):
 
@@ -195,37 +255,6 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
     # Save without NaN
     result[columns_to_save].to_csv(out_path, index=False, header=False)
 
-
-def read_field_from_json(json_file, field_name):
-    """
-    Reads a specific field from a JSON file.
-
-    Args:
-    - json_file (str): Path to the JSON file.
-    - field_name (str): The name of the field whose value you want to retrieve.
-
-    Returns:
-    - The value of the field from the JSON file.
-    - If the field doesn't exist, returns None.
-    """
-    try:
-        # Open and load the JSON file
-        with open(json_file, 'r') as file:
-            data = json.load(file)
-        
-        # Check if the field exists in the loaded data
-        if field_name in data:
-            return data[field_name]
-        else:
-            print(f"Field '{field_name}' not found in the JSON file.")
-            return None
-    except FileNotFoundError:
-        print(f"File '{json_file}' not found.")
-        return None
-    except json.JSONDecodeError:
-        print(f"Error decoding the JSON file '{json_file}'.")
-        return None
-
 def get_list_animals(file_name, file_rawdata_columns):
     """
     Lê um CSV com pandas e retorna a lista de IDs únicos
@@ -272,7 +301,7 @@ def create_clusterization_results(folder_name):
         print(f"Folder '{folder_path}' already exists")
         return False
 
-def create_pairs(elements):
+def create_combinations(elements):
     """
     Creates all possible pairs from the given set of elements.
     Each pair contains two different elements (no self-pairing).
@@ -283,6 +312,7 @@ def create_pairs(elements):
     Returns:
         List of tuples, where each tuple is a unique pair
     """
+    
     result = []
     elements_list = list(elements)
     
@@ -306,3 +336,43 @@ def append_variables_to_file(up, down, filename="variables.txt"):
 
         file.write(f"{up}\n")
         file.write(f"{down}\n")
+
+def merge_all_interpolations_nbeat(file_rawdata):
+    """
+    Junta todos os arquivos map_{animal}_interpolation_nbeats_merged.csv em um único arquivo.
+    """
+    results_dir = results_folder(file_rawdata)
+    interpolation_dir = os.path.join(results_dir, "Interpolation")
+    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nbeats_merged.csv")]
+
+    if not files:
+        print("Nenhum arquivo nbeats encontrado para merge.")
+        return
+
+    dfs = [pd.read_csv(os.path.join(interpolation_dir, f), header=None) for f in files]
+    df_merged = pd.concat(dfs, ignore_index=True)
+    animal_name = os.path.basename(file_rawdata).split('.')[0]
+    output_path = os.path.join(interpolation_dir, f"map_{animal_name}_interpolation_nbeats_all.csv")
+    df_merged.to_csv(output_path, index=False, header=False)
+
+    print(f"Arquivo gerado: {output_path}")
+
+def merge_all_interpolations_nhits(file_rawdata):
+    """
+    Junta todos os arquivos map_{animal}_interpolation_nhits_merged.csv em um único arquivo.
+    """
+    results_dir = results_folder(file_rawdata)
+    interpolation_dir = os.path.join(results_dir, "Interpolation")
+    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nhits_merged.csv")]
+
+    if not files:
+        print("Nenhum arquivo nhits encontrado para merge.")
+        return
+    
+    dfs = [pd.read_csv(os.path.join(interpolation_dir, f), header=None) for f in files]
+    df_merged = pd.concat(dfs, ignore_index=True)
+    animal_name = os.path.basename(file_rawdata).split('.')[0]
+    output_path = os.path.join(interpolation_dir, f"map_{animal_name}_interpolation_nhits_all.csv")
+    df_merged.to_csv(output_path, index=False, header=False)
+    
+    print(f"Arquivo gerado: {output_path}")

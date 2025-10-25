@@ -67,12 +67,26 @@ predictions = model.predict(X_test)
 predictions = scaler.inverse_transform(predictions)
 y_test_actual = scaler.inverse_transform(y_test)
 
+# === JSON PARA LINGUAGEM ===
+json_language = 'scripts/Data_preparation/hyperparameters.json'
+with open(json_language, encoding='utf-8') as f:
+    lang_params = json.load(f)
+    language = lang_params["language"]
+
+if language == 'PT_BR':
+    json_path = 'scripts/Data_preparation/language_PT_BR.json'
+else:
+    json_path = 'scripts/Data_preparation/language_US_US.json'
+
+with open(json_path, encoding='utf-8') as f:
+    lang = json.load(f)
+
 # Step 9: Plot Raw Data (Latitude and Longitude)
 plt.figure(figsize=(10, 6))
 plt.plot(df['Longitude'], df['Latitude'], marker='o', label='Raw Data', linestyle='-', color='blue')
-plt.title("Raw Data: Latitude vs Longitude")
-plt.xlabel("Longitude")
-plt.ylabel("Latitude")
+plt.title(lang["grafico_RNN_LSTM_1"])
+plt.xlabel(lang["xlabel_RNN_LSTM"])
+plt.ylabel(lang["ylabel_RNN_LSTM"])
 plt.legend()
 plt.grid()
 plt.show()
@@ -81,9 +95,9 @@ plt.show()
 plt.figure(figsize=(10, 6))
 plt.scatter(predictions[:, 0], predictions[:, 1], label='Predicted', color='orange', marker='x')
 plt.scatter(y_test_actual[:, 0], y_test_actual[:, 1], label='Actual', color='green', marker='o')
-plt.title("RNN LSTM Predicted vs Actual: Latitude vs Longitude")
-plt.xlabel("Longitude")
-plt.ylabel("Latitude")
+plt.title(lang["grafico_RNN_LSTM_2"])
+plt.xlabel(lang["xlabel_RNN_LSTM"])
+plt.ylabel(lang["ylabel_RNN_LSTM"])
 plt.legend()
 plt.grid()
 

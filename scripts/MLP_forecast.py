@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
 from MLP_model import (
     get_model
@@ -77,6 +78,20 @@ forecasts = forecast_multiple_steps(model, initial_input, steps=5)
 forecasted_lons = scaler.inverse_transform([[lon, 0] for lon, lat in forecasts])[:, 0]
 forecasted_lats = scaler.inverse_transform([[0, lat] for lon, lat in forecasts])[:, 1]
 
+# === JSON PARA LINGUAGEM ===
+json_language = 'scripts/Data_preparation/hyperparameters.json'
+with open(json_language, encoding='utf-8') as f:
+    lang_params = json.load(f)
+    language = lang_params["language"]
+
+if language == 'PT_BR':
+    json_path = 'scripts/Data_preparation/language_PT_BR.json'
+else:
+    json_path = 'scripts/Data_preparation/language_US_US.json'
+
+with open(json_path, encoding='utf-8') as f:
+    lang = json.load(f)
+
 # Plot the forecasted trajectory
 plt.figure(figsize=(8, 6))
 plt.plot(forecasted_lons, forecasted_lats, marker='o', label='Forecasted Path', color='blue')
@@ -84,9 +99,9 @@ plt.plot(forecasted_lons, forecasted_lats, marker='o', label='Forecasted Path', 
 #plt.plot(data['longitude'].iloc[-5:], data['latitude'].iloc[-5:], marker='x', label='Recent Path', color='red')
 plt.plot(data['longitude'].iloc[:], data['latitude'].iloc[:], marker='x', label='Recent Path', color='red')
 
-plt.xlabel('Longitude')
-plt.ylabel('Latitude')
-plt.title('Forecasted Mobility Path MLP')
+plt.xlabel(lang["xlabel_mlp_forecast"])
+plt.ylabel(lang["ylabel_mlp_forecast"])
+plt.title(lang["grafico_mlp_forecast"])
 plt.legend()
 plt.grid(True)
 

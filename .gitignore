@@ -28,3 +28,12 @@ secrets.yaml
 # Ignorar ficheiros gerados por ferramentas
 dist/
 build/
+
+# Ignorar ficheiros de dados grandes
+scripts/Results/
+
+# Arquivos de backup e cópias temporárias
+*_copy.py
+
+# Metadados do Windows
+*:Zone.Identifier

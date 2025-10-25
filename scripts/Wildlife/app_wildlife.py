@@ -3,15 +3,20 @@ import sys
 import os
 import time
 
-# ========== environment preparation ==========
+# environment preparation
 
+# Primeiro passo
 # python3 -m venv venv
+
+# Segundo passo
 # source ./venv/bin/activate
 
-# pip3 install -r scripts/requirements.txt 
+# to run
 
-# ========== to run ==========
+# Terceiro passo
+# pip3 install -r scripts/requirements.txt
 
+# Quarto passo
 # inside wildlife_dtn folder
 # python3 scripts/Wildlife/app_wildlife.py rawdata/jaguar_mamiraua.csv rawdata/jaguar_columns.json
 # python3 scripts/Wildlife/app_wildlife.py rawdata/tangara_mata_atlantica.csv rawdata/tangara_columns.json
@@ -24,9 +29,12 @@ from Common.utils import (
     read_field_from_json,
     get_list_animals,
     merge_csvs,
-    create_pairs,
-    results_folder
-)
+    create_combinations,
+    results_folder,
+    merge_all_interpolations_nbeat,
+    merge_all_interpolations_nhits,
+    remove_nan_data
+    )
 
 from Data_preparation.separar_localizacoes_individuais import (
     run as run_preparation
@@ -70,24 +78,36 @@ from Common.utils import (
 )
 
 from Clusterization.kmeans_individual_csv import (
-    run as run_kmeans
+    run as run_kmeans,
+    run_all as run_all_kmeans
 )
 
 from Clusterization.SOM_individual import (
-    run as run_som
+    run as run_som,
+    run_all as run_som_all
 )
 
 from Clusterization.Mean_Shift import (
-    run as run_mean_shift
+    run as run_mean_shift,
+    run_all as run_mean_shift_all
 )
 
 from Clusterization.BIRCH import (
-    run as run_birch
+    run as run_birch,
+    run_all as run_birch_all
 )
 
 from Clusterization.plot_kmeans_som_birch_mean_shift import (
     run as run_plot_kmeans_som_birch_mean_shift
-)   
+)
+
+from Clusterization.plot_dispersion import (
+    run as run_dispersion_plot
+)
+
+from Clusterization.plot_dispersion_geral import (
+    run_all_dispersion as run_all_dispersion
+)
 
 from DTN.mobility_contacts import (
     run as run_contacts
@@ -152,6 +172,7 @@ tangara = tangara.split('/')[-1]
 #    list_animals = ['OR34MGA' ]
 #else:
 #    list_animals = [94]
+
 # E62724 loop
 # G56068 empty
 
@@ -200,27 +221,56 @@ tangara = tangara.split('/')[-1]
 #     calc_average_by_method( current_animal, 'N_BEATS', file_rawdata )
 #     calc_average_by_method( current_animal, 'N_HITS', file_rawdata )
 
-#run_average_comparison( len_animals, file_rawdata )
-
-# sys.exit()
+#Graficio
+run_average_comparison( len_animals, file_rawdata )
+#sys.exit()
 
 
 ############## CLUSTERIZATION ##############################
 # run clusterization kmeans
 
+#Rodando Dispersao Geral dos animais: Tangara e Jaguar
+#Criando csv das coordenadas interpoladas
+merge_all_interpolations_nbeat(file_rawdata)
+merge_all_interpolations_nhits(file_rawdata)
+
+file_interpolated_nbeats = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nbeats_all.csv' )
+file_interpolated_nhits = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nhits_all.csv' )
+
+#Roda kmeans para todos os animais
+run_all_kmeans(file_interpolated_nbeats, 'nbeats')
+run_all_kmeans(file_interpolated_nhits, 'nhits')
+run_birch_all(file_interpolated_nbeats, 'nbeats')
+run_birch_all(file_interpolated_nhits, 'nhits')
+run_som_all(file_interpolated_nbeats, 'nbeats')
+run_som_all(file_interpolated_nhits, 'nhits')
+run_mean_shift_all(file_interpolated_nbeats, 'nbeats')
+run_mean_shift_all(file_interpolated_nhits, 'nhits')
+sys.exit()
+
+#run_som_all(file_interpolated_nbeats, 'nbeats')
+#run_mean_shift_all(file_interpolated_nbeats, 'nbeats')
+#run_birch_all(file_interpolated_nbeats, 'nbeats')
+
+#Roda dispersao geral para todos os animais Raw data
+run_all_dispersion()
+
+#Antigo
+'''
 for current_animal in list_animals:
     run_kmeans(current_animal, file_rawdata)
     run_som(current_animal, file_rawdata)
-    # run_mean_shift(current_animal, file_rawdata)
-    # run_birch(current_animal, file_rawdata)   
-
-
-for current_animal in list_animals:
-       run_plot_kmeans_som_birch_mean_shift(current_animal)
-
+    run_mean_shift(current_animal, file_rawdata)
+    run_birch(current_animal, file_rawdata)
+'''
 
 for current_animal in list_animals:
-       run_cluster_contacts(current_animal)
+    run_plot_kmeans_som_birch_mean_shift(current_animal)
+
+sys.exit()
+
+#for current_animal in list_animals:
+#   run_cluster_contacts(current_animal)
 
 run_cluster_contacts(current_animal, file_rawdata)
 sys.exit()
@@ -230,7 +280,8 @@ sys.exit()
 #criar os conjunto dois a dois sem repetição
 
 '''
-pairs = create_pairs(list_animals)
+#Combinação sem repetições
+pairs = create_combinations(list_animals)
 
 for pair in pairs:
     run_contacts(pair[0], pair[1], file_rawdata)
