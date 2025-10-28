@@ -357,3 +357,30 @@ def merge_all_interpolations_nhits(file_rawdata):
     df_merged.to_csv(output_path, index=False, header=False)
     
     print(f"Arquivo gerado: {output_path}")
+
+def merge_maps(file_rawdata, list_animals):
+    results_dir = results_folder(file_rawdata)
+    animal_name = os.path.basename(file_rawdata).split('.')[0]
+    
+    # Coletar todos os arquivos map_{animal}.csv de todos os animais
+    all_files = []
+    for current_animal in list_animals:
+        files = [f for f in os.listdir(results_dir) if f == f"map_{current_animal}.csv"]
+        if files:
+            all_files.extend(files)
+            print(f"Encontrado arquivo para animal {current_animal}: {files[0]}")
+        else:
+            print(f"Nenhum arquivo map_{current_animal}.csv encontrado.")
+
+    if not all_files:
+        print("Nenhum arquivo map encontrado para merge.")
+        return
+
+    # Ler e mesclar TODOS os arquivos em um único DataFrame
+    dfs = [pd.read_csv(os.path.join(results_dir, f), header=None) for f in all_files]
+    df_merged = pd.concat(dfs, ignore_index=True)
+    df_merged.dropna(subset=[2, 3])
+    output_path = os.path.join(results_dir, f"map_{animal_name}_all_animals.csv")
+    df_merged.to_csv(output_path, index=False, header=False)
+
+    print(f"Arquivo único gerado com todos os animais: {output_path}")

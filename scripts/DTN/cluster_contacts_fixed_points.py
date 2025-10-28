@@ -13,6 +13,9 @@ INTERPOLATION_TYPES = ['nbeats', 'nhits']
 
 def run(current_animal, file_rawdata_name):
 
+    tangara = file_rawdata_name.split('.')[-2]
+    tangara = tangara.split('/')[-1]
+
     # --- Parâmetros ---
     results_dir = results_folder( file_rawdata_name )
 
@@ -36,7 +39,7 @@ def run(current_animal, file_rawdata_name):
     #arquivo_onca = sys.argv[1]
     #arquivo_clusters = sys.argv[2]
 
-    csv_path = os.path.join(results_dir, f'map_{current_animal}.csv')
+    csv_path = os.path.join(results_dir, f'map_{tangara}_all_animals.csv')
     if os.path.exists(csv_path):
         df = pd.read_csv( csv_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
     else:
@@ -89,7 +92,7 @@ def run(current_animal, file_rawdata_name):
             os.makedirs(dtn_dir, exist_ok=True)
 
             nome_saida = f"contatos_{os.path.splitext(os.path.basename(csv_path))[0]}_" \
-                        f"{os.path.splitext(os.path.basename(arquivo_clusters))[0]}.csv"
+                        f"{os.path.splitext(os.path.basename(arquivo_clusters))[0]}_{distancia_limite_m}.csv"
             
             # Salvar na pasta DTN
             output_path = os.path.join(dtn_dir, nome_saida)
