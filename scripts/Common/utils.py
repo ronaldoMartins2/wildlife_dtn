@@ -368,6 +368,7 @@ def merge_all_interpolations_nbeat(file_rawdata):
     df_merged.to_csv(output_path, index=False, header=False)
 
     print(f"Arquivo gerado: {output_path}")
+    return output_path
 
 def merge_all_interpolations_nhits(file_rawdata):
     """
@@ -388,6 +389,7 @@ def merge_all_interpolations_nhits(file_rawdata):
     df_merged.to_csv(output_path, index=False, header=False)
     
     print(f"Arquivo gerado: {output_path}")
+    return output_path
 
 def merge_maps(file_rawdata, list_animals):
     results_dir = results_folder(file_rawdata)
@@ -415,3 +417,41 @@ def merge_maps(file_rawdata, list_animals):
     df_merged.to_csv(output_path, index=False, header=False)
 
     print(f"Arquivo único gerado com todos os animais: {output_path}")
+    return output_path
+ 
+def merge_csv(file_csv1, file_csv2, file_rawdata, animal_name, method):
+    """
+    Merge two CSV files by simple concatenation (no de-duplication).
+
+    Args:
+        file_csv1 (str): Base CSV path. The merged content is saved here.
+        file_csv2 (str): Second CSV path to append.
+        animal_name (str): Unused here; kept for interface compatibility.
+    """
+    # Read both CSVs as raw (no header) and concatenate
+    if not os.path.exists(file_csv1):
+        print(f"Base CSV not found: {file_csv1}")
+        return
+
+    if not os.path.exists(file_csv2):
+        print(f"Second CSV not found: {file_csv2}")
+        return
+
+    try:
+        df1 = pd.read_csv(file_csv1, header=None)
+    except pd.errors.EmptyDataError:
+        df1 = pd.DataFrame()
+
+    try:
+        df2 = pd.read_csv(file_csv2, header=None)
+    except pd.errors.EmptyDataError:
+        df2 = pd.DataFrame()
+
+    results_dir = results_folder(file_rawdata)
+    output_path = os.path.join(results_dir, f"map_interpolation_merged_{animal_name}_{method}.csv")
+    merged = pd.concat([df1, df2], ignore_index=True)
+    merged.to_csv(path_or_buf=output_path, index=False, header=False)
+
+    print(f"Arquivo de geral de animais(Interpolação e Maps) salvo em {output_path}")
+    
+    return output_path

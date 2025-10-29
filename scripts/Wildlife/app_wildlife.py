@@ -37,7 +37,8 @@ from Common.utils import (
     merge_all_interpolations_nbeat,
     merge_all_interpolations_nhits,
     remove_nan_data, 
-    merge_maps
+    merge_maps,
+    merge_csv
     )
 
 from Data_preparation.separar_localizacoes_individuais import (
@@ -233,13 +234,12 @@ for current_animal in list_animals:
 #Rodando Dispersao Geral dos animais: Tangara e Jaguar
 #Criando csv das coordenadas interpoladas
 
-merge_maps(file_rawdata, list_animals)
-merge_all_interpolations_nbeat(file_rawdata)
-merge_all_interpolations_nhits(file_rawdata)
+file_interpolated_nbeats = merge_all_interpolations_nbeat(file_rawdata)
+file_interpolated_nhits = merge_all_interpolations_nhits(file_rawdata)
+file_marged = merge_maps(file_rawdata, list_animals)
+file_merged_nbeats = merge_csv(file_marged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
+file_merged_nhits = merge_csv(file_marged, file_interpolated_nhits, file_rawdata, tangara, 'nhits')
 
-file_interpolated_nbeats = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nbeats_all.csv' )
-file_interpolated_nhits = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nhits_all.csv' )
-file_marged = os.path.join(results_folder(file_rawdata), f'map_{tangara}_all_animals.csv')
 
 run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
 run_all_kmeans(file_interpolated_nhits, file_rawdata, 'nhits')

@@ -48,6 +48,7 @@ def run(current_animal, file_rawdata_name):
 
     for clustering_type in CLUSTERING_TYPES:
         for interpolation_type in INTERPOLATION_TYPES:
+            #csv_path = os.path.join(results_dir, f'map_interpolation_merged_{tangara}_{interpolation_type}.csv')
             arquivo_clusters = os.path.join(results_dir, 'Clusterization', f'centroids_{clustering_type}_{interpolation_type}.csv')
             if os.path.exists(arquivo_clusters):
                 df_clusters = pd.read_csv(arquivo_clusters, header=None)
