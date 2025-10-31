@@ -139,10 +139,19 @@ def train_nbeats_model_list(
     
     df_train, df_eval = get_train_eval( combined_df )
 
+    data_prep_dir = os.path.join(os.path.dirname(__file__), '..', 'Data_preparation')
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+    lr_ratting = read_field_from_json(hyperparam_path, "lr_nbeats")
+
+    if lr_ratting is None:
+        print(f"Learn ratting de N-Beats não encontrada no arquivo de hiperparâmetros")
+        return 
+
     train_nbeats_model( df_train,
                         df_eval,
                         file_rawdata_name, 
-                        file_rawdata_columns)
+                        file_rawdata_columns,
+                        lr=lr_ratting)
 
 def get_train_eval( df_full ):
     # Sort by timestamp to maintain time series order
@@ -170,10 +179,13 @@ def train_nbeats_model_single(
 
     df_train, df_eval = get_train_eval( df_full )
 
+    lr_training = read_field_from_json()
+
     train_nbeats_model( df_train,
                         df_eval,
                         file_rawdata_name, 
-                        file_rawdata_columns)
+                        file_rawdata_columns
+                        )
 
 def calculate_metrics(y_true, y_pred):
     """Calculate MAE, RMSE, and MAPE metrics"""
@@ -194,7 +206,7 @@ def train_nbeats_model( df_train,
                         file_rawdata_name, 
                         file_rawdata_columns, 
                         epochs=100, 
-                        lr=0.001):
+                        lr=0.001): #0.01
 
     X_tensor, y_tensor = prepare_training_data(df_train, file_rawdata_name, file_rawdata_columns)
 
@@ -210,12 +222,16 @@ def train_nbeats_model( df_train,
     output_dim = 1  # Force to 1 for single value prediction
     hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nbeat")
     num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nbeat")
+    beta1 = read_field_from_json(hyperparam_path, 'beta1_nbeats')
+    beta2 = read_field_from_json(hyperparam_path, 'beta2_nbeats')
+    betas = (beta1, beta2)
+    weight_decay = read_field_from_json(hyperparam_path, 'weight_decay_nbeat')
 
-    print(f"Model architecture: input_dim={input_dim}, output_dim={output_dim}, hidden_dim={hidden_dim}, num_blocks={num_blocks}")
+    print(f"Model architecture: input_dim={input_dim}, output_dim={output_dim}, hidden_dim={hidden_dim}, num_blocks={num_blocks}, beta1={beta1}, beta2={beta2}, weight_decay={weight_decay}")
 
     model = NBeats(input_dim, output_dim, hidden_dim, num_blocks)
     criterion = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, betas=betas, weight_decay=weight_decay)
 
     # Reshape target to match model output
     y_tensor = y_tensor.view(-1, 1)  # Shape: (batch_size, 1)

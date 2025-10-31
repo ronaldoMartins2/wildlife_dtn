@@ -16,7 +16,7 @@ def extract_folder_name(file_rawdata):
     file_name = file_rawdata.split('/')
     file_name = file_name[-1].split('.')[0]
     return file_name
-def run_all(file_rawdata_name, file_rawdata, output_prefix):
+def run_all(file_rawdata_name, file_rawdata, output_prefix=None):
     
     # Define o caminho para SALVAR os resultados usando o nome extraído de file_rawdata (dataset original)
     script_dir = os.path.dirname(os.path.abspath(__file__))

@@ -153,7 +153,6 @@ print(f' list_animals { len_animals }')
 
 print(f'{list_animals}')
 
-
 for current_animal in list_animals:
     run_preparation( current_animal, file_rawdata, file_rawdata_columns )
     run_average_by_individual( current_animal, file_rawdata, file_rawdata_columns )
@@ -165,7 +164,6 @@ time.sleep(2)
 #run_preparation( 93, file_rawdata, file_rawdata_columns )
 #run_preparation( 'G54907', file_rawdata, file_rawdata_columns )
 #run_average_by_individual( 'G54907', file_rawdata, file_rawdata_columns )
-
 
 ############## INTERPOLATION ##############################
 
@@ -180,7 +178,6 @@ tangara = tangara.split('/')[-1]
 
 # E62724 loop
 # G56068 empty
-
 
 # TRAIN step
 
@@ -218,7 +215,6 @@ for current_animal in list_animals:
 
 #exit()
 
-
 # for current_animal in list_animals:
 
 #     calc_average_by_method( current_animal, 'N_BEATS', file_rawdata )
@@ -240,6 +236,7 @@ file_marged = merge_maps(file_rawdata, list_animals)
 file_merged_nbeats = merge_csv(file_marged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
 file_merged_nhits = merge_csv(file_marged, file_interpolated_nhits, file_rawdata, tangara, 'nhits')
 
+#Chamar as funções abaixo con os dados brutos file_marged
 
 run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
 run_all_kmeans(file_interpolated_nhits, file_rawdata, 'nhits')

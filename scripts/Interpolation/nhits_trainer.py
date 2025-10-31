@@ -391,12 +391,24 @@ class NHiTSTrainer:
     def train(self, train_loader, val_loader, file_rawdata_name, epochs=100, lr=0.001, patience=10):
         """Full training loop with comprehensive metrics tracking"""
         criterion = nn.MSELoss()
-        optimizer = optim.Adam(self.model.parameters(), lr=lr)
+
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
+        hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+
+        lr_ratting = read_field_from_json(hyperparam_path, 'lr_nhits')
+        beta1 = read_field_from_json(hyperparam_path, 'beta1_nhits')
+        beta2 = read_field_from_json(hyperparam_path, 'beta2_nhits')
+        betas = (beta1, beta2)
+        weight_decay = read_field_from_json(hyperparam_path, 'weight_decay_nhits')
+        
+        optimizer = optim.Adam(self.model.parameters(), lr=lr_ratting, betas=betas, weight_decay=weight_decay)
         
         best_val_loss = float('inf')
         patience_counter = 0
         
         print("Starting training...")
+        print(f"Values beta1={beta1} beta2={beta2} weight_decay={weight_decay}")
         log_file_path = "training_log_nhits.txt"
 
         for epoch in range(epochs):
