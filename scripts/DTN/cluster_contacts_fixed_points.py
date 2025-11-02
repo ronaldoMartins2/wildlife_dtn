@@ -162,8 +162,8 @@ def uniplemented(current_animal, file_rawdata_name, output_prefix):
     # --- Salvar resultado ---
     df_contatos = pd.DataFrame(contatos)
 
-    nome_saida = f"contatos_{os.path.splitext(os.path.basename(arquivo_onca))[0]}_" \
-                f"{os.path.splitext(os.path.basename(arquivo_clusters))[0]}.csv"
+    nome_saida = f"contatos_{os.path.splitext(os.path.basename(csv_path))[0]}_" \
+                f"{os.path.splitext(os.path.basename(arquivo_clusters))[0]}_{distancia_limite_m}.csv"
     df_contatos.to_csv(nome_saida, index=False)
 
     print(f"Arquivo gerado: {nome_saida}")

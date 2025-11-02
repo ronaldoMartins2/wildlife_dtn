@@ -388,7 +388,7 @@ class NHiTSTrainer:
         
         return total_loss / len(val_loader)
     
-    def train(self, train_loader, val_loader, file_rawdata_name, epochs=100, lr=0.001, patience=10):
+    def train(self, train_loader, val_loader, file_rawdata_name, epochs=200, lr=0.001, patience=20):
         """Full training loop with comprehensive metrics tracking"""
         criterion = nn.MSELoss()
 
@@ -408,7 +408,7 @@ class NHiTSTrainer:
         patience_counter = 0
         
         print("Starting training...")
-        print(f"Values beta1={beta1} beta2={beta2} weight_decay={weight_decay}")
+        print(f"Values beta1={beta1} beta2={beta2} weight_decay={weight_decay} patience={patience}")
         log_file_path = "training_log_nhits.txt"
 
         for epoch in range(epochs):

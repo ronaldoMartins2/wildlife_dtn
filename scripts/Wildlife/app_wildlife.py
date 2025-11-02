@@ -51,7 +51,7 @@ from Interpolation.nhits_trainer import (
 )
 
 from Interpolation.nbeat_trainer import (
-    train_nbeats_model_single,
+    #train_nbeats_model_single,
     train_nbeats_model_list
 )
 

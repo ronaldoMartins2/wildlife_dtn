@@ -58,3 +58,32 @@
 [jaguar_mamiraua] Epoch  60 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
 [jaguar_mamiraua] Epoch  80 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
 [jaguar_mamiraua] Epoch  99 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch   0 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch  20 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch  40 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch  60 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch  80 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch  99 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch   0 | Loss: 68442288.0000 | Train MAE: 2985.4016 | Train RMSE: 8272.4449 | Train MAPE: 910.80%
+[jaguar_mamiraua] Epoch  20 | Loss: 68126128.0000 | Train MAE: 3086.5596 | Train RMSE: 8253.8248 | Train MAPE: 3784.28%
+[jaguar_mamiraua] Epoch  40 | Loss: 68112384.0000 | Train MAE: 3062.3887 | Train RMSE: 8253.0009 | Train MAPE: 2628.53%
+[jaguar_mamiraua] Epoch  60 | Loss: 68109792.0000 | Train MAE: 3068.3242 | Train RMSE: 8252.8633 | Train MAPE: 3010.87%
+[jaguar_mamiraua] Epoch  80 | Loss: 68108984.0000 | Train MAE: 3069.0088 | Train RMSE: 8252.8143 | Train MAPE: 3055.21%
+[jaguar_mamiraua] Epoch  99 | Loss: 68107960.0000 | Train MAE: 3068.7456 | Train RMSE: 8252.7513 | Train MAPE: 3087.29%
+[jaguar_mamiraua] Epoch   0 | Loss: 68257400.0000 | Train MAE: 3022.7300 | Train RMSE: 8258.5326 | Train MAPE: 1397.72%
+[jaguar_mamiraua] Epoch  20 | Loss: 68110360.0000 | Train MAE: 3064.8020 | Train RMSE: 8252.9277 | Train MAPE: 2866.57%
+[jaguar_mamiraua] Epoch  40 | Loss: 68109992.0000 | Train MAE: 3071.5464 | Train RMSE: 8252.8657 | Train MAPE: 3202.14%
+[jaguar_mamiraua] Epoch  60 | Loss: 68108424.0000 | Train MAE: 3069.6555 | Train RMSE: 8252.7780 | Train MAPE: 3170.77%
+[jaguar_mamiraua] Epoch  80 | Loss: 68106656.0000 | Train MAE: 3068.4739 | Train RMSE: 8252.6699 | Train MAPE: 3263.27%
+[jaguar_mamiraua] Epoch  99 | Loss: 68104584.0000 | Train MAE: 3069.6421 | Train RMSE: 8252.5448 | Train MAPE: 3540.28%
+Epoch   0 | Train Loss: 72810088.0000 | Val Loss: 65285920.0000
+Epoch  20 | Train Loss: 71747184.0000 | Val Loss: 63714640.0000
+Epoch  40 | Train Loss: 71033664.0000 | Val Loss: 60868508.0000
+Epoch  60 | Train Loss: 70322816.0000 | Val Loss: 58249448.0000
+Early stopping at epoch 72
+Epoch   0 | Train Loss: 73012112.0000 | Val Loss: 65738820.0000
+Epoch  20 | Train Loss: 71968208.0000 | Val Loss: 64652140.0000
+Epoch  40 | Train Loss: 71487544.0000 | Val Loss: 62814136.0000
+Epoch  60 | Train Loss: 70702048.0000 | Val Loss: 59757548.0000
+Epoch  80 | Train Loss: 70318496.0000 | Val Loss: 58363512.0000
+Epoch  99 | Train Loss: 70305312.0000 | Val Loss: 58251888.0000

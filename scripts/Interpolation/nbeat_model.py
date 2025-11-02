@@ -107,13 +107,15 @@ class NBeats(nn.Module):
             # Update residual (subtract backcast)
             residual = residual - backcast
         
+        final_forecast = forecast_sum
+        #Para voltar ao normal, descomentar as linhas abaixo
         # Final forecast - ensure correct shape
-        final_forecast = forecast_sum.squeeze()  # Remove unnecessary dimensions
+        #final_forecast = forecast_sum.squeeze()  # Remove unnecessary dimensions
         
         # Apply ReLU to ensure positive predictions (if needed for your use case)
-        final_forecast = torch.relu(final_forecast)
+        #final_forecast = torch.relu(final_forecast)
         
         # Clip to minimum threshold if necessary
-        final_forecast = torch.maximum(final_forecast, torch.tensor(0.1, device=x.device))
+        #final_forecast = torch.maximum(final_forecast, torch.tensor(0.1, device=x.device))
         
         return final_forecast
