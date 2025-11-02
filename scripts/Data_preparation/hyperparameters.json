@@ -12,6 +12,10 @@
     "beta1_nbeats": 0.9,
     "beta2_nbeats": 0.999,
     "weight_decay_nbeat": 1e-5,
+    "dropout_rate_nbeat": 0.1,
+    "use_batch_norm_nbeat": true,
+    "patience_nbeats": 20,
+    "epochs_nbeats": 200,
 
     "input_dim_nhits": 3,
     "hidden_dim_nhits": 64,
@@ -27,6 +31,8 @@
     "beta1_nhits": 0.9,
     "beta2_nhits": 0.999,
     "weight_decay_nhits": 1e-5,
+    "dropout_rate_nhits": 0.1,
+    "use_batch_norm_nhits": true,
 
     "sigma_SOM": 0.5,
     "learning_rate_SOM": 0.5,

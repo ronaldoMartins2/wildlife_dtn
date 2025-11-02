@@ -46,12 +46,24 @@ def load_trained_model(current_animal, file_rawdata_name):
     hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nhits")
     num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nhits")
     num_hierarchies = read_field_from_json(hyperparam_path, "num_hierarchies_nhits")
+    
+    # Novos parâmetros de otimização: Batch Normalization e Dropout
+    dropout_rate = read_field_from_json(hyperparam_path, 'dropout_rate_nhits')
+    use_batch_norm = read_field_from_json(hyperparam_path, 'use_batch_norm_nhits')
+    
+    # Valores padrão caso não encontrados
+    if dropout_rate is None:
+        dropout_rate = 0.1
+    if use_batch_norm is None:
+        use_batch_norm = True
 
     hiper_content = []
     hiper_content.append( f"Hyper nhits input_dim {input_dim}" )
     hiper_content.append( f"Hyper nhits hidden_dim {hidden_dim}" )
     hiper_content.append( f"Hyper nhits num_blocks {num_blocks}" )
     hiper_content.append( f"Hyper nhits num_hierarchies {num_hierarchies}" )
+    hiper_content.append( f"Hyper nhits dropout_rate {dropout_rate}" )
+    hiper_content.append( f"Hyper nhits use_batch_norm {use_batch_norm}" )
 
     results_dir = results_folder(file_rawdata_name)
     hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
@@ -64,7 +76,8 @@ def load_trained_model(current_animal, file_rawdata_name):
     model_path = os.path.join(results_dir, f'nhits_model_general_{filename}.pth')
     
     # Create model with same architecture
-    model = NHits(input_dim, hidden_dim, num_blocks, num_hierarchies)
+    model = NHits(input_dim, hidden_dim, num_blocks, num_hierarchies, 
+                  dropout_rate=dropout_rate, use_batch_norm=use_batch_norm)
 
     print(f'model_path >>> {model_path}')
 
@@ -77,21 +90,13 @@ def load_trained_model(current_animal, file_rawdata_name):
     return model
 
 def predict_between_dates(start_date, end_date, df, model, trainer, mask, num_steps=1):
-#def predict_between_dates(start_date, end_date, df, model, trainer, mask, num_steps=10):
     """
     Predict future points using a trained model with proper scaling.
 
-    Parameters:
-    - start_date: datetime
-    - end_date: datetime
-    - df: DataFrame with the last known data
-    - model: trained PyTorch model
-    - trainer: NHiTSTrainer instance containing scalers
-    - mask: datetime format mask
-    - num_steps: maximum number of steps to predict
-
-    Returns:
-    - new_data: list of [ID, Timestamp, Longitude, Latitude]
+    Handles model outputs that may be:
+     - a single tensor (possibly batched),
+     - a tuple/list of tensors,
+     - plain python numbers.
     """
     current_timestamp = start_date
     new_data = []
@@ -115,33 +120,71 @@ def predict_between_dates(start_date, end_date, df, model, trainer, mask, num_st
         input_scaled = trainer.scaler_features.transform(input_raw)
         input_tensor = torch.tensor(input_scaled, dtype=torch.float32)
 
-        # Predict
-        with torch.no_grad():
-            time_diff_forecast, lon_forecast, lat_forecast = model(input_tensor)
+        # Ensure model and batchnorm are in eval for single-sample inference
+        model.eval()
+        for m in model.modules():
+            if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
+                m.eval()
 
-        # Combine and inverse transform output
-        output_scaled = np.array([[time_diff_forecast.item(), lon_forecast.item(), lat_forecast.item()]])
+        with torch.no_grad():
+            if input_tensor.dim() == 1:
+                input_tensor = input_tensor.unsqueeze(0)
+            raw_out = model(input_tensor)
+
+            # Normalize output into a flat Python list of floats
+            flat_vals = []
+            if isinstance(raw_out, (tuple, list)):
+                for elem in raw_out:
+                    if isinstance(elem, torch.Tensor):
+                        e = elem.detach().squeeze()
+                        if e.numel() == 0:
+                            continue
+                        flat_vals.extend(e.reshape(-1).cpu().numpy().tolist())
+                    else:
+                        flat_vals.append(float(elem))
+            elif isinstance(raw_out, torch.Tensor):
+                t = raw_out.detach().squeeze()
+                if t.numel() == 0:
+                    flat_vals = []
+                else:
+                    flat_vals = t.reshape(-1).cpu().numpy().tolist()
+            else:
+                # scalar python number
+                flat_vals = [float(raw_out)]
+
+            if len(flat_vals) == 0:
+                print("Warning: model returned no values. Stopping.")
+                break
+
+            # Assign predictions (safely handle missing values)
+            time_diff_pred = float(flat_vals[0])
+            lon_pred = float(flat_vals[1]) if len(flat_vals) > 1 else None
+            lat_pred = float(flat_vals[2]) if len(flat_vals) > 2 else None
+
+        # Prepare output for inverse scaling (fill missing with zeros)
+        out_for_scaler = [
+            time_diff_pred,
+            lon_pred if lon_pred is not None else 0.0,
+            lat_pred if lat_pred is not None else 0.0
+        ]
+        output_scaled = np.array([out_for_scaler])
         output_unscaled = trainer.scaler_targets.inverse_transform(output_scaled)
 
-        # Extract unscaled predictions
         predicted_time_diff = output_unscaled[0][0]
         predicted_longitude = output_unscaled[0][1]
         predicted_latitude = output_unscaled[0][2]
 
-        # Verificação de latitude e longitude válidas
+        # Validate predictions
         if not (-90 <= predicted_latitude <= 90) or not (-180 <= predicted_longitude <= 180):
             print(f"Predição inválida: latitude {predicted_latitude}, longitude {predicted_longitude}. Interrompendo predições.")
             break
 
-        # Stop if prediction is invalid
         if predicted_time_diff <= 0:
             print("Predicted time difference too small or negative. Stopping predictions.")
             break
 
-        # Generate new timestamp
         new_timestamp = current_timestamp + timedelta(hours=predicted_time_diff)
 
-        # Save prediction
         new_data.append([
             last_row['ID'],
             new_timestamp.strftime(mask),
@@ -149,7 +192,7 @@ def predict_between_dates(start_date, end_date, df, model, trainer, mask, num_st
             predicted_latitude
         ])
 
-        # Update inputs for next iteration
+        # Update for next iteration
         current_timestamp = new_timestamp
         prev_time_diff = predicted_time_diff
         longitude = predicted_longitude

@@ -204,8 +204,19 @@ def getNhitsModel():
     hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nhits")
     num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nhits")
     num_hierarchies = read_field_from_json(hyperparam_path, "num_hierarchies_nhits")
+    
+    # Novos parâmetros de otimização: Batch Normalization e Dropout
+    dropout_rate = read_field_from_json(hyperparam_path, 'dropout_rate_nhits')
+    use_batch_norm = read_field_from_json(hyperparam_path, 'use_batch_norm_nhits')
+    
+    # Valores padrão caso não encontrados
+    if dropout_rate is None:
+        dropout_rate = 0.1
+    if use_batch_norm is None:
+        use_batch_norm = True
 
-    model = NHits(input_dim, hidden_dim, num_blocks, num_hierarchies)
+    model = NHits(input_dim, hidden_dim, num_blocks, num_hierarchies, 
+                  dropout_rate=dropout_rate, use_batch_norm=use_batch_norm)
 
     return model
 
