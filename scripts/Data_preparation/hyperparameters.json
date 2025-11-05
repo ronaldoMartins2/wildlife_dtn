@@ -1,7 +1,7 @@
 {
     "language": "PT_BR",
 
-    "distancia_limite_contatos": 200,
+    "distancia_limite_contatos": 400,
 
     "CONTACT_DISTANCE": 5000,
 
@@ -16,6 +16,9 @@
     "use_batch_norm_nbeat": true,
     "patience_nbeats": 20,
     "epochs_nbeats": 200,
+    "scheduler_min_lr_nbeats": 1e-6,
+    "scheduler_factor_nbeats": 0.5,
+    "scheduler_patience_nbeats": 10,
 
     "input_dim_nhits": 3,
     "hidden_dim_nhits": 64,
@@ -33,6 +36,9 @@
     "weight_decay_nhits": 1e-5,
     "dropout_rate_nhits": 0.1,
     "use_batch_norm_nhits": true,
+    "scheduler_factor_nhits": 0.5,
+    "scheduler_patience_nhits": 10,
+    "scheduler_min_lr_nhits": 1e-6,
 
     "sigma_SOM": 0.5,
     "learning_rate_SOM": 0.5,

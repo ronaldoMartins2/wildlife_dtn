@@ -414,6 +414,19 @@ class NHiTSTrainer:
         weight_decay = read_field_from_json(hyperparam_path, 'weight_decay_nhits')
         
         optimizer = optim.Adam(self.model.parameters(), lr=lr_ratting, betas=betas, weight_decay=weight_decay)
+        min_lr = read_field_from_json(hyperparam_path, 'scheduler_min_lr_nhits')
+        factor = read_field_from_json(hyperparam_path, 'scheduler_factor_nhits')
+        scheduler_patience = read_field_from_json(hyperparam_path, 'scheduler_patience_nhits')
+
+        # Add scheduler
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode='min',
+            factor=factor,  # Reduce LR by half when plateauing
+            patience=scheduler_patience,  # Wait 10 epochs before reducing LR
+            #verbose=True,
+            min_lr=min_lr
+        )
         
         best_val_loss = float('inf')
         patience_counter = 0
@@ -425,6 +438,9 @@ class NHiTSTrainer:
         for epoch in range(epochs):
             train_loss = self.train_epoch(train_loader, optimizer, criterion)
             val_loss = self.validate(val_loader, criterion)
+            
+            # Step scheduler based on validation loss
+            scheduler.step(val_loss)
             
             self.train_losses.append(train_loss)
             self.val_losses.append(val_loss)

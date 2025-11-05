@@ -238,10 +238,32 @@ def train_nbeats_model( df_train,
 
     model = NBeats(input_dim, output_dim, hidden_dim, num_blocks, dropout_rate=dropout_rate, use_batch_norm=use_batch_norm)
     criterion = nn.MSELoss()
+
+    # Read scheduler parameters from hyperparameters.json
+    min_lr = read_field_from_json(hyperparam_path, 'scheduler_min_lr_nbeats')
+    factor = read_field_from_json(hyperparam_path, 'scheduler_factor_nbeats')
+    scheduler_patience = read_field_from_json(hyperparam_path, 'scheduler_patience_nbeats')
+
+    # Set default values if not found in hyperparameters
+    if min_lr is None:
+        min_lr = 1e-6
+    if factor is None:
+        factor = 0.5
+    if scheduler_patience is None:
+        scheduler_patience = 10
+
+    # Create optimizer with the initial learning rate
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, betas=betas, weight_decay=weight_decay)
 
-    # === LINHA QUEBRADA REMOVIDA ===
-    # y_tensor = y_tensor.view(-1, 1)  <-- REMOVIDA
+    # Add scheduler
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode='min',
+        factor=factor,
+        patience=scheduler_patience,
+        #verbose=True,
+        min_lr=min_lr
+    )
 
     filename = file_rawdata_name.split('/')[-1].split('.')[0]
     log_file_path = "training_log_nbeat.txt"
@@ -277,11 +299,15 @@ def train_nbeats_model( df_train,
             val_loss_lat = criterion(val_forecast[:, 2], y_val[:, 2])
             val_loss = val_loss_time + val_loss_lon + val_loss_lat
         
+        # Step the scheduler with validation loss
+        scheduler.step(val_loss)
+        
         if (epoch % 20 == 0) or (epoch == epochs - 1):
-             log_msg = f"Epoch {epoch:3d} | Train Loss: {loss.item():.4f} | Val Loss: {val_loss.item():.4f}"
-             print(log_msg)
-             with open(log_file_path, "a") as f:
-                 f.write(log_msg + "\n")
+            current_lr = optimizer.param_groups[0]['lr']
+            log_msg = f"Epoch {epoch:3d} | Train Loss: {loss.item():.4f} | Val Loss: {val_loss.item():.4f} | LR: {current_lr:.2e}"
+            print(log_msg)
+            with open(log_file_path, "a") as f:
+                f.write(log_msg + "\n")
 
         # Lógica de Paciência
         if val_loss < best_val_loss:
@@ -291,7 +317,13 @@ def train_nbeats_model( df_train,
             filename = file_rawdata_name.split('/')[-1].split('.')[0]
             data_prep_dir = os.path.join(script_dir, '..', 'Interpolation/models')
             model_path = os.path.join(data_prep_dir, f'nbeats_model_general_{filename}.pth')
-            torch.save({'model_state_dict': model.state_dict()}, model_path)
+            torch.save({
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'epoch': epoch,
+                'best_val_loss': best_val_loss
+            }, model_path)
         else:
             patience_counter += 1
             
@@ -578,10 +610,32 @@ def train_nbeats_model( df_train,
 
     model = NBeats(input_dim, output_dim, hidden_dim, num_blocks, dropout_rate=dropout_rate, use_batch_norm=use_batch_norm)
     criterion = nn.MSELoss()
+
+    # Read scheduler parameters from hyperparameters.json
+    min_lr = read_field_from_json(hyperparam_path, 'scheduler_min_lr_nbeats')
+    factor = read_field_from_json(hyperparam_path, 'scheduler_factor_nbeats')
+    scheduler_patience = read_field_from_json(hyperparam_path, 'scheduler_patience_nbeats')
+
+    # Set default values if not found in hyperparameters
+    if min_lr is None:
+        min_lr = 1e-6
+    if factor is None:
+        factor = 0.5
+    if scheduler_patience is None:
+        scheduler_patience = 10
+
+    # Create optimizer with the initial learning rate
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, betas=betas, weight_decay=weight_decay)
 
-    # === LINHA QUEBRADA REMOVIDA ===
-    # y_tensor = y_tensor.view(-1, 1)  <-- REMOVIDA
+    # Add scheduler
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode='min',
+        factor=factor,
+        patience=scheduler_patience,
+        #verbose=True,
+        min_lr=min_lr
+    )
 
     filename = file_rawdata_name.split('/')[-1].split('.')[0]
     log_file_path = "training_log_nbeat.txt"
@@ -589,6 +643,9 @@ def train_nbeats_model( df_train,
 
     best_val_loss = float('inf')
     patience_counter = 0
+
+    # === LINHA QUEBRADA REMOVIDA ===
+    # y_tensor = y_tensor.view(-1, 1)  <-- REMOVIDA
 
     # === LOOP DE TREINAMENTO ANTIGO REMOVIDO ===
     
@@ -617,11 +674,15 @@ def train_nbeats_model( df_train,
             val_loss_lat = criterion(val_forecast[:, 2], y_val[:, 2])
             val_loss = val_loss_time + val_loss_lon + val_loss_lat
         
+        # Step the scheduler with validation loss
+        scheduler.step(val_loss)
+        
         if (epoch % 20 == 0) or (epoch == epochs - 1):
-             log_msg = f"Epoch {epoch:3d} | Train Loss: {loss.item():.4f} | Val Loss: {val_loss.item():.4f}"
-             print(log_msg)
-             with open(log_file_path, "a") as f:
-                 f.write(log_msg + "\n")
+            current_lr = optimizer.param_groups[0]['lr']
+            log_msg = f"Epoch {epoch:3d} | Train Loss: {loss.item():.4f} | Val Loss: {val_loss.item():.4f} | LR: {current_lr:.2e}"
+            print(log_msg)
+            with open(log_file_path, "a") as f:
+                f.write(log_msg + "\n")
 
         # Lógica de Paciência
         if val_loss < best_val_loss:
@@ -631,7 +692,13 @@ def train_nbeats_model( df_train,
             filename = file_rawdata_name.split('/')[-1].split('.')[0]
             data_prep_dir = os.path.join(script_dir, '..', 'Interpolation/models')
             model_path = os.path.join(data_prep_dir, f'nbeats_model_general_{filename}.pth')
-            torch.save({'model_state_dict': model.state_dict()}, model_path)
+            torch.save({
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'epoch': epoch,
+                'best_val_loss': best_val_loss
+            }, model_path)
         else:
             patience_counter += 1
             

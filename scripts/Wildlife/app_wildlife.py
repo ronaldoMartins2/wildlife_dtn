@@ -186,11 +186,11 @@ tangara = tangara.split('/')[-1]
 
 ################ call for training models Nbeat and Nhits #########################################################
 
-#nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
+nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
 
 #train_nbeats_model_single(current_animal, file_rawdata, file_rawdata_columns)
-#train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
+train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
 ####################################################################################################################
 
