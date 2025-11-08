@@ -191,7 +191,7 @@ nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
 
 #train_nbeats_model_single(current_animal, file_rawdata, file_rawdata_columns)
 train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
-#sys.exit()
+sys.exit()
 ####################################################################################################################
 
 for current_animal in list_animals:

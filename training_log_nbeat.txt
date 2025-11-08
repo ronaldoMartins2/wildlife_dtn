@@ -171,3 +171,46 @@ Epoch 140 | Train Loss: 6710.1460 | Val Loss: 2432.4656 | LR: 3.00e-04
 Epoch 160 | Train Loss: 6664.9951 | Val Loss: 2389.7251 | LR: 3.00e-04
 Epoch 180 | Train Loss: 6619.5986 | Val Loss: 2344.9756 | LR: 3.00e-04
 Epoch 199 | Train Loss: 6572.3188 | Val Loss: 2300.8003 | LR: 3.00e-04
+Epoch   0 | Train Loss: 7061.7803 | Val Loss: 2785.8257 | LR: 3.00e-04
+Epoch  20 | Train Loss: 7026.1982 | Val Loss: 2750.3042 | LR: 3.00e-04
+Epoch  40 | Train Loss: 6988.3511 | Val Loss: 2712.8159 | LR: 3.00e-04
+Epoch  60 | Train Loss: 6950.8926 | Val Loss: 2676.5930 | LR: 3.00e-04
+Epoch  80 | Train Loss: 6913.1948 | Val Loss: 2639.3809 | LR: 3.00e-04
+Epoch 100 | Train Loss: 6875.5674 | Val Loss: 2603.3967 | LR: 3.00e-04
+Epoch 120 | Train Loss: 6839.5747 | Val Loss: 2570.0752 | LR: 3.00e-04
+Epoch 140 | Train Loss: 6805.4917 | Val Loss: 2537.1470 | LR: 3.00e-04
+Epoch 160 | Train Loss: 6770.7031 | Val Loss: 2503.4897 | LR: 3.00e-04
+Epoch 180 | Train Loss: 6732.4365 | Val Loss: 2468.1519 | LR: 3.00e-04
+Epoch 199 | Train Loss: 6695.1001 | Val Loss: 2432.8335 | LR: 3.00e-04
+Epoch   0 | Train Loss: 72964592.0000 | Val Loss: 65636560.0000 | LR: 3.00e-04
+Epoch  20 | Train Loss: 72964168.0000 | Val Loss: 65636360.0000 | LR: 1.50e-04
+Epoch  40 | Train Loss: 72964048.0000 | Val Loss: 65636300.0000 | LR: 3.75e-05
+Epoch  60 | Train Loss: 72964024.0000 | Val Loss: 65636280.0000 | LR: 9.37e-06
+Epoch  80 | Train Loss: 72963976.0000 | Val Loss: 65636280.0000 | LR: 2.34e-06
+Early stopping at epoch 88
+Epoch   0 | Train Loss: 72964584.0000 | Val Loss: 65636516.0000 | LR: 3.00e-04
+Epoch  20 | Train Loss: 72964200.0000 | Val Loss: 65636388.0000 | LR: 1.50e-04
+Epoch  40 | Train Loss: 72964080.0000 | Val Loss: 65636352.0000 | LR: 3.75e-05
+Epoch  60 | Train Loss: 72964016.0000 | Val Loss: 65636340.0000 | LR: 9.37e-06
+Early stopping at epoch 76
+Epoch   0 | Train Loss: 72964384.0000 | Val Loss: 65636396.0000 | LR: 3.00e-04
+Epoch  20 | Train Loss: 72964072.0000 | Val Loss: 65636264.0000 | LR: 1.50e-04
+Epoch  40 | Train Loss: 72963992.0000 | Val Loss: 65636216.0000 | LR: 3.75e-05
+Epoch  60 | Train Loss: 72963936.0000 | Val Loss: 65636212.0000 | LR: 9.37e-06
+Early stopping at epoch 74
+Epoch   0 | Train Loss: 72964608.0000 | Val Loss: 65636472.0000 | LR: 3.00e-04
+Epoch  20 | Train Loss: 72964376.0000 | Val Loss: 65636352.0000 | LR: 1.50e-04
+Epoch  40 | Train Loss: 72964312.0000 | Val Loss: 65636316.0000 | LR: 3.75e-05
+Epoch  60 | Train Loss: 72964256.0000 | Val Loss: 65636304.0000 | LR: 9.37e-06
+Epoch  80 | Train Loss: 72964280.0000 | Val Loss: 65636300.0000 | LR: 2.34e-06
+Early stopping at epoch 87
+Epoch   0 | Train Loss: 72964640.0000 | Val Loss: 65636556.0000 | LR: 1.00e-04
+Epoch  20 | Train Loss: 72964584.0000 | Val Loss: 65636544.0000 | LR: 1.25e-05
+Early stopping at epoch 22
+Epoch   0 | Train Loss: 72964544.0000 | Val Loss: 65636396.0000 | LR: 1.00e-04
+Epoch  20 | Train Loss: 72964416.0000 | Val Loss: 65636384.0000 | LR: 1.25e-05
+Early stopping at epoch 22
+Epoch   0 | Train Loss: 72964584.0000 | Val Loss: 65636536.0000 | LR: 1.00e-04
+Early stopping at epoch 11
+Epoch   0 | Train Loss: 72964656.0000 | Val Loss: 65636684.0000 | LR: 1.00e-04
+Early stopping at epoch 20
