@@ -1,7 +1,7 @@
 {
     "language": "PT_BR",
 
-    "distancia_limite_contatos": 400,
+    "distancia_limite_contatos": 200,
 
     "CONTACT_DISTANCE": 5000,
 
@@ -9,10 +9,11 @@
     "hidden_dim_nbeat": 32,
     "num_blocks_nbeat": 2,
     "lr_nbeats": 0.0001,
+    "batch_size_nbeat": 32,
     "beta1_nbeats": 0.9,
     "beta2_nbeats": 0.999,
     "weight_decay_nbeat": 1e-4,
-    "dropout_rate_nbeat": 0.25,
+    "dropout_rate_nbeat": 0.1,
     "use_batch_norm_nbeat": true,
     "patience_nbeats": 10,
     "epochs_nbeats": 120,

@@ -186,11 +186,11 @@ def load_data_for_training(current_animal, file_rawdata_name, file_rawdata_colum
  
 def getModelPath( file_rawdata_name ):
 
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     results_dir = results_folder(file_rawdata_name)
 
     filename = file_rawdata_name.split('/')[-1].split('.')[0]
-    model_path = os.path.join(results_dir, f'nhits_model_general_{filename}.pth')
-
+    model_path = os.path.join(script_dir, f'nhits_model_general_{filename}.pth')
     return model_path
 
 def getNhitsModel():
@@ -537,176 +537,217 @@ class NHiTSTrainer:
         }, filepath)
         print(f"Model saved to {filepath}")
 
-    def load_model(self, filepath):
-        """
-        Load a trained model including scalers, safely.
-        """
-        with safe_globals([MinMaxScaler]):
-            checkpoint = torch.load(filepath, weights_only=False)
+    def load_model(self, model_path):
+        import torch
+        from Interpolation.nhits_model import NHits
 
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.scaler_features = checkpoint['scaler_features']
-        self.scaler_targets = checkpoint['scaler_targets']
-        print(f"Model loaded from {filepath}")
+        print(f"[NHiTSTrainer] loading checkpoint: {model_path} (exists={os.path.exists(model_path)})")
+        
+        # Permitir desserialização de objetos sklearn (MinMaxScaler)
+        try:
+            from sklearn.preprocessing._data import MinMaxScaler
+            torch.serialization.add_safe_globals([MinMaxScaler])
+        except Exception as e:
+            print(f"[NHiTSTrainer] aviso ao allowlist MinMaxScaler: {e}")
 
+        checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
 
-def nhits_main_training_list(   animal_list, 
-                                file_rawdata_name, 
-                                file_rawdata_columns ):
+        # If checkpoint contains 'model_state_dict' use it, otherwise try whole checkpoint
+        state_dict = checkpoint.get('model_state_dict', checkpoint if isinstance(checkpoint, dict) else None)
+        if state_dict is None:
+            raise RuntimeError(f"No model_state_dict found in checkpoint {model_path}")
 
+        # First attempt: load into current self.model
+        try:
+            self.model.load_state_dict(state_dict)
+            print("[NHiTSTrainer] state_dict loaded into existing model.")
+        except RuntimeError as err:
+            print(f"[NHiTSTrainer] initial load failed: {err}")
+            print("[NHiTSTrainer] attempting to infer model shape from checkpoint and recreate model...")
+
+            # Infer parameters from state_dict
+            import re
+            inferred_input_dim = None
+            inferred_hidden_dim = None
+            inferred_num_blocks = None
+            inferred_num_hierarchies = getattr(self, 'num_hierarchies', 1)
+
+            # Try to find a blocks.0.fc1.weight tensor to infer dims
+            for k, v in state_dict.items():
+                if 'blocks.0.fc1.weight' in k:
+                    shape = v.shape
+                    if len(shape) >= 2:
+                        inferred_hidden_dim = int(shape[0])
+                        inferred_input_dim = int(shape[1])
+                        break
+
+            # Fallback: inspect any blocks.*.fc1.weight
+            if inferred_hidden_dim is None:
+                block_indices = set()
+                for k in state_dict.keys():
+                    m = re.match(r'blocks\.(\d+)\.fc1\.weight', k)
+                    if m:
+                        block_indices.add(int(m.group(1)))
+                        inferred_hidden_dim = state_dict[k].shape[0]
+                        inferred_input_dim = state_dict[k].shape[1]
+                if block_indices:
+                    inferred_num_blocks = max(block_indices) + 1
+
+            # if still unknown try other heuristics
+            if inferred_input_dim is None or inferred_hidden_dim is None:
+                for k, v in state_dict.items():
+                    if k.endswith('fc_time.weight'):
+                        inferred_hidden_dim = v.shape[1] if v.ndim == 2 else v.shape[0]
+                        break
+
+            # Final safe defaults
+            inferred_input_dim = int(inferred_input_dim) if inferred_input_dim is not None else getattr(self, 'input_dim', 3)
+            inferred_hidden_dim = int(inferred_hidden_dim) if inferred_hidden_dim is not None else getattr(self, 'hidden_dim', 32)
+            inferred_num_blocks = int(inferred_num_blocks) if inferred_num_blocks is not None else getattr(self, 'num_blocks', 3)
+
+            print(f"[NHiTSTrainer] inferred_input_dim={inferred_input_dim}, inferred_hidden_dim={inferred_hidden_dim}, inferred_num_blocks={inferred_num_blocks}, inferred_num_hierarchies={inferred_num_hierarchies}")
+
+            # Recreate model with inferred hyperparams and try load again
+            try:
+                self.model = NHits(inferred_input_dim, inferred_hidden_dim, inferred_num_blocks, inferred_num_hierarchies,
+                                   dropout_rate=getattr(self, 'dropout_rate', 0.0),
+                                   use_batch_norm=getattr(self, 'use_batch_norm', False))
+                self.model.load_state_dict(state_dict)
+                print("[NHiTSTrainer] successfully recreated model from checkpoint shapes and loaded state_dict.")
+            except Exception as err2:
+                try:
+                    self.model = NHits(inferred_input_dim, inferred_hidden_dim, inferred_num_blocks, inferred_num_hierarchies,
+                                       dropout_rate=getattr(self, 'dropout_rate', 0.0),
+                                       use_batch_norm=getattr(self, 'use_batch_norm', False))
+                    missing, unexpected = self.model.load_state_dict(state_dict, strict=False)
+                    print(f"[NHiTSTrainer] loaded with strict=False. missing_keys_count={len(missing)}, unexpected_keys_count={len(unexpected)}")
+                except Exception as err3:
+                    raise RuntimeError(f"Failed to load NHITS checkpoint. Errors: {err}, {err2}, {err3}")
+
+        # Restaurar scalers do checkpoint se existirem
+        if 'scaler_features' in checkpoint:
+            self.scaler_features = checkpoint['scaler_features']
+            print(f"[NHiTSTrainer] scaler_features restaurado do checkpoint")
+        else:
+            print(f"[NHiTSTrainer] aviso: scaler_features não encontrado no checkpoint")
+
+        if 'scaler_targets' in checkpoint:
+            self.scaler_targets = checkpoint['scaler_targets']
+            print(f"[NHiTSTrainer] scaler_targets restaurado do checkpoint")
+        else:
+            print(f"[NHiTSTrainer] aviso: scaler_targets não encontrado no checkpoint")
+
+        self.model.eval()
+
+def main_training(current_animal, file_rawdata_name, file_rawdata_columns):
+    """
+    Train NHiTS model for a single animal
+    """
+    print(f"\n{'='*80}")
+    print(f"Training NHiTS model for animal {current_animal}")
+    print(f"{'='*80}")
+    
     # Load data
-    print("Loading data...")
-
-    combined_df_list = []
-
-    for current_animal in animal_list:
-        df = load_data_for_training(current_animal, file_rawdata_name, file_rawdata_columns)
-        combined_df_list.append(df)
-
-    combined_df = pd.concat(combined_df_list, ignore_index=True)
-
+    df = load_data_for_training(current_animal, file_rawdata_name, file_rawdata_columns)
+    if df.empty:
+        print(f"Skipping {current_animal} due to insufficient data.")
+        return None
+    
     print(f"Loaded {len(df)} data points for animal {current_animal}")
     
-    df_train, df_eval = get_train_eval( combined_df )
-
-    main_training(  df_train,
-                    df_eval,
-                    file_rawdata_name, 
-                    file_rawdata_columns )
-
-# Enhanced main_training function with performance comparison
-def main_training(df_train, df_eval, file_rawdata_name, file_rawdata_columns):
-    """Main training function with comprehensive performance comparison"""
-    
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # Get device
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
-    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
-
-    # Read hyperparameters
-    epochs = read_field_from_json(hyperparam_path, "epochs_nhits")
-    lr = read_field_from_json(hyperparam_path, "lr_nhits")
-    patience = read_field_from_json(hyperparam_path, "patience_nhits")
-    sequence_length = read_field_from_json(hyperparam_path, "sequence_length_nhits")
-    prediction_horizon = read_field_from_json(hyperparam_path, "prediction_horizon_nhits")
-    test_split = read_field_from_json(hyperparam_path, "test_split_nhits")
-    batch_size = read_field_from_json(hyperparam_path, "batch_size_nhits")
-
+    
+    # Create model
     model = getNhitsModel()
     print(f"Created NHiTS model with {sum(p.numel() for p in model.parameters())} parameters")
     
     # Create trainer
-    trainer = NHiTSTrainer(model, device)
+    trainer = NHiTSTrainer(model, device=device)
     
     # Prepare data
     print("Preparing sequences...")
-    train_loader, val_loader = trainer.prepare_data(df_train, sequence_length, test_split, batch_size, prediction_horizon)
+    train_loader, val_loader = trainer.prepare_data(df, sequence_length=10, test_split=0.2, batch_size=32, prediction_horizon=1)
     print(f"Training batches: {len(train_loader)}, Validation batches: {len(val_loader)}")
-
-    # Train model and get final metrics
-    final_train_metrics, final_val_metrics = trainer.train(train_loader, val_loader, file_rawdata_name, epochs, lr, patience)
+    
+    # Train
+    train_metrics, val_metrics = trainer.train(train_loader, val_loader, file_rawdata_name, epochs=120, lr=0.001, patience=8)
     
     # Save model
     model_path = getModelPath(file_rawdata_name)
     trainer.save_model(model_path)
-
-    ############ Evaluation on Test Set ############
-    model_eval = getNhitsModel()
-    with safe_globals([MinMaxScaler]):
-        checkpoint = torch.load(model_path, weights_only=False)
-    model_eval.load_state_dict(checkpoint['model_state_dict'])
-
-    eval_result = evaluate_nhits_model(model_eval, df_eval, file_rawdata_columns)
-
-    if eval_result is None:
-        print("❌ Evaluation failed. Skipping logging of metrics.")
-        return
-
-    eval_mae, eval_rmse, eval_mape = eval_result
-
-    ############ Performance Comparison ############
+    
+    # Print performance summary
     print("\n" + "="*80)
     print("📊 NHiTS PERFORMANCE COMPARISON")
     print("="*80)
     
-    print("Training Set Performance (Final):")
-    print(f"  Overall MAE:  {final_train_metrics['overall']['mae']:.4f}")
-    print(f"  Overall RMSE: {final_train_metrics['overall']['rmse']:.4f}")
-    print(f"  TimeDiff MAE: {final_train_metrics['time']['mae']:.4f}")
-    print(f"  TimeDiff RMSE: {final_train_metrics['time']['rmse']:.4f}")
-    print(f"  TimeDiff MAPE: {final_train_metrics['time']['mape']:.2f}%")
+    print("\nTraining Set Performance (Final):")
+    print(f"  Overall MAE:  {train_metrics['overall']['mae']:.4f}")
+    print(f"  Overall RMSE: {train_metrics['overall']['rmse']:.4f}")
+    print(f"  TimeDiff MAE: {train_metrics['time']['mae']:.4f}")
+    print(f"  TimeDiff RMSE: {train_metrics['time']['rmse']:.4f}")
+    print(f"  TimeDiff MAPE: {train_metrics['time']['mape']:.2f}%")
     
     print("\nValidation Set Performance (Final):")
-    print(f"  Overall MAE:  {final_val_metrics['overall']['mae']:.4f}")
-    print(f"  Overall RMSE: {final_val_metrics['overall']['rmse']:.4f}")
-    print(f"  TimeDiff MAE: {final_val_metrics['time']['mae']:.4f}")
-    print(f"  TimeDiff RMSE: {final_val_metrics['time']['rmse']:.4f}")
-    print(f"  TimeDiff MAPE: {final_val_metrics['time']['mape']:.2f}%")
+    print(f"  Overall MAE:  {val_metrics['overall']['mae']:.4f}")
+    print(f"  Overall RMSE: {val_metrics['overall']['rmse']:.4f}")
+    print(f"  TimeDiff MAE: {val_metrics['time']['mae']:.4f}")
+    print(f"  TimeDiff RMSE: {val_metrics['time']['rmse']:.4f}")
+    print(f"  TimeDiff MAPE: {val_metrics['time']['mape']:.2f}%")
     
-    print(f"\nTest Set Performance (Separate Evaluation):")
-    print(f"  Overall MAE:  {eval_mae:.4f}")
-    print(f"  Overall RMSE: {eval_rmse:.4f}")
-    print(f"  TimeDiff MAPE: {eval_mape:.2f}%")
-    
-    print("\nPerformance Analysis:")
-    
-    # Compare training vs validation
-    train_val_mae_diff = final_val_metrics['overall']['mae'] - final_train_metrics['overall']['mae']
-    train_val_mape_diff = final_val_metrics['time']['mape'] - final_train_metrics['time']['mape']
-    
-    print(f"  Training vs Validation:")
-    print(f"    MAE Difference:  {train_val_mae_diff:+.4f} ({train_val_mae_diff/final_train_metrics['overall']['mae']*100:+.1f}%)")
-    print(f"    MAPE Difference: {train_val_mape_diff:+.2f}% ({train_val_mape_diff/final_train_metrics['time']['mape']*100:+.1f}%)")
-    
-    # Compare validation vs test
-    val_test_mae_diff = eval_mae - final_val_metrics['overall']['mae']
-    val_test_mape_diff = eval_mape - final_val_metrics['time']['mape']
-    
-    print(f"  Validation vs Test:")
-    print(f"    MAE Difference:  {val_test_mae_diff:+.4f} ({val_test_mae_diff/final_val_metrics['overall']['mae']*100:+.1f}%)")
-    print(f"    MAPE Difference: {val_test_mape_diff:+.2f}% ({val_test_mape_diff/final_val_metrics['time']['mape']*100:+.1f}%)")
-    
-    # Overall assessment
-    if abs(train_val_mae_diff/final_train_metrics['overall']['mae']) < 0.1:
-        print("  ✅ Good generalization (train/val performance similar)")
-    elif abs(train_val_mae_diff/final_train_metrics['overall']['mae']) < 0.2:
-        print("  ℹ️  Normal generalization gap")
-    else:
-        print("  ⚠️  Possible overfitting detected")
+    # Evaluate on test set if available
+    try:
+        test_metrics = evaluate_nhits_model(model, df, file_rawdata_columns)
+        print("\nTest Set Performance (Separate Evaluation):")
+        if test_metrics:
+            mae, rmse, mape = test_metrics
+            print(f"  Overall MAE:  {mae:.4f}")
+            print(f"  Overall RMSE: {rmse:.4f}")
+            print(f"  TimeDiff MAPE: {mape:.2f}%")
+            
+            # Performance analysis
+            print("\nPerformance Analysis:")
+            print(f"  Training vs Validation:")
+            print(f"    MAE Difference:  {val_metrics['overall']['mae'] - train_metrics['overall']['mae']:+.4f} ({(val_metrics['overall']['mae'] - train_metrics['overall']['mae']) / train_metrics['overall']['mae'] * 100:+.1f}%)")
+            print(f"    MAPE Difference: {val_metrics['time']['mape'] - train_metrics['time']['mape']:+.2f}% ({(val_metrics['time']['mape'] - train_metrics['time']['mape']) / train_metrics['time']['mape'] * 100:+.1f}%)")
+            
+            print(f"  Validation vs Test:")
+            print(f"    MAE Difference:  {mae - val_metrics['overall']['mae']:+.4f} ({(mae - val_metrics['overall']['mae']) / val_metrics['overall']['mae'] * 100:+.1f}%)")
+            print(f"    MAPE Difference: {mape - val_metrics['time']['mape']:+.2f}% ({(mape - val_metrics['time']['mape']) / val_metrics['time']['mape'] * 100:+.1f}%)")
+            
+            if abs(val_metrics['overall']['mae'] - train_metrics['overall']['mae']) / train_metrics['overall']['mae'] < 0.3:
+                print(f"  ✅ Good generalization (train/val performance similar)")
+            else:
+                print(f"  ⚠️ Potential overfitting (val MAE significantly higher than train)")
+    except Exception as e:
+        print(f"⚠️ Could not evaluate on test set: {e}")
     
     print("="*80)
-    
-    # Save comprehensive results
-    results_dir = results_folder(file_rawdata_name)
-    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
-    
-    performance_content = [
-        "",
-        "# Test Set Evaluation Results Nhits",
-        f"Test overall MAE {eval_mae:.4f}",
-        f"Test overall RMSE {eval_rmse:.4f}",
-        f"Test time MAPE {eval_mape:.2f}%",
-        "",
-        "# Performance Gaps Nhits",
-        f"Train-Val MAE gap {train_val_mae_diff:+.4f} ({train_val_mae_diff/final_train_metrics['overall']['mae']*100:+.1f}%)",
-        f"Train-Val MAPE gap {train_val_mape_diff:+.2f}% ({train_val_mape_diff/final_train_metrics['time']['mape']*100:+.1f}%)",
-        f"Val-Test MAE gap {val_test_mae_diff:+.4f} ({val_test_mae_diff/final_val_metrics['overall']['mae']*100:+.1f}%)",
-        f"Val-Test MAPE gap {val_test_mape_diff:+.2f}% ({val_test_mape_diff/final_val_metrics['time']['mape']*100:+.1f}%)"
-    ]
-    
-    with open(hiper_path, "a") as file:
-        for line in performance_content:
-            file.write(line + '\n')
-    
     print("Training completed successfully!")
+    print("="*80 + "\n")
+    
     return trainer
 
-if __name__ == "__main__":
-    import sys
-    current_animal = sys.argv[1]
-    file_rawdata_name = sys.argv[2]
-    file_rawdata_columns = sys.argv[3]
 
-    main_training(current_animal, file_rawdata_name, file_rawdata_columns)
+def nhits_main_training_list(list_animals, file_rawdata_name, file_rawdata_columns):
+    """
+    Train NHiTS model for a list of animals
+    """
+    print(f"\n{'#'*80}")
+    print(f"# NHiTS TRAINING FOR {len(list_animals)} ANIMALS")
+    print(f"{'#'*80}\n")
+    
+    for current_animal in list_animals:
+        try:
+            trainer = main_training(current_animal, file_rawdata_name, file_rawdata_columns)
+        except Exception as e:
+            print(f"❌ Error training animal {current_animal}: {e}")
+            import traceback
+            traceback.print_exc()
+            continue
+    
+    print(f"\n{'#'*80}")
+    print(f"# NHiTS TRAINING COMPLETED FOR ALL ANIMALS")
+    print(f"{'#'*80}\n")

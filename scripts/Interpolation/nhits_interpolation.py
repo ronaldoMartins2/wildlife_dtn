@@ -38,24 +38,25 @@ def load_data(filename, mask):
 
 def load_trained_model(current_animal, file_rawdata_name):
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
 
-    input_dim = read_field_from_json(hyperparam_path, "input_dim_nhits")
-    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nhits")
-    num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nhits")
-    num_hierarchies = read_field_from_json(hyperparam_path, "num_hierarchies_nhits")
-    
-    # Novos parâmetros de otimização: Batch Normalization e Dropout
-    dropout_rate = read_field_from_json(hyperparam_path, 'dropout_rate_nhits')
-    use_batch_norm = read_field_from_json(hyperparam_path, 'use_batch_norm_nhits')
-    
-    # Valores padrão caso não encontrados
-    if dropout_rate is None:
-        dropout_rate = 0.1
-    if use_batch_norm is None:
-        use_batch_norm = True
+    # Ler hiperparâmetros treinados (fallbacks seguros)
+    import json
+    try:
+        with open(hyperparam_path, 'r') as hf:
+            hp = json.load(hf)
+    except Exception as e:
+        hp = {}
+        print(f"[NHITS] aviso: não foi possível ler {hyperparam_path}: {e}")
+
+    input_dim = hp.get("input_dim_nhits", 3)
+    hidden_dim = hp.get("hidden_dim_nhits", 32)
+    num_blocks = hp.get("num_blocks_nhits", 3)
+    num_hierarchies = hp.get("num_hierarchies_nhits", 1)
+    dropout_rate = hp.get("dropout_rate_nhits", 0.0)
+    use_batch_norm = hp.get("use_batch_norm_nhits", False)
 
     hiper_content = []
     hiper_content.append( f"Hyper nhits input_dim {input_dim}" )
@@ -69,40 +70,56 @@ def load_trained_model(current_animal, file_rawdata_name):
     hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
 
     with open(hiper_path, "a") as file:
-        for line in hiper_content:
-            file.write(line + '\n')
+        for l in hiper_content:
+            file.write(l + "\n")
 
     filename = file_rawdata_name.split('/')[-1].split('.')[0]
     model_path = os.path.join(results_dir, f'nhits_model_general_{filename}.pth')
-    
-    # Create model with same architecture
-    model = NHits(input_dim, hidden_dim, num_blocks, num_hierarchies, 
+
+    # criar modelo com os hiperparâmetros do treino
+    model = NHits(input_dim, hidden_dim, num_blocks, num_hierarchies,
                   dropout_rate=dropout_rate, use_batch_norm=use_batch_norm)
 
-    print(f'model_path >>> {model_path}')
+    print(f'[NHITS] tentando carregar checkpoint em: {model_path} (exists={os.path.exists(model_path)})')
+    if not os.path.exists(model_path):
+        alt = os.path.join(os.path.dirname(__file__), 'models', os.path.basename(model_path))
+        if os.path.exists(alt):
+            model_path = alt
+            print(f'[NHITS] usando modelo alternativo: {model_path}')
+        else:
+            print(f"[NHITS] Modelo NHITS não encontrado: {model_path}")
+            return None
 
-    # Load trained weights
-    checkpoint = torch.load(model_path, weights_only=False)
+    import torch
+    checkpoint = torch.load(model_path, map_location='cpu')
+    try:
+        model.load_state_dict(checkpoint['model_state_dict'])
+    except RuntimeError as err:
+        # Falha clara: provavelmente hiperparâmetros diferentes entre treino e inferência
+        raise RuntimeError(
+            "Falha ao carregar state_dict do NHits. Verifique se os hiperparâmetros em "
+            "Data_preparation/hyperparameters.json batem com os usados no treino. "
+            f"Erro original: {err}"
+        ) from err
 
-    model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
-
     return model
 
 def predict_between_dates(start_date, end_date, df, model, trainer, mask, num_steps=1):
     """
     Predict future points using a trained model with proper scaling.
-
     Handles model outputs that may be:
      - a single tensor (possibly batched),
      - a tuple/list of tensors,
      - plain python numbers.
     """
+    print(f"[NHITS] predict_between_dates start={start_date} end={end_date} num_steps={num_steps}")
     current_timestamp = start_date
     new_data = []
 
     # Get the last known row (most recent data point)
     last_row = df.iloc[-1]
+    print(f"[NHITS] last_row timestamp={last_row['Timestamp']} lon={last_row['Longitude']} lat={last_row['Latitude']}")
 
     # Initial features
     last_timestamp = last_row['Timestamp']
@@ -130,7 +147,7 @@ def predict_between_dates(start_date, end_date, df, model, trainer, mask, num_st
             if input_tensor.dim() == 1:
                 input_tensor = input_tensor.unsqueeze(0)
             raw_out = model(input_tensor)
-
+            print(f"[NHITS] raw_out type={type(raw_out)} raw_out={raw_out}")
             # Normalize output into a flat Python list of floats
             flat_vals = []
             if isinstance(raw_out, (tuple, list)):
@@ -151,6 +168,8 @@ def predict_between_dates(start_date, end_date, df, model, trainer, mask, num_st
             else:
                 # scalar python number
                 flat_vals = [float(raw_out)]
+
+            print(f"[NHITS] flat_vals={flat_vals}")
 
             if len(flat_vals) == 0:
                 print("Warning: model returned no values. Stopping.")
@@ -176,7 +195,7 @@ def predict_between_dates(start_date, end_date, df, model, trainer, mask, num_st
 
         # Validate predictions
         if not (-90 <= predicted_latitude <= 90) or not (-180 <= predicted_longitude <= 180):
-            print(f"Predição inválida: latitude {predicted_latitude}, longitude {predicted_longitude}. Interrompendo predições.")
+            print(f"[NHITS] Predição inválida: latitude {predicted_latitude}, longitude {predicted_longitude}. Interrompendo predições.")
             break
 
         if predicted_time_diff <= 0:
@@ -254,11 +273,11 @@ def run(    current_animal,
             end_date, 
             file_rawdata_name, 
             file_rawdata_columns ):
-
+    print(f"[NHITS] run current_animal={current_animal} file={file_rawdata_name} dates=({start_date},{end_date})")
     df = getDataFromCSV( current_animal, file_rawdata_name )
-
+    print(f"[NHITS] loaded df shape: {None if df is None else df.shape}")
     if df.empty:
-        print(f"DataFrame is empty for animal {current_animal}. Skipping NHITS interpolation.")
+        print(f"[NHITS] DataFrame is empty for animal {current_animal}. Skipping NHITS interpolation.")
         return
 
     len_animal_outliers_less = len(df)
@@ -285,10 +304,31 @@ def run(    current_animal,
 
     model = getNhitsModel()
     model_path = getModelPath( file_rawdata_name )
+    print(f"[NHITS] model_path = {model_path} exists={os.path.exists(model_path)}")
+
+    # Fallback: se o path retornado não existir, tentar procurar em ./models/<basename>
+    if not os.path.exists(model_path):
+        alt_model_path = os.path.join(os.path.dirname(__file__), 'models', os.path.basename(model_path))
+        print(f"[NHITS] model_path não encontrado, tentando alternativa: {alt_model_path} exists={os.path.exists(alt_model_path)}")
+        if os.path.exists(alt_model_path):
+            model_path = alt_model_path
+            print(f"[NHITS] Usando modelo alternativo: {model_path}")
+        else:
+            print(f"Modelo NHITS não encontrado: {model_path}\nGere o treino primeiro ou verifique o caminho.")
+            return
 
     trainer = NHiTSTrainer(model)
     trainer.load_model(model_path)
-
+    print(f"[NHITS] trainer loaded. has scaler_features={hasattr(trainer,'scaler_features')}, has scaler_targets={hasattr(trainer,'scaler_targets')}")
+    
+    # Verificações básicas pós-load
+    if not hasattr(trainer, 'scaler_features') or trainer.scaler_features is None:
+        print("Aviso: scaler_features não encontrado no trainer (checkpoint pode estar incompleto).")
+        return
+    if not hasattr(trainer, 'scaler_targets') or trainer.scaler_targets is None:
+        print("Aviso: scaler_targets não encontrado no trainer (checkpoint pode estar incompleto).")
+        return
+    
     if start_date <= df.iloc[-1]['Timestamp']:
         print("Adjusting start_date to just after last known timestamp.")
         start_date = df.iloc[-1]['Timestamp'] + timedelta(hours=1)
@@ -296,15 +336,13 @@ def run(    current_animal,
     print(f'********************************** len_animal {len_animal}  current_animal {current_animal} nhits')
 
     while len(predicted_df) < len_animal:
-        # Ensure you predict only the remaining number of points
         remaining_predictions = len_animal - len(predicted_df)
-        num_steps = min(remaining_predictions, 1)  # Predict at most 1 step, or the remaining points
-
+        num_steps = min(remaining_predictions, 1)
         new_predictions = predict_between_dates(start_date, end_date, df, model, trainer, mask, num_steps=num_steps)
-
+        print(f"[NHITS] new_predictions returned: {len(new_predictions)}")
         if not new_predictions:
-            print("No valid predictions returned. Exiting interpolation loop.")
-            break  # Avoid infinite loop
+            print("[NHITS] No valid predictions returned. Exiting interpolation loop.")
+            break
 
         # Ensure we don’t exceed the length we need
         if len(predicted_df) + len(new_predictions) > len_animal:
@@ -345,5 +383,6 @@ def run(    current_animal,
 
     file_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits.csv')
 
+    print(f"[NHITS] final predicted_df shape: {predicted_df.shape}")
     create_clusterization_results(f'{results_dir}/Interpolation')
     save_to_csv(predicted_df, file_path)

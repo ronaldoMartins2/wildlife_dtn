@@ -29,6 +29,11 @@ from Data_preparation.clear_outtliers import (
     run as run_clear_outliers
 )
 
+def get_device():
+    if torch.cuda.is_available():
+        return torch.device('cuda')
+    return torch.device('cpu')
+
 def getDataFromCSV( current_animal, file_rawdata_name ):
     # Read the CSV file into a DataFrame
     
@@ -44,7 +49,7 @@ def getDataFromCSV( current_animal, file_rawdata_name ):
         if 'jaguar' in file_rawdata_name:
             df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Jaguar" )
         else:
-            df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-mark-outlier"] )
+            df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"] )
     else:
         return pd.DataFrame()
 
@@ -72,38 +77,28 @@ def getDataFromCSV( current_animal, file_rawdata_name ):
     return df
 
 def load_trained_nbeats_model(file_rawdata_name):
-
     script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
-
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+    interpolation_dir = os.path.join(script_dir, '..', 'Interpolation/models')  # Navigate to the parent directory and into 'Results'
 
     input_dim = 3
-    output_dim = read_field_from_json(hyperparam_path, "output_dim_nbeat")
-    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nbeat")
-    num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nbeat")
-    
-    # Novos parâmetros de otimização: Batch Normalization e Dropout
-    dropout_rate = read_field_from_json(hyperparam_path, 'dropout_rate_nbeat')
-    use_batch_norm = read_field_from_json(hyperparam_path, 'use_batch_norm_nbeat')
-    
-    # Valores padrão caso não encontrados
-    if dropout_rate is None:
-        dropout_rate = 0.1
-    if use_batch_norm is None:
-        use_batch_norm = True
+    output_dim = read_field_from_json(hyperparam_path, "output_dim")
+    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim")
+    num_blocks = read_field_from_json(hyperparam_path, "num_blocks")
+    dropout_rate = read_field_from_json(hyperparam_path, "dropout_rate_nbeat")
+    device = get_device()
 
-    model = NBeats(input_dim, output_dim, hidden_dim, num_blocks, dropout_rate=dropout_rate, use_batch_norm=use_batch_norm)
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    data_prep_dir = os.path.join(script_dir, '..', 'Interpolation')  # Navigate to the parent directory and into 'Results'
+    model = NBeats(input_dim, output_dim, hidden_dim, num_blocks,dropout=dropout_rate) 
 
     filename = file_rawdata_name.split('/')[-1].split('.')[0]
-    model_path = os.path.join(data_prep_dir, f'nbeats_model_general_{filename}.pth')
+    model_path = os.path.join(interpolation_dir, f'nbeats_model_general_{filename}.pth')
 
     print(f'Loading trained model from {model_path}')
-    checkpoint = torch.load(model_path, map_location=torch.device('cpu'))  # Add map_location if needed
+    checkpoint = torch.load(model_path, map_location=device)  # Add map_location if needed
     model.load_state_dict(checkpoint['model_state_dict'])
+
+    model.to(device)
     model.eval()
     return model
 
@@ -114,6 +109,8 @@ def run(    current_animal,
             file_rawdata_columns ):
 
     print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+
+    device = get_device()
 
     df = getDataFromCSV( current_animal, file_rawdata_name )
 
@@ -127,7 +124,7 @@ def run(    current_animal,
     if 'jaguar' in file_rawdata_name:
         df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Jaguar" )
     else:
-        df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-mark-outlier"] )
+        df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"] )
 
     results_dir = results_folder(file_rawdata_name)
     columns_to_save = ['ID', 'Timestamp', 'Longitude', 'Latitude']
@@ -170,19 +167,10 @@ def run(    current_animal,
     output_dim = read_field_from_json(hyperparam_path, "output_dim_nbeat")  # Output: predict multiple future time steps
     hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nbeat")  # Hidden layer size
     num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nbeat")  # Number of N-BEATS blocks
-    
-    # Novos parâmetros de otimização: Batch Normalization e Dropout
-    dropout_rate = read_field_from_json(hyperparam_path, 'dropout_rate_nbeat')
-    use_batch_norm = read_field_from_json(hyperparam_path, 'use_batch_norm_nbeat')
-    
-    # Valores padrão caso não encontrados
-    if dropout_rate is None:
-        dropout_rate = 0.1
-    if use_batch_norm is None:
-        use_batch_norm = True
+    dropout_rate = read_field_from_json(hyperparam_path, "dropout_rate_nbeat")  # Dropout rate
 
     # Create the model
-    model = NBeats(input_dim, output_dim, hidden_dim, num_blocks, dropout_rate=dropout_rate, use_batch_norm=use_batch_norm)
+    model = NBeats(input_dim, output_dim, hidden_dim, num_blocks, dropout=dropout_rate)
 
     # Training loop (for demonstration)
     criterion = nn.MSELoss()  # Mean Squared Error Loss
@@ -216,6 +204,17 @@ def run(    current_animal,
         # train_nbeats_model(current_animal, file_rawdata_name, file_rawdata_columns)
         print('need first generate trainning model')
         sys.exit()
+
+    model = NBeats(input_dim, output_dim, hidden_dim, num_blocks, dropout=dropout_rate)
+    
+    # Carrega pesos
+    print(f"Loading weights from {model_path}")
+    checkpoint = torch.load(model_path, map_location=device)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    
+    # Configura para inferência
+    model.to(device)
+    model.eval()
 
     print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& 22222222222222")
 
@@ -267,49 +266,53 @@ def run(    current_animal,
         current_timestamp = start_date
         rows_generated = 0
 
+        model.eval()
+
         while current_timestamp <= end_date:
-            # Check if we've reached the maximum rows limit
             if max_rows is not None and rows_generated >= max_rows:
                 break
 
-            # Prepare the input for the model (use the last known values from the previous row)
             last_row = df.iloc[-1]
-            last_features = torch.tensor([[last_row['Prev Time Difference (hours)'], last_row['Longitude'], last_row['Latitude']]], dtype=torch.float32)
+            
+            vals = [last_row['Prev Time Difference (hours)'], last_row['Longitude'], last_row['Latitude']]
+            last_features = torch.tensor([vals], dtype=torch.float32).to(device)
 
-            # Predict the next time difference (forecasting multiple steps)
-            model.eval()
             with torch.no_grad():
                 forecast = model(last_features)
+            
+            # O forecast agora retorna 3 valores: [Tempo, Longitude, Latitude]
+            # Vamos pegar esses valores e converter para numpy/lista simples
+            predictions = forecast.cpu().numpy().flatten()
+            
+            predicted_time_diff = predictions[0]
+            predicted_longitude = predictions[1]
+            predicted_latitude = predictions[2]
 
-            # Safely extract the first predicted value (time difference)
-            if isinstance(forecast, torch.Tensor):
-                # remove batch dim if present
-                if forecast.dim() > 1 and forecast.size(0) == 1:
-                    forecast = forecast.squeeze(0)
-                # flatten and take first element
-                forecast_flat = forecast.view(-1)
-                if forecast_flat.numel() < 1:
-                    print("Warning: model returned empty tensor.")
-                    break
-                predicted_time_diff = float(forecast_flat[0].item())
-            else:
-                predicted_time_diff = float(forecast)
-
+            # Tratamento para tempo negativo
             if predicted_time_diff <= 0:
-                print("Predicted time difference is non-positive, breaking loop.")
-                break
+                predicted_time_diff = 0.1 
 
-            # Calculate the next timestamp using the predicted time difference
-            new_timestamp = current_timestamp + timedelta(hours=predicted_time_diff)
-
-            # Append the new entry to the data with the correct number of columns
+            new_timestamp = current_timestamp + timedelta(hours=float(predicted_time_diff))
+            
             mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
-            new_data.append([current_animal, new_timestamp.strftime(mask), last_row['Longitude'], last_row['Latitude'],
-                            last_row['Time Difference (hours)'], last_row['Prev Time Difference (hours)']])
+            
+            # AQUI ESTÁ A MUDANÇA MÁGICA:
+            # Usamos predicted_longitude e predicted_latitude em vez de last_row[...]
+            new_data.append([
+                current_animal, 
+                new_timestamp.strftime(mask), 
+                predicted_longitude,   # <-- Usando o valor previsto
+                predicted_latitude,    # <-- Usando o valor previsto
+                float(predicted_time_diff), 
+                last_row['Time Difference (hours)'] # O "Prev" do próximo é o "Diff" atual
+            ])
 
-            # Update current_timestamp and last_row for the next iteration
             current_timestamp = new_timestamp
-            df = pd.concat([df, pd.DataFrame([new_data[-1]], columns=df.columns)], ignore_index=True)
+            
+            # Adiciona ao DF temporário para a próxima iteração usar essa nova lat/lon como input
+            new_row_df = pd.DataFrame([new_data[-1]], columns=df.columns)
+            df = pd.concat([df, new_row_df], ignore_index=True)
+            
             rows_generated += 1
 
         return pd.DataFrame(new_data, columns=['ID', 'Timestamp', 'Longitude', 'Latitude', 'Time Difference (hours)', 'Prev Time Difference (hours)'])
@@ -450,41 +453,3 @@ def run_mock( ):
     number_of_predictions = sys.argv[2]
 
     run( current_animal, number_of_predictions )
-
-def predict_between_dates(model, last_features, last_date, next_date, scaler):
-    """
-    Predict values between two dates using the trained model
-    """
-    model.eval()
-    with torch.no_grad():
-        # Convert features to tensor
-        last_features = torch.FloatTensor(last_features).unsqueeze(0)
-        
-        # Get model prediction
-        forecast = model(last_features)
-        
-        # Handle multi-dimensional output
-        if forecast.dim() > 1:
-            forecast = forecast.squeeze()
-        
-        # Get individual predictions
-        if len(forecast) >= 3:
-            predicted_values = forecast[:3].detach().numpy()
-        else:
-            raise ValueError("Model output does not contain expected 3 values")
-            
-        # Inverse transform if scaler is provided
-        if scaler is not None:
-            predicted_values = predicted_values.reshape(1, -1)
-            predicted_values = scaler.inverse_transform(predicted_values)
-            predicted_values = predicted_values.flatten()
-
-        # Create predicted dataframe
-        predicted_df = pd.DataFrame({
-            'Timestamp': [next_date],
-            'TimeDiff': [predicted_values[0]],
-            'LatDiff': [predicted_values[1]],
-            'LonDiff': [predicted_values[2]]
-        })
-        
-        return predicted_df
