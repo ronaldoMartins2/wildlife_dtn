@@ -190,7 +190,7 @@ tangara = tangara.split('/')[-1]
 #sys.exit()
 
 #train_nbeats_model_single(current_animal, file_rawdata, file_rawdata_columns)
-train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
+#train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
 ####################################################################################################################
 
@@ -201,13 +201,13 @@ for current_animal in list_animals:
    
     print(f'len_animal {len_animal} current_animal {current_animal} file_rawdata {file_rawdata}')
 
-    run_interpolation_nbeat(current_animal, number_of_predictions, file_rawdata, file_rawdata_columns)
+    #run_interpolation_nbeat(current_animal, number_of_predictions, file_rawdata, file_rawdata_columns)
 
     start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
 
     #run_interpolation_nhits(current_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
 #exit ()
-sys.exit()
+#sys.exit()
 
 for current_animal in list_animals:
     merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )
@@ -232,11 +232,15 @@ for current_animal in list_animals:
 
 file_interpolated_nbeats = merge_all_interpolations_nbeat(file_rawdata)
 file_interpolated_nhits = merge_all_interpolations_nhits(file_rawdata)
-file_marged = merge_maps(file_rawdata, list_animals)
-file_merged_nbeats = merge_csv(file_marged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
-file_merged_nhits = merge_csv(file_marged, file_interpolated_nhits, file_rawdata, tangara, 'nhits')
+file_merged = merge_maps(file_rawdata, list_animals)
+file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
+file_merged_nhits = merge_csv(file_merged, file_interpolated_nhits, file_rawdata, tangara, 'nhits')
 
-#Chamar as funções abaixo con os dados brutos file_marged
+#Chamar as funções abaixo con os dados brutos file_merged
+run_all_kmeans(file_merged, file_rawdata, 'rawdata')
+run_birch_all(file_merged, file_rawdata, 'rawdata')
+run_som_all(file_merged, file_rawdata, 'rawdata')
+sys.exit()
 
 run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
 run_all_kmeans(file_interpolated_nhits, file_rawdata, 'nhits')

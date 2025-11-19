@@ -90,6 +90,19 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     df_centroids.to_csv(output_centroids_csv, index=False, header=None)
     print(f"Centroids saved to {output_centroids_csv}")
 
+    # --- Novo: salvar mapeamento ponto -> centróide ---
+    labels = birch_model.labels_
+    df_points = data_cleaned.reset_index(drop=True).copy()
+    df_map = pd.DataFrame({
+        'id_centroid': (labels + 1),                        # centróides numerados a partir de 1
+        'id_animal': df_points.iloc[:, 0].values,           # coluna ID original
+        'latitude_animal': df_points.iloc[:, 3].values,     # latitude
+        'longitude_animal': df_points.iloc[:, 2].values     # longitude
+    })
+    map_file = os.path.join(cluster_output_dir, f'points_birch_mapping_{output_prefix}.csv')
+    df_map.to_csv(map_file, index=False)
+    print(f"Point->centroid mapping saved to {map_file}")
+
     # Carrega idioma
     language = read_field_from_json(hyperparam_path, "language")
     json_path = os.path.join(data_prep_dir, f'language_{language}.json')
@@ -167,6 +180,17 @@ def run(current_animal, file_rawdata_name):
     df_out.insert(0, 'Index', range(1, len(df_out) + 1))
     df_out.to_csv(output_csv_path, index=False, header=None)
     print(f"Clusters saved to {output_csv_path}")
+
+    # --- Novo: salvar mapeamento ponto -> centróide para este mapa ---
+    df_map = pd.DataFrame({
+        'id_centroid': (df['Cluster'].astype(int) + 1).values,
+        'id_animal': df['id'].values,
+        'latitude_animal': df['Latitude'].values,
+        'longitude_animal': df['Longitude'].values
+    })
+    map_file = os.path.join(cluster_output_dir, f'points_birch_mapping_{current_animal}.csv')
+    df_map.to_csv(map_file, index=False)
+    print(f"Point->centroid mapping saved to {map_file}")
 
     # Carrega idioma
     json_path = f'scripts/Data_preparation/language_{read_field_from_json(hyperparam_path, "language")}.json'

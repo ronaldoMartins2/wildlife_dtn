@@ -76,7 +76,6 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     som.random_weights_init(coords)
     som.train_random(coords, ephocs)
     
-
     hiper_content = [
         f"Hyper SOM sigma {sigma}",
         f"Hyper SOM learning_rate {learning_rate}",
@@ -119,6 +118,20 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     df_centroids_real['Index'] = df_centroids_real['Index'] + 1  # começa por 1
     df_centroids_real.to_csv(output_centroids_csv, index=False, header=None)
     print(f"Centroids saved to {output_centroids_csv}")
+
+    # --- Novo: salvar mapeamento ponto -> centróide (id linear do neurônio) ---
+    # calcula id linear do neurônio para cada ponto (0-based -> +1)
+    labels = [ (n[0] * som_y + n[1]) + 1 for n in cluster_assignments ]
+    df_points = data_cleaned.reset_index(drop=True).copy()
+    df_map = pd.DataFrame({
+        'id_centroid': labels,
+        'id_animal': df_points.iloc[:, 0].values,
+        'latitude_animal': df_points.iloc[:, 3].values,
+        'longitude_animal': df_points.iloc[:, 2].values
+    })
+    map_file = os.path.join(cluster_output_dir, f'points_som_mapping_{output_prefix}.csv')
+    df_map.to_csv(map_file, index=False)
+    print(f"Point->centroid mapping saved to {map_file}")
 
     # Plota e salva o gráfico
     plt.figure(figsize=(10, 6))
@@ -175,7 +188,9 @@ def run(current_animal, file_rawdata_name):
         print(f"Warning for animal {current_animal}: Not enough data for SOM slicing (needs at least 108 rows, found {len(data_cleaned)}). Skipping.")
         return
 
-    data_selected = data_cleaned.iloc[100:108, [2, 3]]
+    # keep full slice so we still have id column for mapping
+    data_selected_full = data_cleaned.iloc[100:108]
+    data_selected = data_selected_full[[2, 3]]
     coords = data_selected.values
 
     if coords.shape[0] == 0:
@@ -237,6 +252,20 @@ def run(current_animal, file_rawdata_name):
     plt.savefig(output_png_path)
     plt.close() # Fecha a figura
     print(f"Plot saved to {output_png_path}")
+
+    # --- Novo: salvar mapeamento ponto -> centróide para o slice usado ---
+    winners = [som.winner(coord) for coord in coords]
+    labels_slice = [ (w[0] * 8 + w[1]) + 1 for w in winners ]  # aqui usamos 8 pois som foi criado como 8x8 no modo run
+    df_slice = data_selected_full.reset_index(drop=True).copy()
+    df_map_slice = pd.DataFrame({
+        'id_centroid': labels_slice,
+        'id_animal': df_slice.iloc[:, 0].values,
+        'latitude_animal': df_slice.iloc[:, 3].values,
+        'longitude_animal': df_slice.iloc[:, 2].values
+    })
+    map_file_slice = os.path.join(cluster_output_dir, f'points_som_mapping_{current_animal}.csv')
+    df_map_slice.to_csv(map_file_slice, index=False)
+    print(f"Point->centroid mapping (slice) saved to {map_file_slice}")
 
 def run_mock():
     current_animal = sys.argv[1]

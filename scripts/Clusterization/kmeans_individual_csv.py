@@ -62,6 +62,19 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix=None):
     df_centroids.to_csv(output_file_csv, index=False, header=None)
     print(f"Cluster centroids saved to {output_file_csv}")
 
+    # --- Novo: salvar mapeamento ponto -> centróide ---
+    labels = kmeans.predict(coords)
+    df_points = data_cleaned.reset_index(drop=True).copy()
+    df_map = pd.DataFrame({
+        'id_centroid': (labels + 1),                        # centróides numerados a partir de 1
+        'id_animal': df_points.iloc[:, 0].values,           # coluna ID original
+        'latitude_animal': df_points.iloc[:, 3].values,     # latitude
+        'longitude_animal': df_points.iloc[:, 2].values     # longitude
+    })
+    map_file = os.path.join(cluster_output_dir, f'points_kmeans_mapping_{output_prefix}.csv')
+    df_map.to_csv(map_file, index=False)
+    print(f"Point->centroid mapping saved to {map_file}")
+
     # Gráfico
     language = read_field_from_json(hyperparam_path, "language")
     json_path = os.path.join(data_prep_dir, f'language_{language}.json')
@@ -154,6 +167,19 @@ def run(current_animal, file_rawdata_name):
     df_centroids['Index'] = df_centroids['Index'] + 1  # começa por 1
     df_centroids.to_csv(output_file_csv, index=False, header=None)
     print(f"Cluster centroids saved to {output_file_csv}")
+
+    # --- Novo: salvar mapeamento ponto -> centróide ---
+    labels = kmeans.predict(coords)
+    df_points = data_cleaned.reset_index(drop=True).copy()
+    df_map = pd.DataFrame({
+        'id_centroid': (labels + 1),
+        'id_animal': df_points.iloc[:, 0].values,
+        'latitude_animal': df_points.iloc[:, 3].values,
+        'longitude_animal': df_points.iloc[:, 2].values
+    })
+    map_file = os.path.join(cluster_output_dir, f'points_kmeans_mapping_{current_animal}.csv')
+    df_map.to_csv(map_file, index=False)
+    print(f"Point->centroid mapping saved to {map_file}")
 
     # --- GERAÇÃO DO GRÁFICO ---
     # Carrega textos do gráfico (título, eixos) de acordo com o idioma definido

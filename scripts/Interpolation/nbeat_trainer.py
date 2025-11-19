@@ -94,31 +94,34 @@ def prepare_training_data(  #current_animal,
                             file_rawdata_columns):
 
     df = remove_nan_data(df, file_rawdata_columns)
-
-    # --- CORREÇÃO: Converter string para datetime ---
-    # Isso é necessário para que o .diff() funcione matematicamente
+    
+    # 1. Garantir datetime
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
-
-    # Ordena por tempo para garantir consistência
     df = df.sort_values(by='Timestamp')
 
-    # Calcular diferenças de tempo (agora funcionará pois são datetimes)
+    # 2. Calcular DELTAS (Variações)
+    # Tempo
     df['Time Difference (hours)'] = df['Timestamp'].diff().dt.total_seconds() / 3600.0
-    
-    # Shift para pegar a diferença anterior como input
+    # Espaço (O segredo para consertar as coordenadas está aqui)
+    df['Delta Longitude'] = df['Longitude'].diff()
+    df['Delta Latitude'] = df['Latitude'].diff()
+
+    # 3. Criar colunas "Prev" (Anteriores) para servir de input
     df['Prev Time Difference (hours)'] = df['Time Difference (hours)'].shift(1)
+    df['Prev Delta Longitude'] = df['Delta Longitude'].shift(1)
+    df['Prev Delta Latitude'] = df['Delta Latitude'].shift(1)
 
-    # Definição das FEATURES (Entrada) e TARGET (Saída)
-    features = ['Prev Time Difference (hours)', 'Longitude', 'Latitude']
-    target = ['Time Difference (hours)', 'Longitude', 'Latitude'] 
+    # 4. Definir Features (Input) e Target (Output) baseados em VARIAÇÃO
+    features = ['Prev Time Difference (hours)', 'Prev Delta Longitude', 'Prev Delta Latitude']
+    target = ['Time Difference (hours)', 'Delta Longitude', 'Delta Latitude'] 
 
-    # Remove linhas com NaN gerados pelo diff/shift
+    # Limpeza
     df = df.dropna(subset=features + target)
 
     X = df[features].values
     y = df[target].values 
 
-    # Retorna tensores. X shape: (N, 3), y shape: (N, 3)
+    # Retorna tensores (N, 3)
     return torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)
 
 def train_nbeats_model_list(

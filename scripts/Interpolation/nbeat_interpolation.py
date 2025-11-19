@@ -177,7 +177,7 @@ def run(    current_animal,
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     # Ensure the target tensor is reshaped correctly to have the same shape as the forecast
-    y_tensor = y_tensor.view(-1, 1)  # Reshape to (12, 1) if the model is predicting single values    
+    #y_tensor = y_tensor.view(-1, 1)  # Reshape to (12, 1) if the model is predicting single values    
     
     hiper_content = []
     hiper_content.append( f"Hyper nbeats input_dim {input_dim}" )
@@ -268,55 +268,73 @@ def run(    current_animal,
 
         model.eval()
 
+        # Precisamos calcular os deltas iniciais baseados no histórico recente do DF original
+        # para ter o primeiro input
+        if len(df) >= 2:
+            last_row = df.iloc[-1]
+            second_last_row = df.iloc[-2]
+            
+            # Input inicial: O último movimento que o animal fez
+            last_time_diff = (last_row['Timestamp'] - second_last_row['Timestamp']).total_seconds() / 3600.0
+            last_delta_long = last_row['Longitude'] - second_last_row['Longitude']
+            last_delta_lat = last_row['Latitude'] - second_last_row['Latitude']
+        else:
+            # Fallback se não tiver histórico suficiente (muito raro)
+            last_time_diff = 1.0
+            last_delta_long = 0.0
+            last_delta_lat = 0.0
+
+        # Guardamos a Posição Absoluta atual para ir somando
+        current_long = df.iloc[-1]['Longitude']
+        current_lat = df.iloc[-1]['Latitude']
+
         while current_timestamp <= end_date:
             if max_rows is not None and rows_generated >= max_rows:
                 break
 
-            last_row = df.iloc[-1]
-            
-            vals = [last_row['Prev Time Difference (hours)'], last_row['Longitude'], last_row['Latitude']]
+            # Prepara o tensor de entrada com os DELTAS ANTERIORES
+            vals = [last_time_diff, last_delta_long, last_delta_lat]
             last_features = torch.tensor([vals], dtype=torch.float32).to(device)
 
             with torch.no_grad():
                 forecast = model(last_features)
             
-            # O forecast agora retorna 3 valores: [Tempo, Longitude, Latitude]
-            # Vamos pegar esses valores e converter para numpy/lista simples
             predictions = forecast.cpu().numpy().flatten()
             
-            predicted_time_diff = predictions[0]
-            predicted_longitude = predictions[1]
-            predicted_latitude = predictions[2]
+            # O modelo previu VARIAÇÕES
+            pred_time_diff = float(predictions[0])
+            pred_delta_long = float(predictions[1])
+            pred_delta_lat = float(predictions[2])
 
-            # Tratamento para tempo negativo
-            if predicted_time_diff <= 0:
-                predicted_time_diff = 0.1 
+            # Tratamento para tempo
+            if pred_time_diff <= 0: pred_time_diff = 0.1
 
-            new_timestamp = current_timestamp + timedelta(hours=float(predicted_time_diff))
+            # ATUALIZAÇÃO DA POSIÇÃO (Soma o passo à posição atual)
+            new_timestamp = current_timestamp + timedelta(hours=pred_time_diff)
+            current_long += pred_delta_long
+            current_lat += pred_delta_lat
             
             mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
             
-            # AQUI ESTÁ A MUDANÇA MÁGICA:
-            # Usamos predicted_longitude e predicted_latitude em vez de last_row[...]
+            # Salva no CSV (Note que Time Diff e Prev Time Diff aqui são apenas para registro)
             new_data.append([
                 current_animal, 
                 new_timestamp.strftime(mask), 
-                predicted_longitude,   # <-- Usando o valor previsto
-                predicted_latitude,    # <-- Usando o valor previsto
-                float(predicted_time_diff), 
-                last_row['Time Difference (hours)'] # O "Prev" do próximo é o "Diff" atual
+                current_long,   # Posição absoluta calculada
+                current_lat,    # Posição absoluta calculada
+                pred_time_diff, 
+                last_time_diff
             ])
 
+            # Atualiza as variáveis para a próxima iteração do loop
             current_timestamp = new_timestamp
-            
-            # Adiciona ao DF temporário para a próxima iteração usar essa nova lat/lon como input
-            new_row_df = pd.DataFrame([new_data[-1]], columns=df.columns)
-            df = pd.concat([df, new_row_df], ignore_index=True)
+            last_time_diff = pred_time_diff
+            last_delta_long = pred_delta_long
+            last_delta_lat = pred_delta_lat
             
             rows_generated += 1
 
         return pd.DataFrame(new_data, columns=['ID', 'Timestamp', 'Longitude', 'Latitude', 'Time Difference (hours)', 'Prev Time Difference (hours)'])
-
     def find_min_max_dates(current_animal, file_rawdata_columns):
         """
         Reads a CSV file and identifies the earliest and latest dates in the 'Datetime' column.
