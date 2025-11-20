@@ -126,6 +126,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     df_map = pd.DataFrame({
         'id_centroid': labels,
         'id_animal': df_points.iloc[:, 0].values,
+        'timestamp': df_points.iloc[:, 1].values,  # coluna 1 é o timestamp
         'latitude_animal': df_points.iloc[:, 3].values,
         'longitude_animal': df_points.iloc[:, 2].values
     })
@@ -260,6 +261,7 @@ def run(current_animal, file_rawdata_name):
     df_map_slice = pd.DataFrame({
         'id_centroid': labels_slice,
         'id_animal': df_slice.iloc[:, 0].values,
+        'timestamp': df_slice.iloc[:, 1].values,  # coluna 1 é o timestamp
         'latitude_animal': df_slice.iloc[:, 3].values,
         'longitude_animal': df_slice.iloc[:, 2].values
     })

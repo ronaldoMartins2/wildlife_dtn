@@ -298,3 +298,9 @@ Early stopping at epoch 12
 [jaguar_mamiraua] Epoch  60 | Loss: 2034745.5000 | Train MAE: 35.8907 | Train RMSE: 1426.4559 | Train MAPE: 172991.09%
 [jaguar_mamiraua] Epoch  80 | Loss: 2034510.7500 | Train MAE: 35.8869 | Train RMSE: 1426.3557 | Train MAPE: 178885.09%
 [jaguar_mamiraua] Epoch  99 | Loss: 2034322.2500 | Train MAE: 35.8836 | Train RMSE: 1426.2659 | Train MAPE: 183951.80%
+[jaguar_mamiraua] Epoch   0 | Loss: 2035578.0000 | Train MAE: 35.9106 | Train RMSE: 1426.7651 | Train MAPE: 166932.14%
+[jaguar_mamiraua] Epoch  20 | Loss: 2035361.2500 | Train MAE: 35.9255 | Train RMSE: 1426.7062 | Train MAPE: 191692.11%
+[jaguar_mamiraua] Epoch  40 | Loss: 2035024.0000 | Train MAE: 35.9266 | Train RMSE: 1426.5731 | Train MAPE: 202780.97%
+[jaguar_mamiraua] Epoch  60 | Loss: 2034950.7500 | Train MAE: 35.9214 | Train RMSE: 1426.4531 | Train MAPE: 202374.33%
+[jaguar_mamiraua] Epoch  80 | Loss: 2034370.0000 | Train MAE: 35.9142 | Train RMSE: 1426.3613 | Train MAPE: 197316.77%
+[jaguar_mamiraua] Epoch  99 | Loss: 2034283.5000 | Train MAE: 35.9097 | Train RMSE: 1426.2700 | Train MAPE: 196195.30%

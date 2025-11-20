@@ -190,7 +190,7 @@ tangara = tangara.split('/')[-1]
 #sys.exit()
 
 #train_nbeats_model_single(current_animal, file_rawdata, file_rawdata_columns)
-#train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
+train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
 ####################################################################################################################
 
@@ -201,13 +201,13 @@ for current_animal in list_animals:
    
     print(f'len_animal {len_animal} current_animal {current_animal} file_rawdata {file_rawdata}')
 
-    #run_interpolation_nbeat(current_animal, number_of_predictions, file_rawdata, file_rawdata_columns)
+    run_interpolation_nbeat(current_animal, number_of_predictions, file_rawdata, file_rawdata_columns)
 
     start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
 
     #run_interpolation_nhits(current_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
 #exit ()
-#sys.exit()
+sys.exit()
 
 for current_animal in list_animals:
     merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )

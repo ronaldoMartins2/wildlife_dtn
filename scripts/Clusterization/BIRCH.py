@@ -96,6 +96,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     df_map = pd.DataFrame({
         'id_centroid': (labels + 1),                        # centróides numerados a partir de 1
         'id_animal': df_points.iloc[:, 0].values,           # coluna ID original
+        'timestamp': df_points.iloc[:, 1].values,  # coluna 1 é o timestamp
         'latitude_animal': df_points.iloc[:, 3].values,     # latitude
         'longitude_animal': df_points.iloc[:, 2].values     # longitude
     })
