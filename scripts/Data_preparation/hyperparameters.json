@@ -44,16 +44,15 @@
     "sigma_SOM": 0.5,
     "learning_rate_SOM": 0.5,
     "ephocs_SOM": 500,
-    "som_x": 8,
+    "som_x": 32,
     "som_y": 1,
 
-    "n_clusters_kmeans": 8,
+    "n_clusters_kmeans": 32,
     "random_state_kmeans": 0,
     "n_init_kmeans": 10,
 
     "bandwidth": 0.03,
 
-    "BIRCH_NCLUSTERS": 8,
-
-    "threshold": 0.5
+    "BIRCH_NCLUSTERS": 32,
+    "threshold": 0.3
 }

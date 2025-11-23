@@ -56,6 +56,33 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
 
     coords = data_cleaned.iloc[:, [2, 3]].values
 
+    # --- Novo: converter para float e limpar NaN/inf ---
+    print(f"[SOM] coords shape before cleaning: {coords.shape}")
+    print(f"[SOM] coords dtype: {coords.dtype}")
+    
+    # Converter para float (força conversão segura)
+    try:
+        coords = coords.astype(float)
+    except (ValueError, TypeError) as e:
+        print(f"[SOM] Erro ao converter coords para float: {e}")
+        print(f"[SOM] Primeiras linhas de coords: {coords[:5]}")
+        return
+    
+    # Remover NaN e inf
+    valid_mask = ~(np.isnan(coords).any(axis=1) | np.isinf(coords).any(axis=1))
+    coords_clean = coords[valid_mask]
+    print(f"[SOM] coords shape after cleaning: {coords_clean.shape}")
+    print(f"[SOM] Removidas {coords.shape[0] - coords_clean.shape[0]} linhas com NaN/inf")
+    
+    if coords_clean.shape[0] == 0:
+        print(f"[SOM] All coordinates are NaN/inf. Skipping SOM training.")
+        return
+    
+    coords = coords_clean
+    
+    # Atualizar data_cleaned para refletir limpeza
+    data_cleaned = data_cleaned[valid_mask]
+    
     # Salva as coordenadas usadas no diretório de saída correto
     output_csv_path = os.path.join(cluster_output_dir, f'clusters_som_{output_prefix}.csv')
     df_coords = data_cleaned.iloc[:, [2, 3]].copy()

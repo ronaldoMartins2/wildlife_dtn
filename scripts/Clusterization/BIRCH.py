@@ -119,7 +119,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     # Adiciona centroides ao gráfico (corrigido!)
     plt.scatter(centroids_final[:, 0], centroids_final[:, 1], color='red', marker='x', s=100, label='Centroids')
 
-    plt.title(f"{lang['grafico_BIRCH']} - Clusters: {n_clusters} - Centroids:  - {output_prefix.capitalize()}")
+    plt.title(f"{lang['grafico_BIRCH']} - Clusters: {n_clusters} - Centroids:  {len(centroids_final)} - {output_prefix.capitalize()}")
     plt.xlabel(lang["xlabel_BIRCH"])
     plt.ylabel(lang["ylabel_BIRCH"])
     plt.legend()
@@ -135,6 +135,11 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
     with open(hiper_path, "a") as file:
         file.write(hiper_content[0] + '\n')
+
+    # Adicione isto em run_all() após fit_predict():
+    print(f"[BIRCH] n_clusters solicitado: {n_clusters}")
+    print(f"[BIRCH] clusters únicos gerados: {len(np.unique(labels))}")
+    print(f"[BIRCH] threshold usado: {threshold}")
 
 def run(current_animal, file_rawdata_name):
     # --- CAMINHO DE ENTRADA (para ler os dados) ---

@@ -200,6 +200,7 @@ def run(current_animal, number_of_predictions, file_rawdata_name, file_rawdata_c
         )
         
         results_dir = results_folder(file_rawdata_name)
-        out_path = os.path.join(results_dir, f'map_{current_animal}_interpolation_nbeats.csv')
-        df_interp.to_csv(out_path, index=False)
+        interpolation_dir = os.path.join(results_dir, 'Interpolation')
+        out_path = os.path.join(interpolation_dir, f'map_{current_animal}_interpolation_nbeats.csv')
+        df_interp.to_csv(out_path, index=False, header=False)
         print(f"Saved to {out_path}")
