@@ -47,11 +47,11 @@ from Data_preparation.separar_localizacoes_individuais import (
 
 from Interpolation.nhits_trainer import (
     main_training,
-    train_nhits_model_list
+    nhits_main_training_list
 )
 
 from Interpolation.nbeat_trainer import (
-    #train_nbeats_model_single,
+    train_nbeats_model_single,
     train_nbeats_model_list
 )
 
@@ -152,11 +152,13 @@ len_animals = len(list_animals)
 print(f' list_animals { len_animals }')
 
 print(f'{list_animals}')
-
+'''
 for current_animal in list_animals:
     run_preparation( current_animal, file_rawdata, file_rawdata_columns )
     run_average_by_individual( current_animal, file_rawdata, file_rawdata_columns )
     run_media_tempos_hist( current_animal, file_rawdata)
+
+'''
 
 time.sleep(2)
 # sys.exit()
@@ -186,26 +188,26 @@ tangara = tangara.split('/')[-1]
 
 ################ call for training models Nbeat and Nhits #########################################################
 
-#train_nhits_model_list(list_animals, file_rawdata, file_rawdata_columns)
+#nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
 
-#train_nbeats_model_single(current_animal, file_rawdata, file_rawdata_columns)
+train_nbeats_model_single(93, file_rawdata, file_rawdata_columns)
 #train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
 ####################################################################################################################
+#sys.exit()
 
 #TODO review number_of_predictions 
 number_of_predictions = 5
-len_animal = get_len_animal( '93', file_rawdata )
+len_animal = get_len_animal( 93, file_rawdata )
+    
+print(f'len_animal {93} current_animal {93} file_rawdata {file_rawdata}')
 
-print(f'len_animal {'93'} current_animal {'93'} file_rawdata {file_rawdata}')
+run_interpolation_nbeat(93, number_of_predictions, file_rawdata, file_rawdata_columns)
 
-run_interpolation_nbeat('93', number_of_predictions, file_rawdata, file_rawdata_columns)
+start_date, end_date = get_top_botom_date( 93, file_rawdata, file_rawdata_columns )
 
-start_date, end_date = get_top_botom_date( '93', file_rawdata, file_rawdata_columns )
-
-run_interpolation_nhits("93", start_date, end_date, file_rawdata, file_rawdata_columns)
-
+run_interpolation_nhits(93, start_date, end_date, file_rawdata, file_rawdata_columns)
 '''
 for current_animal in list_animals:
     #TODO review number_of_predictions 
@@ -222,6 +224,7 @@ for current_animal in list_animals:
 #exit ()
 #sys.exit()
 '''
+sys.exit()
 
 for current_animal in list_animals:
     merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )
@@ -249,12 +252,6 @@ file_interpolated_nhits = merge_all_interpolations_nhits(file_rawdata)
 file_merged = merge_maps(file_rawdata, list_animals)
 file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
 file_merged_nhits = merge_csv(file_merged, file_interpolated_nhits, file_rawdata, tangara, 'nhits')
-
-
-run_all_kmeans(file_merged, file_rawdata, 'rawdata')
-run_som_all(file_merged, file_rawdata, 'rawdata')
-run_birch_all(file_merged, file_rawdata, 'rawdata')
-sys.exit()
 
 map_animal_93 = os.path.join(results_dir, f'map_93.csv')
 map_animal_93_interpolated_nbeats = os.path.join(results_dir, f'Interpolation/map_93_interpolation_nbeats.csv')

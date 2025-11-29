@@ -304,3 +304,39 @@ Early stopping at epoch 12
 [jaguar_mamiraua] Epoch  60 | Loss: 2034950.7500 | Train MAE: 35.9214 | Train RMSE: 1426.4531 | Train MAPE: 202374.33%
 [jaguar_mamiraua] Epoch  80 | Loss: 2034370.0000 | Train MAE: 35.9142 | Train RMSE: 1426.3613 | Train MAPE: 197316.77%
 [jaguar_mamiraua] Epoch  99 | Loss: 2034283.5000 | Train MAE: 35.9097 | Train RMSE: 1426.2700 | Train MAPE: 196195.30%
+[jaguar_mamiraua] Epoch   0 | Loss: 68444504.0000 | Train MAE: 2982.4849 | Train RMSE: 8272.9941 | Train MAPE: 131.36%
+[jaguar_mamiraua] Epoch  20 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch  40 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch  60 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch  80 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch  99 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch   0 | Loss: 68496632.0000 | Train MAE: 2997.4272 | Train RMSE: 8276.1141 | Train MAPE: 4847.32%
+[jaguar_mamiraua] Epoch  20 | Loss: 68450896.0000 | Train MAE: 2983.2793 | Train RMSE: 8273.3785 | Train MAPE: 724.08%
+[jaguar_mamiraua] Epoch  40 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch  60 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch  80 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch  99 | Loss: 68442288.0000 | Train MAE: 2982.5154 | Train RMSE: 8272.9854 | Train MAPE: 121.77%
+[jaguar_mamiraua] Epoch   0 | Loss: 5273189.0000 | MAE_TimeDiff: 660.1631 | MAE_Lon: 224.131973 | MAE_Lat: 20.819042
+[jaguar_mamiraua] Epoch  20 | Loss: 5241599.5000 | MAE_TimeDiff: 661.5944 | MAE_Lon: 223.435760 | MAE_Lat: 18.096418
+[jaguar_mamiraua] Epoch  40 | Loss: 5240763.5000 | MAE_TimeDiff: 663.3600 | MAE_Lon: 223.435760 | MAE_Lat: 14.087016
+[jaguar_mamiraua] Epoch  60 | Loss: 5240072.0000 | MAE_TimeDiff: 665.0254 | MAE_Lon: 223.435760 | MAE_Lat: 10.888893
+[jaguar_mamiraua] Epoch  80 | Loss: 5239579.5000 | MAE_TimeDiff: 666.4974 | MAE_Lon: 223.435760 | MAE_Lat: 8.613242
+[jaguar_mamiraua] Epoch  99 | Loss: 5239167.0000 | MAE_TimeDiff: 667.6744 | MAE_Lon: 223.435760 | MAE_Lat: 6.931480
+[jaguar_mamiraua] Epoch   0 | Loss: 5240217.0000 | MAE_TimeDiff: 659.5222 | MAE_Lon: 223.435760 | MAE_Lat: 6.792856
+[jaguar_mamiraua] Epoch  20 | Loss: 5240206.5000 | MAE_TimeDiff: 659.5222 | MAE_Lon: 223.435760 | MAE_Lat: 6.792856
+[jaguar_mamiraua] Epoch  40 | Loss: 5240206.5000 | MAE_TimeDiff: 659.5222 | MAE_Lon: 223.435760 | MAE_Lat: 6.792856
+[jaguar_mamiraua] Epoch  60 | Loss: 5240206.5000 | MAE_TimeDiff: 659.5222 | MAE_Lon: 223.435760 | MAE_Lat: 6.792856
+[jaguar_mamiraua] Epoch  80 | Loss: 5240206.5000 | MAE_TimeDiff: 659.5222 | MAE_Lon: 223.435760 | MAE_Lat: 6.792856
+[jaguar_mamiraua] Epoch  99 | Loss: 5240206.5000 | MAE_TimeDiff: 659.5222 | MAE_Lon: 223.435760 | MAE_Lat: 6.792856
+[jaguar_mamiraua] Epoch   0 | Loss: 5393114.5000 | MAE_TimeDiff: 663.0840 | MAE_Lon: 233.380737 | MAE_Lat: 8.637412
+[jaguar_mamiraua] Epoch  20 | Loss: 5270323.5000 | MAE_TimeDiff: 659.7805 | MAE_Lon: 227.472305 | MAE_Lat: 8.167098
+[jaguar_mamiraua] Epoch  40 | Loss: 5240861.0000 | MAE_TimeDiff: 659.4656 | MAE_Lon: 225.400436 | MAE_Lat: 7.386932
+[jaguar_mamiraua] Epoch  60 | Loss: 5240497.5000 | MAE_TimeDiff: 659.4604 | MAE_Lon: 224.822586 | MAE_Lat: 7.079360
+[jaguar_mamiraua] Epoch  80 | Loss: 5240186.0000 | MAE_TimeDiff: 659.4454 | MAE_Lon: 224.373474 | MAE_Lat: 6.792856
+[jaguar_mamiraua] Epoch  99 | Loss: 5240163.0000 | MAE_TimeDiff: 659.4372 | MAE_Lon: 223.986816 | MAE_Lat: 6.792856
+[jaguar_mamiraua] Epoch   0 | Loss: 5252435.0000 | MAE_TimeDiff: 671.7977 | MAE_Lon: 228.496109 | MAE_Lat: 22.532904
+[jaguar_mamiraua] Epoch  20 | Loss: 5247451.0000 | MAE_TimeDiff: 669.4272 | MAE_Lon: 225.456833 | MAE_Lat: 15.220176
+[jaguar_mamiraua] Epoch  40 | Loss: 5245776.5000 | MAE_TimeDiff: 667.9511 | MAE_Lon: 223.630035 | MAE_Lat: 12.976347
+[jaguar_mamiraua] Epoch  60 | Loss: 5245630.5000 | MAE_TimeDiff: 669.0115 | MAE_Lon: 223.630035 | MAE_Lat: 11.574881
+[jaguar_mamiraua] Epoch  80 | Loss: 5245543.5000 | MAE_TimeDiff: 669.8088 | MAE_Lon: 223.630035 | MAE_Lat: 10.511964
+[jaguar_mamiraua] Epoch  99 | Loss: 5245489.5000 | MAE_TimeDiff: 670.0904 | MAE_Lon: 223.630035 | MAE_Lat: 9.720169

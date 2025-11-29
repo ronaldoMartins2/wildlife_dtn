@@ -1,61 +1,69 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.optim as optim
+import numpy as np
 
-class NHITSBlock(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim, n_layers=2, dropout=0.1):
-        super(NHITSBlock, self).__init__()
+# Define the NHiTSBlock with hierarchical time series forecasting mechanism
+class NHiTSBlock(nn.Module):
+    def __init__(self, input_dim, hidden_dim, num_hierarchies):
+        super(NHiTSBlock, self).__init__()
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        self.fc3 = nn.Linear(hidden_dim, hidden_dim)  # Output is hidden_dim (not scalar)
         
-        self.layers = nn.ModuleList()
+        # Optional: If you want residual connections, ensure they match input/output dimensions
+        self.fc_res = nn.Linear(hidden_dim, hidden_dim)  # Fix the dimension mismatch here
         
-        # Primeira camada
-        self.layers.append(nn.Linear(input_dim, hidden_dim))
-        self.layers.append(nn.BatchNorm1d(hidden_dim)) # Batch Norm
-        self.layers.append(nn.ReLU())
-        self.layers.append(nn.Dropout(dropout))        # Dropout
-        
-        # Camadas ocultas extras
-        for _ in range(n_layers - 1):
-            self.layers.append(nn.Linear(hidden_dim, hidden_dim))
-            self.layers.append(nn.BatchNorm1d(hidden_dim)) # Batch Norm
-            self.layers.append(nn.ReLU())
-            self.layers.append(nn.Dropout(dropout))        # Dropout
-            
-        # Projeção final (backcast e forecast)
-        self.backcast_head = nn.Linear(hidden_dim, input_dim)
-        self.forecast_head = nn.Linear(hidden_dim, output_dim)
-        
-    def forward(self, x):
-        h = x
-        for layer in self.layers:
-            h = layer(h)
-            
-        backcast = self.backcast_head(h)
-        forecast = self.forecast_head(h)
-        return backcast, forecast
+        self.num_hierarchies = num_hierarchies  # Number of hierarchical levels
 
-class NHITS(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim, num_blocks, dropout=0.1):
-        super(NHITS, self).__init__()
-        
-        # N-HiTS geralmente usa "Stacks", aqui simplificamos como uma lista de blocos
-        # para manter consistência com o input/output do seu pipeline
-        self.blocks = nn.ModuleList([
-            NHITSBlock(input_dim, output_dim, hidden_dim, n_layers=2, dropout=dropout)
-            for _ in range(num_blocks)
-        ])
-        
     def forward(self, x):
-        # x shape: (Batch, Input_Dim)
-        residual = x
-        forecast_sum = torch.zeros_like(x) # Assumindo output_dim ~= input_dim (3 para 3)
+        # Initial forecast (without residual connection)
+        forecast = torch.relu(self.fc1(x))  # Shape: [batch_size, hidden_dim]
+        forecast = torch.relu(self.fc2(forecast))  # Shape: [batch_size, hidden_dim]
+        forecast = self.fc3(forecast)  # Shape: [batch_size, hidden_dim]
+
+        # Initialize forecast_residual as forecast (first step)
+        forecast_residual = forecast  # The initial residual is just the forecast itself
+
+        # Apply residual connections (hierarchical forecasting)
+        hierarchical_forecasts = [forecast]  # List to store forecasts at different levels
+        for _ in range(self.num_hierarchies - 1):
+            forecast_residual = self.fc_res(forecast_residual)  # Shape: [batch_size, hidden_dim]
+            forecast_residual = torch.relu(forecast_residual)  # Ensure activation for residuals
+            forecast_residual = self.fc3(forecast_residual)  # Apply output layer to residual forecast
+            hierarchical_forecasts.append(forecast_residual)
         
-        # Se output_dim for diferente de input_dim, ajustamos o tensor de soma
-        # Mas no seu caso ambos são 3 (Time, Lat, Lon)
+        return hierarchical_forecasts  # Return hierarchical forecasts
+
+
+# Define the NHiTS model
+class NHits(nn.Module):
+    def __init__(self, input_dim, hidden_dim, num_blocks, num_hierarchies):
+        super(NHits, self).__init__()
+        self.blocks = nn.ModuleList([NHiTSBlock(input_dim, hidden_dim, num_hierarchies) for _ in range(num_blocks)])
         
+        # Separate output layers for time difference, longitude, and latitude
+        self.fc_time = nn.Linear(hidden_dim, 1)  # For time difference
+        self.fc_lon = nn.Linear(hidden_dim, 1)  # For longitude
+        self.fc_lat = nn.Linear(hidden_dim, 1)  # For latitude
+
+    def forward(self, x):
+        forecasts = []
         for block in self.blocks:
-            backcast, forecast = block(residual)
-            residual = residual - backcast
-            forecast_sum = forecast_sum + forecast
-            
-        return forecast_sum
+            block_forecasts = block(x)  # Get hierarchical forecasts from each block
+            forecasts.append(block_forecasts)
+
+        # Aggregate all forecasts from each block and hierarchy level
+        aggregated_forecasts = [torch.mean(torch.stack([forecast[i] for forecast in forecasts]), dim=0)
+                                for i in range(len(forecasts[0]))]
+
+        # The aggregated forecast for each hierarchy is expected to be of shape [batch_size, hidden_dim]
+        # We take the first forecast from the first block for simplicity, which should have shape [batch_size, hidden_dim]
+        aggregated_forecast = aggregated_forecasts[0]
+
+        # Separate predictions for time difference, longitude, and latitude
+        time_diff = self.fc_time(aggregated_forecast)  # Output shape: [batch_size, 1]
+        longitude = self.fc_lon(aggregated_forecast)  # Output shape: [batch_size, 1]
+        latitude = self.fc_lat(aggregated_forecast)  # Output shape: [batch_size, 1]
+
+        return time_diff.view(-1), longitude.view(-1), latitude.view(-1)

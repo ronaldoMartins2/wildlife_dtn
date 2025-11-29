@@ -45,75 +45,48 @@ class NBeats(nn.Module):
 
         return final_forecast
 '''
+
 import torch
 import torch.nn as nn
 
 class NBeatsBlock(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim, dropout=0.1):
+    def __init__(self, input_dim, output_dim, hidden_dim):
         super(NBeatsBlock, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
         
         # Feature extraction layers
         self.fc1 = nn.Linear(input_dim, hidden_dim)
-        self.bn1 = nn.BatchNorm1d(hidden_dim)
-        
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
-        self.bn2 = nn.BatchNorm1d(hidden_dim)
-        
         self.fc3 = nn.Linear(hidden_dim, hidden_dim)
-        self.bn3 = nn.BatchNorm1d(hidden_dim)
-        
         self.fc4 = nn.Linear(hidden_dim, hidden_dim)
-        self.bn4 = nn.BatchNorm1d(hidden_dim)
         
-        # Dropout layer
-        self.dropout = nn.Dropout(p=dropout)
-        
-        # Output branches (No BN/Dropout typically on the final projection heads)
-        self.forecast_head = nn.Linear(hidden_dim, output_dim)
-        self.backcast_head = nn.Linear(hidden_dim, input_dim)
+        # Output branches
+        self.forecast_head = nn.Linear(hidden_dim, output_dim)  # For predictions
+        self.backcast_head = nn.Linear(hidden_dim, input_dim)   # For residual connection
         
     def forward(self, x):
-        # Feature extraction block 1
-        h = self.fc1(x)
-        h = self.bn1(h)
-        h = torch.relu(h)
-        h = self.dropout(h)
-
-        # Feature extraction block 2
-        h = self.fc2(h)
-        h = self.bn2(h)
-        h = torch.relu(h)
-        h = self.dropout(h)
-        
-        # Feature extraction block 3
-        h = self.fc3(h)
-        h = self.bn3(h)
-        h = torch.relu(h)
-        h = self.dropout(h)
-        
-        # Feature extraction block 4
-        h = self.fc4(h)
-        h = self.bn4(h)
-        h = torch.relu(h)
-        h = self.dropout(h)
+        # Feature extraction
+        h = torch.relu(self.fc1(x))
+        h = torch.relu(self.fc2(h))
+        h = torch.relu(self.fc3(h))
+        h = torch.relu(self.fc4(h))
         
         # Generate forecast and backcast
-        forecast = self.forecast_head(h)
-        backcast = self.backcast_head(h)
+        forecast = self.forecast_head(h)  # Shape: (batch_size, output_dim)
+        backcast = self.backcast_head(h)  # Shape: (batch_size, input_dim)
         
         return forecast, backcast
 
 class NBeats(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim, num_blocks, dropout=0.1):
+    def __init__(self, input_dim, output_dim, hidden_dim, num_blocks):
         super(NBeats, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.num_blocks = num_blocks
         
         self.blocks = nn.ModuleList([
-            NBeatsBlock(input_dim, output_dim, hidden_dim, dropout) 
+            NBeatsBlock(input_dim, output_dim, hidden_dim) 
             for _ in range(num_blocks)
         ])
         
@@ -121,7 +94,7 @@ class NBeats(nn.Module):
         batch_size = x.shape[0]
         
         # Initialize residual and forecast accumulator
-        residual = x.clone()
+        residual = x.clone()  # Shape: (batch_size, input_dim)
         forecast_sum = torch.zeros(batch_size, self.output_dim, device=x.device)
         
         for block in self.blocks:
@@ -135,12 +108,12 @@ class NBeats(nn.Module):
             residual = residual - backcast
         
         # Final forecast - ensure correct shape
-        final_forecast = forecast_sum.squeeze()
+        final_forecast = forecast_sum.squeeze()  # Remove unnecessary dimensions
         
-        # Apply ReLU to ensure positive predictions
+        # Apply ReLU to ensure positive predictions (if needed for your use case)
         final_forecast = torch.relu(final_forecast)
         
-        # Clip to minimum threshold
+        # Clip to minimum threshold if necessary
         final_forecast = torch.maximum(final_forecast, torch.tensor(0.1, device=x.device))
         
         return final_forecast
