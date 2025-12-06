@@ -54,5 +54,5 @@
     "bandwidth": 0.03,
 
     "BIRCH_NCLUSTERS": 32,
-    "threshold": 0.3
+    "threshold": 0.1
 }

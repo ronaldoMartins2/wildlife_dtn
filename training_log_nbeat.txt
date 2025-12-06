@@ -340,3 +340,81 @@ Early stopping at epoch 12
 [jaguar_mamiraua] Epoch  60 | Loss: 5245630.5000 | MAE_TimeDiff: 669.0115 | MAE_Lon: 223.630035 | MAE_Lat: 11.574881
 [jaguar_mamiraua] Epoch  80 | Loss: 5245543.5000 | MAE_TimeDiff: 669.8088 | MAE_Lon: 223.630035 | MAE_Lat: 10.511964
 [jaguar_mamiraua] Epoch  99 | Loss: 5245489.5000 | MAE_TimeDiff: 670.0904 | MAE_Lon: 223.630035 | MAE_Lat: 9.720169
+[jaguar_mamiraua] Epoch   0 | Loss: 5248144.5000 | MAE_TimeDiff: 662.9885 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  20 | Loss: 5247065.0000 | MAE_TimeDiff: 662.7164 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  40 | Loss: 5245960.0000 | MAE_TimeDiff: 662.8381 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  60 | Loss: 5245805.5000 | MAE_TimeDiff: 663.8879 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  80 | Loss: 5245653.0000 | MAE_TimeDiff: 665.1766 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  99 | Loss: 5245536.0000 | MAE_TimeDiff: 666.4222 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch   0 | Loss: 5248773.5000 | MAE_TimeDiff: 662.2627 | MAE_Lon: 224.140152 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  20 | Loss: 5247619.5000 | MAE_TimeDiff: 662.0565 | MAE_Lon: 223.649796 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  40 | Loss: 5246601.0000 | MAE_TimeDiff: 661.7902 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  60 | Loss: 5246109.0000 | MAE_TimeDiff: 662.5433 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  80 | Loss: 5245946.5000 | MAE_TimeDiff: 663.6391 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  99 | Loss: 5245806.5000 | MAE_TimeDiff: 664.7657 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch   0 | Loss: 5360693.0000 | MAE_TimeDiff: 662.5700 | MAE_Lon: 230.763321 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  20 | Loss: 5246022.5000 | MAE_TimeDiff: 662.6102 | MAE_Lon: 223.641220 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  40 | Loss: 5245795.0000 | MAE_TimeDiff: 664.0241 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  60 | Loss: 5245629.5000 | MAE_TimeDiff: 665.4756 | MAE_Lon: 223.632050 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  80 | Loss: 5245520.5000 | MAE_TimeDiff: 666.7594 | MAE_Lon: 223.630920 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  99 | Loss: 5245454.0000 | MAE_TimeDiff: 667.8226 | MAE_Lon: 223.630325 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch   0 | Loss: 5256041.0000 | MAE_TimeDiff: 665.0240 | MAE_Lon: 232.413635 | MAE_Lat: 16.241434
+[jaguar_mamiraua] Epoch  20 | Loss: 5250209.0000 | MAE_TimeDiff: 664.1094 | MAE_Lon: 230.274200 | MAE_Lat: 11.987216
+[jaguar_mamiraua] Epoch  40 | Loss: 5247152.0000 | MAE_TimeDiff: 664.9420 | MAE_Lon: 227.572067 | MAE_Lat: 8.690403
+[jaguar_mamiraua] Epoch  60 | Loss: 5245630.5000 | MAE_TimeDiff: 666.4818 | MAE_Lon: 224.665344 | MAE_Lat: 6.858190
+[jaguar_mamiraua] Epoch  80 | Loss: 5245442.0000 | MAE_TimeDiff: 668.5357 | MAE_Lon: 223.630051 | MAE_Lat: 6.841499
+[jaguar_mamiraua] Epoch  99 | Loss: 5245398.0000 | MAE_TimeDiff: 669.7669 | MAE_Lon: 223.630035 | MAE_Lat: 6.837635
+[jaguar_mamiraua] Epoch   0 | Loss: 5248413.5000 | MAE_TimeDiff: 660.3082 | MAE_Lon: 223.630035 | MAE_Lat: 9.876088
+[jaguar_mamiraua] Epoch  20 | Loss: 5246741.5000 | MAE_TimeDiff: 660.3082 | MAE_Lon: 223.630035 | MAE_Lat: 6.882792
+[jaguar_mamiraua] Epoch  40 | Loss: 5246626.5000 | MAE_TimeDiff: 660.3082 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  60 | Loss: 5246626.5000 | MAE_TimeDiff: 660.3082 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  80 | Loss: 5246626.5000 | MAE_TimeDiff: 660.3082 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch  99 | Loss: 5246626.5000 | MAE_TimeDiff: 660.3082 | MAE_Lon: 223.630035 | MAE_Lat: 6.797300
+[jaguar_mamiraua] Epoch   0 | Loss: 1474.9619 | MAE_TimeDiff: 12.0002 | MAE_Lon: 64.977089 | MAE_Lat: 3.724113
+[jaguar_mamiraua] Epoch  20 | Loss: 1472.3682 | MAE_TimeDiff: 12.0001 | MAE_Lon: 64.977089 | MAE_Lat: 3.430691
+[jaguar_mamiraua] Epoch  40 | Loss: 1471.0796 | MAE_TimeDiff: 12.0000 | MAE_Lon: 64.977089 | MAE_Lat: 3.146947
+[jaguar_mamiraua] Epoch  60 | Loss: 1471.0267 | MAE_TimeDiff: 12.0000 | MAE_Lon: 64.977089 | MAE_Lat: 3.138172
+[jaguar_mamiraua] Epoch  80 | Loss: 1471.0267 | MAE_TimeDiff: 12.0000 | MAE_Lon: 64.977089 | MAE_Lat: 3.138172
+[jaguar_mamiraua] Epoch  99 | Loss: 1471.0267 | MAE_TimeDiff: 12.0000 | MAE_Lon: 64.977089 | MAE_Lat: 3.138172
+[jaguar_mamiraua] Epoch   0 | Loss(MSE): 0.46493 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  20 | Loss(MSE): 0.44438 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  40 | Loss(MSE): 0.42679 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  60 | Loss(MSE): 0.40996 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  80 | Loss(MSE): 0.39356 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  99 | Loss(MSE): 0.37918 | Real MAE: Time=12.000h, Lon=0.00001, Lat=0.00004
+[jaguar_mamiraua] Epoch   0 | Loss(MSE): 0.45924 | Real MAE: Time=12.076h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  20 | Loss(MSE): 0.44234 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  40 | Loss(MSE): 0.42667 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  60 | Loss(MSE): 0.41169 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  80 | Loss(MSE): 0.39658 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  99 | Loss(MSE): 0.38188 | Real MAE: Time=12.000h, Lon=0.00001, Lat=0.00004
+[jaguar_mamiraua] Epoch   0 | Loss(MSE): 0.41380 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  20 | Loss(MSE): 0.39744 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  40 | Loss(MSE): 0.38259 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  60 | Loss(MSE): 0.36863 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  80 | Loss(MSE): 0.35622 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  99 | Loss(MSE): 0.34504 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch   0 | Loss(MSE): 0.41242 | Real MAE: Time=12.243h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  20 | Loss(MSE): 0.38917 | Real MAE: Time=12.191h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  40 | Loss(MSE): 0.36756 | Real MAE: Time=12.121h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  60 | Loss(MSE): 0.34710 | Real MAE: Time=12.046h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  80 | Loss(MSE): 0.32808 | Real MAE: Time=11.964h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  99 | Loss(MSE): 0.31053 | Real MAE: Time=11.878h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch   0 | Loss(MSE): 0.45093 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  20 | Loss(MSE): 0.42488 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  40 | Loss(MSE): 0.40180 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  60 | Loss(MSE): 0.38070 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  80 | Loss(MSE): 0.36018 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch  99 | Loss(MSE): 0.34267 | Real MAE: Time=12.000h, Lon=0.00002, Lat=0.00004
+[jaguar_mamiraua] Epoch   0 | Loss(MSE): 0.45179 | Real MAE: Time=6180.317h, Lon=55866.27344, Lat=2063.62817
+[jaguar_mamiraua] Epoch  20 | Loss(MSE): 0.41302 | Real MAE: Time=5871.049h, Lon=53096.23438, Lat=1995.47949
+[jaguar_mamiraua] Epoch  40 | Loss(MSE): 0.37860 | Real MAE: Time=5590.542h, Lon=50578.14844, Lat=1924.89880
+[jaguar_mamiraua] Epoch  60 | Loss(MSE): 0.34187 | Real MAE: Time=5334.111h, Lon=47778.33203, Lat=1840.54578
+[jaguar_mamiraua] Epoch  80 | Loss(MSE): 0.30476 | Real MAE: Time=5071.631h, Lon=44835.80469, Lat=1747.04163
+[jaguar_mamiraua] Epoch  99 | Loss(MSE): 0.26910 | Real MAE: Time=4820.631h, Lon=41835.01562, Lat=1649.62146
+[jaguar_mamiraua] Epoch   0 | Loss(MSE): 0.75733 | Real MAE: Time=4156.971h, Lon=73805.39844, Lat=2837.30640
+[jaguar_mamiraua] Epoch  20 | Loss(MSE): 0.71984 | Real MAE: Time=4027.767h, Lon=71943.35938, Lat=2766.58765
+[jaguar_mamiraua] Epoch  40 | Loss(MSE): 0.68033 | Real MAE: Time=3860.250h, Lon=69957.60938, Lat=2688.35864
+[jaguar_mamiraua] Epoch  60 | Loss(MSE): 0.63734 | Real MAE: Time=3699.181h, Lon=67713.97656, Lat=2600.86694
+[jaguar_mamiraua] Epoch  80 | Loss(MSE): 0.59209 | Real MAE: Time=3520.446h, Lon=65350.09766, Lat=2501.10498
+[jaguar_mamiraua] Epoch  99 | Loss(MSE): 0.54824 | Real MAE: Time=3379.941h, Lon=63019.15625, Lat=2397.04321
