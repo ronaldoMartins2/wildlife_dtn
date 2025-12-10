@@ -52,7 +52,7 @@ from Interpolation.nhits_trainer import (
 
 from Interpolation.nbeat_trainer import (
     train_nbeats_model_single,
-    train_nbeats_model_list
+    #train_nbeats_model_list
 )
 
 from Interpolation.nbeat_interpolation import (
@@ -257,9 +257,17 @@ file_merged_nhits = merge_csv(file_merged, file_interpolated_nhits, file_rawdata
 #map_animal_93_interpolated_nhits = os.path.join(results_dir, f'Interpolation/map_93_interpolation_nhits.csv')
 #####
 
-run_all_kmeans(file_merged, file_rawdata, 'RawData_32_Tangara')
-run_birch_all(file_merged, file_rawdata, 'RawData_32_Tangara')
-run_som_all(file_merged, file_rawdata, 'RawData_32_Tangara')
+script_dir = os.path.dirname(os.path.abspath(__file__))
+data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
+hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+#n_c_BIRCH = read_field_from_json(hyperparam_path, "BIRCH_NCLUSTERS")
+n_c_KMEANS = read_field_from_json(hyperparam_path, "n_clusters_kmeans")
+n_c_SOM_x = read_field_from_json(hyperparam_path, "som_x")
+n_c_SOM_y = read_field_from_json(hyperparam_path, "som_y")
+
+run_all_kmeans(file_merged, file_rawdata, f'RawData_{n_c_KMEANS}_{tangara}')
+#run_birch_all(file_merged, file_rawdata, f'RawData_{n_c_BIRCH}_{tangara}')
+run_som_all(file_merged, file_rawdata, f'RawData_{n_c_SOM_x * n_c_SOM_y}_{tangara}')
 sys.exit()
 
 run_all_kmeans(map_animal_93, file_rawdata, 'map_93RAWDATA')
