@@ -1,0 +1,369 @@
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:46: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp']) # Ensure datetime type
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:48: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:46: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp']) # Ensure datetime type
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:48: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:46: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp']) # Ensure datetime type
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:48: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:46: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp']) # Ensure datetime type
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:48: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:46: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp']) # Ensure datetime type
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:48: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:46: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp']) # Ensure datetime type
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:48: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+ list_animals 8
+['93', '94', '95', '96', '97', '98', '99', '100']
+--- Starting N-Beats Pipeline for ALL animals in rawdata/jaguar_mamiraua.csv ---
+Found 8 animals: ['93', '94', '95', '96', '97', '98', '99', '100']
+
+==================================================
+ PROCESSING ANIMAL: 93
+==================================================
+> Training 93...
+[NBEATS] Starting pipeline for animal 93...
+[Prep] Initial shape: (1023, 4)
+[Prep] Resampling to frequency: 360T (Derived from median delta: 0 days 06:00:00)
+[Prep] Found infinity in deltas. Replacing with 0 or dropping.
+[Prep] Split Sizes - Train: 1400, Val: 300, Test: 301
+[NBEATS] Device: cuda
+[NBEATS] Training 93 | Ep: 120 | LR: 0.0001
+Ep 10 | Train: 0.99309 | Val: 0.01523
+Ep 20 | Train: 0.97860 | Val: 0.01609
+Ep 30 | Train: 0.96041 | Val: 0.01971
+Early stopping at 34
+✅ Finished 93. Best Val: 0.01471 @ Ep 13
+> Evaluating 93...
+[EVAL] Evaluating 93...
+[EVAL] Delta Metrics - RMSE: 157.0235, MAE: 95.7313
+[EVAL] Trajectory Metrics (Meters) - ADE: 146.0082, FDE: 660.6499
+✅ Metrics saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/metrics_nbeats_93.json
+> Generating Forecast for 93...
+Generating 250 forecast steps for 93...
+Saved forecast to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_93_interpolation_nbeats.csv
+
+==================================================
+ PROCESSING ANIMAL: 94
+==================================================
+> Training 94...
+[NBEATS] Starting pipeline for animal 94...
+[Prep] Initial shape: (516, 4)
+[Prep] Resampling to frequency: 360T (Derived from median delta: 0 days 06:00:00)
+[Prep] Found infinity in deltas. Replacing with 0 or dropping.
+[Prep] Split Sizes - Train: 518, Val: 111, Test: 111
+[NBEATS] Device: cuda
+[NBEATS] Training 94 | Ep: 120 | LR: 0.0001
+Ep 10 | Train: 1.00232 | Val: 0.43422
+Ep 20 | Train: 1.00097 | Val: 0.42710
+Ep 30 | Train: 0.94328 | Val: 0.42449
+Ep 40 | Train: 0.94100 | Val: 0.42740
+Ep 50 | Train: 0.86186 | Val: 0.43503
+Early stopping at 52
+✅ Finished 94. Best Val: 0.42432 @ Ep 31
+> Evaluating 94...
+[EVAL] Evaluating 94...
+[EVAL] Delta Metrics - RMSE: 601.0699, MAE: 364.2497
+[EVAL] Trajectory Metrics (Meters) - ADE: 595.5543, FDE: 1889.3550
+✅ Metrics saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/metrics_nbeats_94.json
+> Generating Forecast for 94...
+Generating 250 forecast steps for 94...
+Saved forecast to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_94_interpolation_nbeats.csv
+
+==================================================
+ PROCESSING ANIMAL: 95
+==================================================
+> Training 95...
+[NBEATS] Starting pipeline for animal 95...
+[Prep] Initial shape: (61, 4)
+[Prep] Resampling to frequency: 121T (Derived from median delta: 0 days 02:01:00)
+[Prep] Split Sizes - Train: 2081, Val: 446, Test: 446
+[NBEATS] Device: cuda
+[NBEATS] Training 95 | Ep: 120 | LR: 0.0001
+Ep 10 | Train: 0.59295 | Val: 6.41111
+Ep 20 | Train: 0.50214 | Val: 6.55662
+Early stopping at 22
+✅ Finished 95. Best Val: 5.67810 @ Ep 1
+> Evaluating 95...
+[EVAL] Evaluating 95...
+[EVAL] Delta Metrics - RMSE: 19.1837, MAE: 7.5364
+[EVAL] Trajectory Metrics (Meters) - ADE: 11.7904, FDE: 50.0226
+✅ Metrics saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/metrics_nbeats_95.json
+> Generating Forecast for 95...
+Generating 250 forecast steps for 95...
+Saved forecast to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_95_interpolation_nbeats.csv
+
+==================================================
+ PROCESSING ANIMAL: 96
+==================================================
+> Training 96...
+[NBEATS] Starting pipeline for animal 96...
+[Prep] Initial shape: (491, 4)
+[Prep] Resampling to frequency: 360T (Derived from median delta: 0 days 06:00:00)
+[Prep] Found infinity in deltas. Replacing with 0 or dropping.
+[Prep] Split Sizes - Train: 409, Val: 88, Test: 88
+[NBEATS] Device: cuda
+[NBEATS] Training 96 | Ep: 120 | LR: 0.0001
+Ep 10 | Train: 0.93933 | Val: 0.36519
+Ep 20 | Train: 0.93477 | Val: 0.36167
+Ep 30 | Train: 0.92603 | Val: 0.35983
+Ep 40 | Train: 0.91126 | Val: 0.35855
+Ep 50 | Train: 0.89649 | Val: 0.35719
+Ep 60 | Train: 0.87232 | Val: 0.35665
+Ep 70 | Train: 0.85115 | Val: 0.35711
+Early stopping at 79
+✅ Finished 96. Best Val: 0.35661 @ Ep 58
+> Evaluating 96...
+[EVAL] Evaluating 96...
+[EVAL] Delta Metrics - RMSE: 303.8513, MAE: 174.2621
+[EVAL] Trajectory Metrics (Meters) - ADE: 269.9178, FDE: 984.3239
+✅ Metrics saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/metrics_nbeats_96.json
+> Generating Forecast for 96...
+Generating 250 forecast steps for 96...
+Saved forecast to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_96_interpolation_nbeats.csv
+
+==================================================
+ PROCESSING ANIMAL: 97
+==================================================
+> Training 97...
+[NBEATS] Starting pipeline for animal 97...
+[Prep] Initial shape: (295, 4)
+[Prep] Resampling to frequency: 360T (Derived from median delta: 0 days 06:00:00)
+[Prep] Split Sizes - Train: 1062, Val: 228, Test: 228
+[NBEATS] Device: cuda
+[NBEATS] Training 97 | Ep: 120 | LR: 0.0001
+Ep 10 | Train: 0.95296 | Val: 1.37301
+Ep 20 | Train: 1.07606 | Val: 1.30125
+Ep 30 | Train: 0.86244 | Val: 1.16321
+Ep 40 | Train: 0.84134 | Val: 1.09193
+Ep 50 | Train: 0.82362 | Val: 1.05522
+Ep 60 | Train: 0.83240 | Val: 1.02315
+Ep 70 | Train: 0.80951 | Val: 1.01542
+Ep 80 | Train: 0.80463 | Val: 1.00843
+Ep 90 | Train: 0.78506 | Val: 1.00728
+Ep 100 | Train: 0.80864 | Val: 1.00105
+Ep 110 | Train: 0.77023 | Val: 0.99468
+Ep 120 | Train: 0.79681 | Val: 0.99184
+✅ Finished 97. Best Val: 0.99184 @ Ep 120
+> Evaluating 97...
+[EVAL] Evaluating 97...
+[EVAL] Delta Metrics - RMSE: 375.2722, MAE: 191.0499
+[EVAL] Trajectory Metrics (Meters) - ADE: 297.3810, FDE: 1104.4390
+✅ Metrics saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/metrics_nbeats_97.json
+> Generating Forecast for 97...
+Generating 250 forecast steps for 97...
+Saved forecast to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_97_interpolation_nbeats.csv
+
+==================================================
+ PROCESSING ANIMAL: 98
+==================================================
+> Training 98...
+[NBEATS] Starting pipeline for animal 98...
+[Prep] Initial shape: (784, 4)
+[Prep] Resampling to frequency: 301T (Derived from median delta: 0 days 05:01:00)
+[Prep] Split Sizes - Train: 1105, Val: 237, Test: 237
+[NBEATS] Device: cuda
+[NBEATS] Training 98 | Ep: 120 | LR: 0.0001
+Ep 10 | Train: 0.97297 | Val: 1.05617
+Ep 20 | Train: 0.96854 | Val: 1.05430
+Ep 30 | Train: 0.95487 | Val: 1.05451
+Ep 40 | Train: 0.94854 | Val: 1.05680
+Early stopping at 47
+✅ Finished 98. Best Val: 1.05380 @ Ep 26
+> Evaluating 98...
+[EVAL] Evaluating 98...
+[EVAL] Delta Metrics - RMSE: 363.9019, MAE: 194.3784
+[EVAL] Trajectory Metrics (Meters) - ADE: 303.8946, FDE: 1065.4241
+✅ Metrics saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/metrics_nbeats_98.json
+> Generating Forecast for 98...
+Generating 250 forecast steps for 98...
+Saved forecast to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_98_interpolation_nbeats.csv
+
+==================================================
+ PROCESSING ANIMAL: 99
+==================================================
+> Training 99...
+[NBEATS] Starting pipeline for animal 99...
+[Prep] Initial shape: (3698, 4)
+[Prep] Resampling to frequency: 120T (Derived from median delta: 0 days 02:00:00)
+[Prep] Found infinity in deltas. Replacing with 0 or dropping.
+[Prep] Split Sizes - Train: 3577, Val: 767, Test: 767
+[NBEATS] Device: cuda
+[NBEATS] Training 99 | Ep: 120 | LR: 0.0001
+Ep 10 | Train: 0.99196 | Val: 0.73591
+Ep 20 | Train: 0.97421 | Val: 0.72590
+Ep 30 | Train: 0.96565 | Val: 0.72329
+Ep 40 | Train: 0.95615 | Val: 0.72197
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:46: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp']) # Ensure datetime type
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:48: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_data_prep.py:73: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:46: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp']) # Ensure datetime type
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:48: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Common/utils.py:207: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
+  result = pd.concat([df_raw, df_interp], axis=0, ignore_index=True)
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Common/utils.py:207: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
+  result = pd.concat([df_raw, df_interp], axis=0, ignore_index=True)
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Common/utils.py:207: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
+  result = pd.concat([df_raw, df_interp], axis=0, ignore_index=True)
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Common/utils.py:207: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
+  result = pd.concat([df_raw, df_interp], axis=0, ignore_index=True)
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Common/utils.py:207: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
+  result = pd.concat([df_raw, df_interp], axis=0, ignore_index=True)
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Common/utils.py:207: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
+  result = pd.concat([df_raw, df_interp], axis=0, ignore_index=True)
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Common/utils.py:207: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
+  result = pd.concat([df_raw, df_interp], axis=0, ignore_index=True)
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Common/utils.py:207: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
+  result = pd.concat([df_raw, df_interp], axis=0, ignore_index=True)
+Ep 50 | Train: 0.94800 | Val: 0.72255
+Ep 60 | Train: 0.94114 | Val: 0.72356
+Early stopping at 62
+✅ Finished 99. Best Val: 0.72192 @ Ep 41
+> Evaluating 99...
+[EVAL] Evaluating 99...
+[EVAL] Delta Metrics - RMSE: 270.1215, MAE: 149.7075
+[EVAL] Trajectory Metrics (Meters) - ADE: 234.2036, FDE: 870.8540
+✅ Metrics saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/metrics_nbeats_99.json
+> Generating Forecast for 99...
+Generating 250 forecast steps for 99...
+Saved forecast to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_99_interpolation_nbeats.csv
+
+==================================================
+ PROCESSING ANIMAL: 100
+==================================================
+> Training 100...
+[NBEATS] Starting pipeline for animal 100...
+[Prep] Initial shape: (42, 4)
+[Prep] Resampling to frequency: 360T (Derived from median delta: 0 days 06:00:00)
+[Prep] Split Sizes - Train: 522, Val: 112, Test: 112
+[NBEATS] Device: cuda
+[NBEATS] Training 100 | Ep: 120 | LR: 0.0001
+Ep 10 | Train: 1.05824 | Val: 0.34369
+Ep 20 | Train: 0.88587 | Val: 0.21732
+Ep 30 | Train: 0.82486 | Val: 0.16994
+Ep 40 | Train: 0.85717 | Val: 0.16766
+Ep 50 | Train: 0.77614 | Val: 0.16667
+Ep 60 | Train: 0.75903 | Val: 0.16919
+Early stopping at 65
+✅ Finished 100. Best Val: 0.16662 @ Ep 44
+> Evaluating 100...
+[EVAL] Evaluating 100...
+[EVAL] Delta Metrics - RMSE: 89.1466, MAE: 21.5915
+[EVAL] Trajectory Metrics (Meters) - ADE: 33.5078, FDE: 158.0464
+✅ Metrics saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/metrics_nbeats_100.json
+> Generating Forecast for 100...
+Generating 250 forecast steps for 100...
+Saved forecast to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_100_interpolation_nbeats.csv
+
+--- All Animals Completed ---
+File /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_93_interpolation_nhits.csv not found or is empty. Skipping.
+File /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_94_interpolation_nhits.csv not found or is empty. Skipping.
+File /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_95_interpolation_nhits.csv not found or is empty. Skipping.
+File /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_96_interpolation_nhits.csv not found or is empty. Skipping.
+File /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_97_interpolation_nhits.csv not found or is empty. Skipping.
+File /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_98_interpolation_nhits.csv not found or is empty. Skipping.
+File /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_99_interpolation_nhits.csv not found or is empty. Skipping.
+File /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_100_interpolation_nhits.csv not found or is empty. Skipping.
+Arquivo gerado: /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_jaguar_mamiraua_interpolation_nbeats_all.csv
+Arquivo gerado: /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_jaguar_mamiraua_interpolation_nhits_all.csv
+Encontrado arquivo para animal 93: map_93.csv
+Encontrado arquivo para animal 94: map_94.csv
+Encontrado arquivo para animal 95: map_95.csv
+Encontrado arquivo para animal 96: map_96.csv
+Encontrado arquivo para animal 97: map_97.csv
+Encontrado arquivo para animal 98: map_98.csv
+Encontrado arquivo para animal 99: map_99.csv
+Encontrado arquivo para animal 100: map_100.csv
+Arquivo único gerado com todos os animais: /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/map_jaguar_mamiraua_all_animals.csv
+Arquivo de geral de animais(Interpolação e Maps) salvo em /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/map_interpolation_merged_jaguar_mamiraua_nbeats.csv
+Arquivo de geral de animais(Interpolação e Maps) salvo em /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/map_interpolation_merged_jaguar_mamiraua_nhits.csv
+Folder '/home/abinadabe/wild_life/wildlife_dtn/scripts/Clusterization/../Results/jaguar_mamiraua/Clusterization' already exists
+Cluster centroids saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Clusterization/../Results/jaguar_mamiraua/Clusterization/centroids_kmeans_RawData_16_jaguar_mamiraua.csv
+Point->centroid mapping saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Clusterization/../Results/jaguar_mamiraua/Clusterization/points_kmeans_mapping_RawData_16_jaguar_mamiraua.csv
+Plot saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Clusterization/../Results/jaguar_mamiraua/Clusterization/kmeans_RawData_16_jaguar_mamiraua.png
+Folder '/home/abinadabe/wild_life/wildlife_dtn/scripts/Clusterization/../Results/jaguar_mamiraua/Clusterization' already exists
+[SOM] coords shape before cleaning: (6899, 2)
+[SOM] coords dtype: float64
+[SOM] coords shape after cleaning: (6899, 2)
+[SOM] Removidas 0 linhas com NaN/inf
+Coordinates saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Clusterization/../Results/jaguar_mamiraua/Clusterization/clusters_som_RawData_16_jaguar_mamiraua.csv
+Neuron weights saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Clusterization/../Results/jaguar_mamiraua/Clusterization/centroids_som_neurons_RawData_16_jaguar_mamiraua.csv
+Centroids saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Clusterization/../Results/jaguar_mamiraua/Clusterization/centroids_som_RawData_16_jaguar_mamiraua.csv
+Point->centroid mapping saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Clusterization/../Results/jaguar_mamiraua/Clusterization/points_som_mapping_RawData_16_jaguar_mamiraua.csv
+Plot saved to /home/abinadabe/wild_life/wildlife_dtn/scripts/Clusterization/../Results/jaguar_mamiraua/Clusterization/som_RawData_16_jaguar_mamiraua.png

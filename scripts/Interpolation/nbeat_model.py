@@ -2,18 +2,23 @@ import torch
 import torch.nn as nn
 
 class NBeatsBlock(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim):
+    def __init__(self, input_dim, hidden_dim, forecast_dim, backcast_dim):
+        """
+        Args:
+            input_dim: Flattened input size (Input Steps * Features)
+            hidden_dim: Hidden layer size
+            forecast_dim: Flattened forecast size (Horizon * Features)
+            backcast_dim: Flattened backcast size (Input Steps * Features) usually same as input_dim
+        """
         super(NBeatsBlock, self).__init__()
-        self.input_dim = input_dim
-        self.output_dim = output_dim
         
         self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
         self.fc3 = nn.Linear(hidden_dim, hidden_dim)
         self.fc4 = nn.Linear(hidden_dim, hidden_dim)
         
-        self.forecast_head = nn.Linear(hidden_dim, output_dim)
-        self.backcast_head = nn.Linear(hidden_dim, input_dim)
+        self.forecast_head = nn.Linear(hidden_dim, forecast_dim)
+        self.backcast_head = nn.Linear(hidden_dim, backcast_dim)
         
     def forward(self, x):
         h = torch.relu(self.fc1(x))
@@ -26,39 +31,44 @@ class NBeatsBlock(nn.Module):
         return forecast, backcast
 
 class NBeats(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim, num_blocks):
+    def __init__(self, input_steps, output_steps, input_features, hidden_dim, num_blocks):
         super(NBeats, self).__init__()
-        self.input_dim = input_dim
-        self.output_dim = output_dim
+        self.input_steps = input_steps
+        self.output_steps = output_steps
+        self.input_features = input_features
+        self.hidden_dim = hidden_dim
         self.num_blocks = num_blocks
         
+        # Flattened dimensions
+        self.input_flat_dim = input_steps * input_features
+        self.output_flat_dim = output_steps * input_features
+        
         self.blocks = nn.ModuleList([
-            NBeatsBlock(input_dim, output_dim, hidden_dim) 
+            NBeatsBlock(
+                input_dim=self.input_flat_dim, 
+                hidden_dim=hidden_dim,
+                forecast_dim=self.output_flat_dim,
+                backcast_dim=self.input_flat_dim
+            ) 
             for _ in range(num_blocks)
         ])
         
     def forward(self, x):
-        # x shape: (batch, input_dim)
-        residual = x.clone()
-        forecast_sum = torch.zeros(x.shape[0], self.output_dim, device=x.device)
+        # x shape: (Batch, Input Steps, Features)
+        batch_size = x.shape[0]
+        
+        # Flatten input
+        x_flat = x.view(batch_size, -1)
+        
+        residual = x_flat.clone()
+        forecast_sum = torch.zeros(batch_size, self.output_flat_dim, device=x.device)
         
         for block in self.blocks:
             forecast, backcast = block(residual)
             forecast_sum += forecast
             residual = residual - backcast
-        
-        # O Output tem 3 dimensões: [TimeDiff, Longitude, Latitude]
-        # Aplicamos restrição APENAS no TimeDiff (índice 0)
-        
-        # Separa as previsões
-        pred_time = forecast_sum[:, 0]
-        pred_coords = forecast_sum[:, 1:]
-        
-        # Garante tempo positivo (mínimo 0.01 hora para evitar travar o loop)
-        pred_time = torch.relu(pred_time)
-        pred_time = torch.maximum(pred_time, torch.tensor(0.01, device=x.device))
-        
-        # Reconecta (Stack) - Coordenadas ficam livres (podem ser negativas)
-        final_forecast = torch.cat((pred_time.unsqueeze(1), pred_coords), dim=1)
+            
+        # Reshape output to (Batch, Horizon, Features)
+        final_forecast = forecast_sum.view(batch_size, self.output_steps, self.input_features)
         
         return final_forecast

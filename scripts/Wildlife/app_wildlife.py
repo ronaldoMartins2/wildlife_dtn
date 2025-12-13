@@ -59,6 +59,10 @@ from Interpolation.nbeat_interpolation import (
     run as run_interpolation_nbeat
 )
 
+from Interpolation.run_nbeats_all import (
+    run_pipeline_all as run_pipeline_all_nbeats
+)
+
 from Interpolation.nhits_interpolation import (
     run as run_interpolation_nhits
 )
@@ -190,17 +194,15 @@ tangara = tangara.split('/')[-1]
 #nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
 
+
+# 2. RUN FULL N-BEATS PIPELINE (Train -> Eval -> Interpolate)
+# This replaces the old separated steps.
+run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns)
+
+sys.exit()
+## LEGACY CALLS COMMENTED OUT FOR SAFETY ##
 #train_nbeats_model_single(93, file_rawdata, file_rawdata_columns)
 #train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
-#sys.exit()
-####################################################################################################################
-#sys.exit()
-
-#TODO review number_of_predictions 
-#number_of_predictions = 5
-#len_animal = get_len_animal( 93, file_rawdata )
-
-#print(f'len_animal {len_animal} current_animal {93} file_rawdata {file_rawdata}')
 
 #run_interpolation_nbeat(93, number_of_predictions, file_rawdata, file_rawdata_columns)
 
