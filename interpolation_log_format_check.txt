@@ -1,0 +1,6 @@
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:47: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.
+  df['Timestamp'] = pd.to_datetime(df['Timestamp']) # Ensure datetime type
+/home/abinadabe/wild_life/wildlife_dtn/scripts/Interpolation/nbeat_interpolation.py:49: FutureWarning: 'T' is deprecated and will be removed in a future version, please use 'min' instead.
+  df_resampled = df[['E', 'N']].resample(freq_str).mean()
+Generating 25 forecast steps for 93...
+Saved forecast to /home/abinadabe/wild_life/wildlife_dtn/scripts/Results/jaguar_mamiraua/Interpolation/map_93_interpolation_nbeats.csv

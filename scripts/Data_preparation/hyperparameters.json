@@ -44,10 +44,10 @@
     "sigma_SOM": 0.5,
     "learning_rate_SOM": 0.5,
     "ephocs_SOM": 500,
-    "som_x": 16,
+    "som_x": 8,
     "som_y": 1,
 
-    "n_clusters_kmeans": 16,
+    "n_clusters_kmeans": 8,
     "random_state_kmeans": 0,
     "n_init_kmeans": 10,
 

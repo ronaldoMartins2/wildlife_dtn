@@ -1,0 +1,27 @@
+--- DEBUGGING 95 ---
+Original Rows: 61
+[Prep] Initial shape: (61, 4)
+[Prep] Resampling to frequency: 121T (Derived from median delta: 0 days 02:01:00)
+[Prep] Split Sizes - Train: 2081, Val: 446, Test: 446
+Train Size: 2081
+Val Size: 446
+Test Size: 446
+Freq: 121T
+Median Delta Seconds: 7260.0
+Scaler Mean: [-2.53940842  0.89449251]
+Scaler Var: [1382.73190645 1414.30461745]
+
+
+--- DEBUGGING 99 ---
+Original Rows: 3698
+[Prep] Initial shape: (3698, 4)
+[Prep] Resampling to frequency: 120T (Derived from median delta: 0 days 02:00:00)
+[Prep] Found infinity in deltas. Replacing with 0 or dropping.
+[Prep] Split Sizes - Train: 3577, Val: 767, Test: 767
+Train Size: 3577
+Val Size: 767
+Test Size: 767
+Freq: 120T
+Median Delta Seconds: 7200.0
+Scaler Mean: [ 1.71935429 -2.03694694]
+Scaler Var: [42079.11288326 43636.34790181]

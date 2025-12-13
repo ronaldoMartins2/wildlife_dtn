@@ -157,13 +157,13 @@ print(f' list_animals { len_animals }')
 
 print(f'{list_animals}')
 
-'''
+
 for current_animal in list_animals:
     run_preparation( current_animal, file_rawdata, file_rawdata_columns )
     run_average_by_individual( current_animal, file_rawdata, file_rawdata_columns )
     run_media_tempos_hist( current_animal, file_rawdata)
-'''
-time.sleep(2)
+
+#time.sleep(2)
 # sys.exit()
 
 #run_preparation( 93, file_rawdata, file_rawdata_columns )
@@ -195,11 +195,12 @@ tangara = tangara.split('/')[-1]
 #sys.exit()
 
 
+
 # 2. RUN FULL N-BEATS PIPELINE (Train -> Eval -> Interpolate)
 # This replaces the old separated steps.
 run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns)
 
-sys.exit()
+
 ## LEGACY CALLS COMMENTED OUT FOR SAFETY ##
 #train_nbeats_model_single(93, file_rawdata, file_rawdata_columns)
 #train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
@@ -254,10 +255,27 @@ file_merged = merge_maps(file_rawdata, list_animals)
 file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
 file_merged_nhits = merge_csv(file_merged, file_interpolated_nhits, file_rawdata, tangara, 'nhits')
 
+for current_animal in list_animals:
+    map_animal_interpolated_nbeats = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')
+    
+    # Check if file exists and is not empty before clustering
+    if os.path.exists(map_animal_interpolated_nbeats) and os.path.getsize(map_animal_interpolated_nbeats) > 0:
+        print(f"Clustering interpolated data for {current_animal}...")
+        run_all_kmeans(map_animal_interpolated_nbeats, file_rawdata, f'map_{current_animal}_INTERPOLATED_NBEATS')
+        run_birch_all(map_animal_interpolated_nbeats, file_rawdata, f'map_{current_animal}_INTERPOLATED_NBEATS')
+        run_som_all(map_animal_interpolated_nbeats, file_rawdata, f'map_{current_animal}_INTERPOLATED_NBEATS')
+    else:
+        print(f"Skipping clustering for {current_animal}: Interpolation file not found or empty.")
+
+
 #map_animal_93 = os.path.join(results_dir, f'map_93.csv')
-#map_animal_93_interpolated_nbeats = os.path.join(results_dir, f'Interpolation/map_93_interpolation_nbeats.csv')
 #map_animal_93_interpolated_nhits = os.path.join(results_dir, f'Interpolation/map_93_interpolation_nhits.csv')
 #####
+
+run_all_kmeans(file_merged_nbeats, file_rawdata, 'merged_nbeats')
+run_birch_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
+run_som_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
+sys.exit()
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')

@@ -16,9 +16,10 @@ from Common.utils import results_folder
 from Interpolation.nbeat_model import NBeats
 from Interpolation.nbeat_data_prep import preprocess_nbeats_data, get_utm_proj
 
-def generate_forecast(df, model, scaler, metadata, future_steps=50):
+def generate_forecast(df, model, scaler, metadata, future_steps=50, noise_level=0.1):
     """
     Generates future trajectory by iteratively predicting deltas.
+    noise_level: Standard deviation of noise to add to scaled predictions (since scaler is Standard).
     """
     # 1. Prepare Initial Context
     # We need the last 'input_width' sequence of Deltas
@@ -104,6 +105,12 @@ def generate_forecast(df, model, scaler, metadata, future_steps=50):
         # Predict
         with torch.no_grad():
             pred_scaled = model(input_t).cpu().numpy().squeeze(0) # (Horizon, 2)
+            
+        # Add Stochastic Noise (Gaussian)
+        # scaler scales to Mean=0, Std=1. So noise_level=0.2 means 20% of standard deviation.
+        if noise_level > 0:
+            noise = np.random.normal(0, noise_level, pred_scaled.shape)
+            pred_scaled += noise
             
         # Inverse Scale
         pred_flat = pred_scaled.reshape(-1, 2)
@@ -217,7 +224,8 @@ def run(current_animal, number_of_predictions, file_rawdata_name, file_rawdata_c
     model.eval()
     
     # Generate
-    forecast_df = generate_forecast(df, model, scaler, metadata, future_steps=max_steps)
+    # Using noise_level=0.2 (20% of std dev) to add "animal-like" randomness
+    forecast_df = generate_forecast(df, model, scaler, metadata, future_steps=max_steps, noise_level=0.2)
     
     if forecast_df is None:
         print("Forecast generation failed.")
@@ -227,15 +235,22 @@ def run(current_animal, number_of_predictions, file_rawdata_name, file_rawdata_c
     forecast_df['ID'] = current_animal
     
     # Format Timestamp
-    mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
-    # Pandas to_datetime mask format is diff from strftime? 
-    # "dd/mm/YY HH:MM" -> "%d/%m/%y %H:%M"
-    # Usually mask is something like "%d/%m/%Y %H:%M:%S"
-    # Fallback to standard ISO if unsure, or try to respect raw format if possible.
-    # The utils `get_id_from_json` might return the python format string.
+    # Try to match "M/D/YY HH:MM" (e.g. 8/1/15 22:00)
+    # Linux/Python strftime doesn't easily support "no zero pad" cross-platform, but we can try basic.
+    # Actually, let's just use a clean standard format, but round the floats.
+    
+    # Round coordinates to 6 decimals
+    forecast_df['Longitude'] = forecast_df['Longitude'].round(6)
+    forecast_df['Latitude'] = forecast_df['Latitude'].round(6)
     
     try:
-        forecast_df['Timestamp'] = forecast_df['Timestamp'].dt.strftime(mask)
+        # User format seems to be M/D/YY HH:MM. Let's try to stick to standard or raw.
+        # If we use the mask from utils, it might just work.
+        mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
+        if mask:
+             forecast_df['Timestamp'] = forecast_df['Timestamp'].dt.strftime(mask)
+        else:
+             forecast_df['Timestamp'] = forecast_df['Timestamp'].dt.strftime('%m/%d/%y %H:%M')
     except:
         forecast_df['Timestamp'] = forecast_df['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
 

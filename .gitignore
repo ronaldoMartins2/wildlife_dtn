@@ -17,6 +17,8 @@ env/
 *.sublime-project
 *.sublime-workspace
 
+models/
+
 # Ignorar caches e repositórios
 .DS_Store
 Thumbs.db

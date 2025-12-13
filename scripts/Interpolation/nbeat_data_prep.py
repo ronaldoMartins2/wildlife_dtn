@@ -70,20 +70,28 @@ def preprocess_nbeats_data(df, file_rawdata_columns, input_width=10, forecast_ho
     
     # Resample and interpolate coordinates linearly
     # limit_direction='both' ensures leading/trailing NaNs are filled if bins are empty at start/end
-    df_resampled = df[['E', 'N']].resample(freq_str).mean()
-    df_resampled = df_resampled.interpolate(method='linear', limit_direction='both')
+    df_resampled = df[['E', 'N']].resample(freq_str).mean() 
     
-    # Drop any remaining NaNs (rare but possible if ALL are NaN)
-    df_resampled = df_resampled.dropna()
-
-    # Re-calculate Delta T (now it is constant, but we keep the column for consistency)
-    # Ideally should be constant.
+    # 4. Interpolate with LIMIT to avoid massive synthetic linear data
+    # limit=24 means we fill gaps up to 24 steps (e.g. 1-2 days depending on freq).
+    # If gap is larger, it remains NaN and will be dropped (creating a discontinuity in training, but better than fake data).
+    df_resampled = df_resampled.interpolate(method='linear', limit_direction='both', limit=24)
+    # Note: We must drop NaNs *after* calculating deltas? NO.
+    # If we have [Val, NaN, Val], diff will be [NaN, NaN]. 
+    # This correctly kills the jump.
     
-    # 4. Feature Engineering (Deltas)
+    # 5. Feature Engineering (Deltas)
     df_resampled['Delta_E'] = df_resampled['E'].diff()
     df_resampled['Delta_N'] = df_resampled['N'].diff()
     
-    # We drop the very first NaN from diff
+    # Now drop NaNs. This removes:
+    # 1. The very first point (diff is NaN)
+    # 2. Any point that was a NaN in position
+    # 3. Any point immediately *after* a gap (diff is Val - NaN = NaN)
+    # This effectively breaks the chain at gaps.
+    df_resampled = df_resampled.dropna()
+
+    # We drop the very first NaN from diff and any gap artifacts
     df_resampled = df_resampled.dropna().reset_index(drop=True)
     
     # Check for Infinity
