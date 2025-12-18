@@ -72,32 +72,56 @@ def preprocess_nbeats_data(df, file_rawdata_columns, input_width=10, forecast_ho
     # limit_direction='both' ensures leading/trailing NaNs are filled if bins are empty at start/end
     df_resampled = df[['E', 'N']].resample(freq_str).mean() 
     
-    # 4. Interpolate with LIMIT to avoid massive synthetic linear data
-    # limit=24 means we fill gaps up to 24 steps (e.g. 1-2 days depending on freq).
-    # If gap is larger, it remains NaN and will be dropped (creating a discontinuity in training, but better than fake data).
-    df_resampled = df_resampled.interpolate(method='linear', limit_direction='both', limit=24)
-    # Note: We must drop NaNs *after* calculating deltas? NO.
-    # If we have [Val, NaN, Val], diff will be [NaN, NaN]. 
-    # This correctly kills the jump.
+    # 4. Remove Linear Interpolation Bias
+    # Previous logic: df_resampled = df_resampled.interpolate(method='linear', limit_direction='both', limit=24)
+    # New logic: leave NaNs where data is missing. We will split trajectories at these gaps.
     
     # 5. Feature Engineering (Deltas)
     df_resampled['Delta_E'] = df_resampled['E'].diff()
     df_resampled['Delta_N'] = df_resampled['N'].diff()
     
-    # Now drop NaNs. This removes:
-    # 1. The very first point (diff is NaN)
-    # 2. Any point that was a NaN in position
-    # 3. Any point immediately *after* a gap (diff is Val - NaN = NaN)
-    # This effectively breaks the chain at gaps.
-    df_resampled = df_resampled.dropna()
-
-    # We drop the very first NaN from diff and any gap artifacts
-    df_resampled = df_resampled.dropna().reset_index(drop=True)
+    # Identify Gaps
+    # A gap exists if Delta_E or Delta_N is NaN (except the very first point)
+    # The 'diff' operation puts NaN at t=0.
+    # It also puts NaN at t=k if t=k-1 was missing (because Val - NaN = NaN).
+    # This is actually what we want: if there is a gap, the delta logic breaks.
+    
+    # However, to be cleaner, we should probably identify continuous segments.
+    # A continuous segment is a sequence where we have valid (E, N) at every step.
+    
+    # Let's drop rows where E or N is NaN. 
+    # But wait, if we drop rows, we lose the time continuity structure if we just concatenate.
+    # We must treat the data as a list of independent valid segments.
+    
+    # Detect where timestamps are not continuous
+    # Actually, df_resampled is on a fixed frequency index.
+    # rows with NaN in 'E' or 'N' represent missing data.
+    
+    # We will iterate through valid segments.
+    # Create mask of valid data
+    valid_mask = df_resampled['E'].notna() & df_resampled['N'].notna()
+    
+    # We can assign group IDs to continuous runs of True
+    # diff() on boolean gives True where value changes.
+    # cumsum gives unique ID for each run of falses/trues.
+    df_resampled['segment_id'] = (valid_mask != valid_mask.shift()).cumsum()
+    
+    # Keep only valid segments
+    df_valid = df_resampled[valid_mask].copy()
+    
+    # Re-calculate Deltas strictly within segments
+    df_valid['Delta_E'] = df_valid.groupby('segment_id')['E'].diff()
+    df_valid['Delta_N'] = df_valid.groupby('segment_id')['N'].diff()
+    
+    # Drop the first point of each segment (Delta is NaN)
+    df_valid = df_valid.dropna(subset=['Delta_E', 'Delta_N'])
     
     # Check for Infinity
-    if np.isinf(df_resampled[['Delta_E', 'Delta_N']].values).any():
+    if np.isinf(df_valid[['Delta_E', 'Delta_N']].values).any():
         if verbose: print("[Prep] Found infinity in deltas. Replacing with 0 or dropping.")
-        df_resampled = df_resampled.replace([np.inf, -np.inf], np.nan).dropna().reset_index(drop=True)
+        df_valid = df_valid.replace([np.inf, -np.inf], np.nan).dropna()
+        
+    df_resampled = df_valid.reset_index(drop=True)
 
     
     if len(df_resampled) < (input_width + forecast_horizon + 10):

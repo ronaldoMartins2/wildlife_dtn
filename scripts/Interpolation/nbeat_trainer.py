@@ -90,7 +90,69 @@ def train_nbeats_model_single(current_animal, file_rawdata_name, file_rawdata_co
         num_blocks=num_blocks
     ).to(device)
     
-    criterion = nn.MSELoss()
+    class PhysicsInformedLoss(nn.Module):
+        def __init__(self, mean, std, speed_limit_meters=1666.0, penalty_weight=0.1):
+            """
+            speed_limit_meters: Max plausible speed per step in meters. 
+                                6 km/h = 6000 m/h. 
+                                If freq is 1H, limit is 6000.
+                                If freq is 10 min, limit is 1000.
+            penalty_weight: Weight of the physics penalty.
+            """
+            super().__init__()
+            self.mse = nn.MSELoss()
+            self.mean = torch.tensor(mean, dtype=torch.float32).to(device)
+            self.std = torch.tensor(std, dtype=torch.float32).to(device)
+            self.limit = speed_limit_meters
+            self.lamb = penalty_weight
+            
+        def forward(self, pred_scaled, target_scaled):
+            # 1. Standard MSE
+            mse_loss = self.mse(pred_scaled, target_scaled)
+            
+            # 2. Physics Penalty
+            # Unscale to get real meters
+            # pred: (Batch, Horizon, 2)
+            # mean/std: (2,)
+            
+            pred_real = pred_scaled * self.std + self.mean
+            
+            # Calculate distance per step (speed if step is fixed)
+            # dist = sqrt(delta_e^2 + delta_n^2)
+            dist = torch.norm(pred_real, p=2, dim=2) # (Batch, Horizon)
+            
+            # Penalty: only if dist > limit
+            excess = torch.relu(dist - self.limit)
+            
+            # Mean excess penalty
+            penalty = excess.mean()
+            
+            return mse_loss + self.lamb * penalty
+
+    # Extract scaler stats
+    # scaler.mean_ and scaler.scale_ are numpy arrays
+    scaler_mean = scaler.mean_
+    scaler_std = scaler.scale_
+    
+    # Calculate speed limit based on median_delta
+    # 6 km/h = 1.67 m/s
+    median_seconds = metadata['median_delta_seconds']
+    max_speed_mps = 1.67 # ~6 km/h
+    # Relax it a bit to 2.5 m/s (~9 km/h) to avoid penalizing running/sprinting too hard
+    # but still kill the 20 km/h jumps.
+    max_speed_mps = 2.5 
+    
+    step_limit_meters = max_speed_mps * median_seconds
+    
+    print(f"[Loss] Speed limit set to {step_limit_meters:.2f} meters per step ({median_seconds}s).")
+
+    criterion = PhysicsInformedLoss(
+        mean=scaler_mean, 
+        std=scaler_std, 
+        speed_limit_meters=step_limit_meters,
+        penalty_weight=0.1
+    )
+    
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999), weight_decay=1e-5)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, factor=0.5, patience=20, min_lr=1e-6

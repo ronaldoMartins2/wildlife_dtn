@@ -195,38 +195,9 @@ tangara = tangara.split('/')[-1]
 #sys.exit()
 
 
-
 # 2. RUN FULL N-BEATS PIPELINE (Train -> Eval -> Interpolate)
 # This replaces the old separated steps.
 run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns)
-
-
-## LEGACY CALLS COMMENTED OUT FOR SAFETY ##
-#train_nbeats_model_single(93, file_rawdata, file_rawdata_columns)
-#train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
-
-#run_interpolation_nbeat(93, number_of_predictions, file_rawdata, file_rawdata_columns)
-
-#start_date, end_date = get_top_botom_date( 93, file_rawdata, file_rawdata_columns )
-
-#run_interpolation_nhits(93, start_date, end_date, file_rawdata, file_rawdata_columns)
-'''
-for current_animal in list_animals:
-    #TODO review number_of_predictions 
-    number_of_predictions = 5
-    len_animal = get_len_animal( current_animal, file_rawdata )
-   
-    print(f'len_animal {len_animal} current_animal {current_animal} file_rawdata {file_rawdata}')
-
-    run_interpolation_nbeat(current_animal, number_of_predictions, file_rawdata, file_rawdata_columns)
-
-    start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
-
-    run_interpolation_nhits(current_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
-#exit ()
-#sys.exit()
-'''
-#sys.exit()
 
 for current_animal in list_animals:
     merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )

@@ -16,177 +16,171 @@ from Common.utils import results_folder
 from Interpolation.nbeat_model import NBeats
 from Interpolation.nbeat_data_prep import preprocess_nbeats_data, get_utm_proj
 
-def generate_forecast(df, model, scaler, metadata, future_steps=50, noise_level=0.1):
+def generate_forecast_raw(model, scaler, input_deltas, metadata, steps=10, noise_level=0.1):
     """
-    Generates future trajectory by iteratively predicting deltas.
-    noise_level: Standard deviation of noise to add to scaled predictions (since scaler is Standard).
+    Core generation loop that takes raw deltas (numpy) and returns predicted deltas (numpy).
     """
-    # 1. Prepare Initial Context
-    # We need the last 'input_width' sequence of Deltas
-    # Preprocess the entire dataframe to get the deltas in the same way as training
-    # Note: We need a dummy "forecast_horizon" in prep just to get the function to work,
-    # but we are interested in the LAST valid window of Deltas.
-    
-    # Using a helper to get deltas without splitting
-    # We basically need to manually replicate prep logic to extract the last window
-    
-    # a. UTM Projection
-    median_lon = df['Longitude'].median()
-    median_lat = df['Latitude'].median()
-    epsg = metadata['utm_epsg'] # Trust training EPSG or recalculate? Better to use training EPSG for consistency.
-    
-    transformer = Transformer.from_crs("EPSG:4326", f"EPSG:{epsg}", always_xy=True)
-    transformer_back = Transformer.from_crs(f"EPSG:{epsg}", "EPSG:4326", always_xy=True)
-    
-    e, n = transformer.transform(df['Longitude'].values, df['Latitude'].values)
-    df['E'] = e
-    df['N'] = n
-    
-    # b. Resample (Must match training frequency)
-    freq_str = metadata['freq_str']
-    df['Timestamp'] = pd.to_datetime(df['Timestamp']) # Ensure datetime type
-    df = df.set_index('Timestamp')
-    df_resampled = df[['E', 'N']].resample(freq_str).mean()
-    df_resampled = df_resampled.interpolate(method='linear', limit_direction='both')
-    
-    # Re-calculate Delta T info for reconstruction (frequency is fixed now)
-    # We assume 'freq_str' implies the step size.
-    # Parsing freq_str is complex (e.g. '360T').
-    # metadata['median_delta_seconds'] is a better source for the step in seconds.
-    step_seconds = metadata['median_delta_seconds']
-    
-    # c. Calculate Deltas
-    df_resampled['Delta_E'] = df_resampled['E'].diff()
-    df_resampled['Delta_N'] = df_resampled['N'].diff()
-    
-    # Drop NaNs
-    df_clean = df_resampled.dropna().reset_index(drop=True) # Reset index to 0..N
-    
+    device = next(model.parameters()).device
     input_width = metadata['input_width']
-    forecast_horizon = metadata['forecast_horizon'] # The model predicts this many steps at once
+    forecast_horizon = metadata['forecast_horizon']
     
-    if len(df_clean) < input_width:
-        print("Not enough history to forecast.")
-        return None
-        
-    # Get last window (Input)
-    last_deltas = df_clean[['Delta_E', 'Delta_N']].values[-input_width:] # (input_width, 2)
-    current_input = last_deltas.copy() # (10, 2)
-    
-    # Prepare for Iterative Prediction
-    # We predict 'forecast_horizon' steps at a time.
-    # Then shift the window? No, this is Multi-Horizon.
-    # Usually: Input[t-10:t] -> Output[t:t+5]
-    # IF we want 50 steps:
-    # 1. Pred[t:t+5]
-    # 2. Append Pred to Input -> Input[t-5 : t+5] -> take last 10 -> Input[t-5+5 : t+5]
-    #    Wait, if Input size is 10, and we predict 5.
-    #    New Input should be: Old_Input[5:] + New_Pred[0:5]
-    
+    current_input = input_deltas.copy() # (input_width, 2)
     generated_deltas = []
     
-    device = next(model.parameters()).device
-    
-    loops = int(np.ceil(future_steps / forecast_horizon))
+    loops = int(np.ceil(steps / forecast_horizon))
     
     for _ in range(loops):
-        # Scale Input
-        # Scaler expects (N, Features). We flatten our (Input, Features) to fit if scaler was fitted on flat?
-        # In trainer: scaler.fit(X_train_flat) where features are (Delta_E, Delta_N) standard scaled.
-        # So we scale frame by frame.
-        
+        # Scale
         curr_shape = current_input.shape
         input_flat = current_input.reshape(-1, 2)
         input_scaled = scaler.transform(input_flat).reshape(curr_shape)
         
-        # Tensor (Batch=1, Input, Feat)
+        # Tensor
         input_t = torch.tensor(input_scaled, dtype=torch.float32).unsqueeze(0).to(device)
         
         # Predict
         with torch.no_grad():
-            pred_scaled = model(input_t).cpu().numpy().squeeze(0) # (Horizon, 2)
+            pred_scaled = model(input_t).cpu().numpy().squeeze(0)
             
-        # Add Stochastic Noise (Gaussian)
-        # scaler scales to Mean=0, Std=1. So noise_level=0.2 means 20% of standard deviation.
+        # Noise
         if noise_level > 0:
             noise = np.random.normal(0, noise_level, pred_scaled.shape)
             pred_scaled += noise
             
         # Inverse Scale
         pred_flat = pred_scaled.reshape(-1, 2)
-        pred_deltas = scaler.inverse_transform(pred_flat) # (Horizon, 2)
+        pred_deltas = scaler.inverse_transform(pred_flat)
         
         generated_deltas.extend(pred_deltas)
         
-        # Update Input for next loop
-        # Shift window: remove first 'horizon' elements, append predicted 'horizon' elements
-        # current_input (10, 2)
-        # pred_deltas (5, 2)
-        
-        # If horizon < input_width (e.g. 5 < 10)
-        # New input = [Old[5:], New]
+        # Update Input
         if forecast_horizon <= input_width:
-            current_input = np.vstack([current_input[forecast_horizon:], pred_deltas])
+             current_input = np.vstack([current_input[forecast_horizon:], pred_deltas])
         else:
-            # If horizon > input_width (unlikely here but possible)
-            # Just take last 'input_width' of prediction
-            current_input = pred_deltas[-input_width:]
-            
-    # Trim to requested future_steps
-    generated_deltas = np.array(generated_deltas)[:future_steps]
-    
-    # Reconstruct Absolute Paths
-    # We need the Last Known Absolute Position (E, N) and Timestamp
-    last_known_timestamp = df_clean.index[-1] # From resampled dataframe (Wait, reset_index dropped it!)
-    # Actually df_resampled has the index if we didn't reset it, but we needed to dropna for deltas.
-    # The last row of df_clean corresponds to the last valid Delta.
-    # To get absolute position, we need the Row corresponding to df_clean.iloc[-1].
-    # df_clean row i corresponds to Delta between i and i-1.
-    # So df_clean.iloc[-1] is (Pos[T] - Pos[T-1]).
-    # We need Pos[T].
-    # Let's go back to df_resampled
-    
-    df_no_na = df_resampled.dropna()
-    last_absolute_row = df_no_na.iloc[-1]
-    
-    start_E = last_absolute_row['E']
-    start_N = last_absolute_row['N']
-    # Timestamp: this is the index of the dataframe
-    start_time = df_no_na.index[-1] 
-    
-    # Cumulative Sum of predicted deltas
-    # Pred path relative to start:
-    path_rel_E = np.cumsum(generated_deltas[:, 0])
-    path_rel_N = np.cumsum(generated_deltas[:, 1])
-    
-    path_abs_E = start_E + path_rel_E
-    path_abs_N = start_N + path_rel_N
-    
-    # Convert back to WGS84
-    path_lon, path_lat = transformer_back.transform(path_abs_E, path_abs_N)
-    
-    # Timestamps
-    # Each step is 'step_seconds'
-    future_times = [start_time + timedelta(seconds=step_seconds * (i+1)) for i in range(future_steps)]
-    
-    return pd.DataFrame({
-        'Timestamp': future_times,
-        'Longitude': path_lon,
-        'Latitude': path_lat
-    })
+             current_input = pred_deltas[-input_width:]
+             
+    return np.array(generated_deltas)[:steps]
 
-def run(current_animal, number_of_predictions, file_rawdata_name, file_rawdata_columns):
-    # number_of_predictions is legacy (e.g. "5"). 
-    # But usually refers to "how many windows" or just "how many points".
-    # Let's assume points for now, or default to a reasonable horizon (e.g. 50 points).
-    if not number_of_predictions or int(number_of_predictions) < 5:
-        max_steps = 50
-    else:
-        max_steps = int(number_of_predictions) * 5 # Legacy multiplier? Or just use directly. 
-        # If user passes 5, maybe they mean 5 points? Let's default to enough to be useful.
-        if max_steps < 20: max_steps = 20
+def generate_bidirectional_forecast(df_gap_context, gap_size_steps, model, scaler, metadata):
+    """
+    Fills a gap using both Forward and Backward prediction.
+    df_gap_context: DataFrame containing [Data Before] + [Gap (NaNs)] + [Data After]
+    gap_size_steps: Number of missing steps.
+    """
+    input_width = metadata['input_width']
+    
+    # 1. Extract contexts
+    # We assume df_gap_context is RESAMPLED and contains valid data before/after.
+    # We need to calculate deltas.
+    
+    # E and N must be present
+    e_vals = df_gap_context['E'].values
+    n_vals = df_gap_context['N'].values
+    
+    # Identify indices
+    # We have valid data up to index 'start_gap_idx'
+    # Gap is from 'start_gap_idx + 1' to 'end_gap_idx - 1'
+    # Valid data resumes at 'end_gap_idx'
+    
+    valid_mask = ~np.isnan(e_vals)
+    valid_indices = np.where(valid_mask)[0]
+    
+    # Find the hole
+    # Assuming one single gap in this context
+    # The gap starts after the first block of valid data
+    # and ends before the second block.
+    
+    # Simple check: find where diff of indices > 1
+    diffs = np.diff(valid_indices)
+    gap_starts = np.where(diffs > 1)[0]
+    if len(gap_starts) == 0:
+        return None # No gap?
+        
+    last_valid_before = valid_indices[gap_starts[0]]
+    first_valid_after = valid_indices[gap_starts[0] + 1]
+    
+    real_gap_size = first_valid_after - last_valid_before - 1
+    
+    if real_gap_size != gap_size_steps:
+        # Mismatch in expected gap size, but we trust the index
+        gap_size_steps = real_gap_size
+        
+    # FORWARD Context
+    # We need 'input_width' deltas ending at 'last_valid_before'
+    # Delta[i] = P[i] - P[i-1]
+    # We need P[last_valid_before - input_width] to P[last_valid_before]
+    
+    start_context_idx = last_valid_before - input_width
+    if start_context_idx < 0:
+        return None # Not enough history
+        
+    forward_segment = df_gap_context.iloc[start_context_idx : last_valid_before + 1][['E', 'N']].values
+    # Calc deltas
+    # (N+1 points -> N deltas)
+    forward_deltas = np.diff(forward_segment, axis=0) # (10, 2)
+    
+    # BACKWARD Context
+    # We need 'input_width' deltas starting from 'first_valid_after' going validly forward in time?
+    # No, we need to go BACKWARDS from 'first_valid_after'.
+    # So we take points from P[first_valid_after] to P[first_valid_after + input_width]
+    # And we treat the sequence as P[N], P[N+1]...
+    # REVERSE them: P[N+input_width] ... P[N]
+    # Calculate deltas on reversed sequence.
+    
+    end_context_idx = first_valid_after + input_width
+    if end_context_idx >= len(df_gap_context):
+        return None # Not enough future
+        
+    backward_segment = df_gap_context.iloc[first_valid_after : end_context_idx + 1][['E', 'N']].values
+    # Reverse the points to simulate walking backwards
+    backward_segment_rev = backward_segment[::-1]
+    backward_deltas = np.diff(backward_segment_rev, axis=0) # (10, 2)
+    
+    # 2. Predict
+    # Forward prediction
+    # Use less noise for interpolation to keep it connecting? Or keep it to add texture?
+    pred_forward_deltas = generate_forecast_raw(model, scaler, forward_deltas, metadata, steps=gap_size_steps, noise_level=0.1)
+    
+    # Backward prediction
+    pred_backward_deltas = generate_forecast_raw(model, scaler, backward_deltas, metadata, steps=gap_size_steps, noise_level=0.1)
+    
+    # 3. Reconstruct Paths
+    # Forward Path (from last_valid_before)
+    start_point = df_gap_context.iloc[last_valid_before][['E', 'N']].values
+    path_forward = np.zeros((gap_size_steps, 2))
+    curr = start_point
+    for i in range(gap_size_steps):
+        curr = curr + pred_forward_deltas[i]
+        path_forward[i] = curr
+        
+    # Backward Path (from first_valid_after)
+    # The backward deltas predict steps AWAY from the end point in reverse time.
+    end_point = df_gap_context.iloc[first_valid_after][['E', 'N']].values
+    path_backward = np.zeros((gap_size_steps, 2))
+    
+    curr = end_point
+    path_backward_rev = []
+    for i in range(gap_size_steps):
+        curr = curr + pred_backward_deltas[i]
+        path_backward_rev.append(curr)
+        
+    # Reverse back to normal time order
+    path_backward = np.array(path_backward_rev)[::-1]
+    
+    # 4. Merge (Linear Weighted Average)
+    # Weights for Forward: 1 -> 0
+    # Weights for Backward: 0 -> 1
+    
+    weights = np.linspace(1, 0, gap_size_steps)
+    weights = weights[:, None] 
+    
+    mixed_path = path_forward * weights + path_backward * (1 - weights)
+    
+    return mixed_path
 
-    print(f"Generating {max_steps} forecast steps for {current_animal}...")
+
+def run(current_animal, legacy_number, file_rawdata_name, file_rawdata_columns):
+    print(f"Running Bidirectional N-BEATS for {current_animal}...")
 
     # Load Data
     results_dir = results_folder(file_rawdata_name)
@@ -196,6 +190,9 @@ def run(current_animal, number_of_predictions, file_rawdata_name, file_rawdata_c
     except:
         print(f"Could not load map_{current_animal}.csv")
         return
+        
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+    df = df.sort_values('Timestamp')
 
     # Load Model
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -223,42 +220,120 @@ def run(current_animal, number_of_predictions, file_rawdata_name, file_rawdata_c
     model.load_state_dict(model_state)
     model.eval()
     
-    # Generate
-    # Using noise_level=0.2 (20% of std dev) to add "animal-like" randomness
-    forecast_df = generate_forecast(df, model, scaler, metadata, future_steps=max_steps, noise_level=0.2)
+    # 1. Project to UTM
+    median_lon = df['Longitude'].median()
+    median_lat = df['Latitude'].median()
+    epsg = metadata['utm_epsg']
+    transformer = Transformer.from_crs("EPSG:4326", f"EPSG:{epsg}", always_xy=True)
+    transformer_back = Transformer.from_crs(f"EPSG:{epsg}", "EPSG:4326", always_xy=True)
     
-    if forecast_df is None:
-        print("Forecast generation failed.")
+    e, n = transformer.transform(df['Longitude'].values, df['Latitude'].values)
+    df['E'] = e
+    df['N'] = n
+    
+    # 2. Resample on Full Range
+    # Leave gaps as NaNs
+    freq_str = metadata['freq_str']
+    df_resampled = df.set_index('Timestamp')[['E', 'N']].resample(freq_str).first()
+    
+    # Mask of valid data
+    is_valid = df_resampled['E'].notna()
+    valid_indices = np.where(is_valid)[0]
+    
+    if len(valid_indices) < 2:
+        print("Not enough data to interpolate.")
         return
-
-    # Save
-    forecast_df['ID'] = current_animal
+        
+    first_valid = valid_indices[0]
+    last_valid = valid_indices[-1]
     
-    # Format Timestamp
-    # Try to match "M/D/YY HH:MM" (e.g. 8/1/15 22:00)
-    # Linux/Python strftime doesn't easily support "no zero pad" cross-platform, but we can try basic.
-    # Actually, let's just use a clean standard format, but round the floats.
+    # Truncate to relevant range
+    df_resampled = df_resampled.iloc[first_valid : last_valid + 1]
     
-    # Round coordinates to 6 decimals
-    forecast_df['Longitude'] = forecast_df['Longitude'].round(6)
-    forecast_df['Latitude'] = forecast_df['Latitude'].round(6)
+    # Re-calc mask
+    is_valid = df_resampled['E'].notna().values
+    nan_indices = np.where(~is_valid)[0]
     
+    if len(nan_indices) == 0:
+        print("No gaps to fill.")
+        return
+        
+    # Group NaNs into segments
+    from itertools import groupby
+    from operator import itemgetter
+    
+    filled_df = df_resampled.copy()
+    
+    gap_count = 0
+    filled_points = 0
+    
+    for k, g in groupby(enumerate(nan_indices), lambda x: x[0]-x[1]):
+        group = list(map(itemgetter(1), g))
+        start_gap = group[0]
+        end_gap = group[-1]
+        gap_len = end_gap - start_gap + 1
+        
+        # Check context
+        if start_gap - metadata['input_width'] < 0:
+             continue
+        if end_gap + metadata['input_width'] >= len(df_resampled):
+             continue
+            
+        # Extract context window
+        c_start = start_gap - metadata['input_width']
+        c_end = end_gap + metadata['input_width']
+        
+        context_subset = df_resampled.iloc[c_start : c_end + 1]
+        
+        # Interpolate
+        reconstructed_path = generate_bidirectional_forecast(context_subset, gap_len, model, scaler, metadata)
+        
+        if reconstructed_path is not None:
+             filled_df.iloc[start_gap : end_gap + 1, 0] = reconstructed_path[:, 0]
+             filled_df.iloc[start_gap : end_gap + 1, 1] = reconstructed_path[:, 1]
+             gap_count += 1
+             filled_points += len(reconstructed_path)
+        
+    print(f"Filled {gap_count} gaps ({filled_points} points).")
+    
+    final_e = filled_df['E'].values
+    final_n = filled_df['N'].values
+    
+    # Clean up edges logic: if linear interpolation was removed, we might have NaNs at edges?
+    # We only filled internal gaps.
+    mask_final = ~np.isnan(final_e)
+    final_e = final_e[mask_final]
+    final_n = final_n[mask_final]
+    timestamps = filled_df.index[mask_final]
+    
+    final_lon, final_lat = transformer_back.transform(final_e, final_n)
+    
+    out_df = pd.DataFrame({
+        'ID': current_animal,
+        'Timestamp': timestamps,
+        'Longitude': final_lon,
+        'Latitude': final_lat
+    })
+    
+    # Rounding
+    out_df['Longitude'] = out_df['Longitude'].round(6)
+    out_df['Latitude'] = out_df['Latitude'].round(6)
+    
+    # Format
     try:
-        # User format seems to be M/D/YY HH:MM. Let's try to stick to standard or raw.
-        # If we use the mask from utils, it might just work.
         mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
         if mask:
-             forecast_df['Timestamp'] = forecast_df['Timestamp'].dt.strftime(mask)
+             out_df['Timestamp'] = out_df['Timestamp'].dt.strftime(mask)
         else:
-             forecast_df['Timestamp'] = forecast_df['Timestamp'].dt.strftime('%m/%d/%y %H:%M')
+             out_df['Timestamp'] = out_df['Timestamp'].dt.strftime('%m/%d/%y %H:%M')
     except:
-        forecast_df['Timestamp'] = forecast_df['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+        out_df['Timestamp'] = out_df['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
 
     out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     
-    forecast_df[['ID', 'Timestamp', 'Longitude', 'Latitude']].to_csv(out_path, index=False, header=False)
-    print(f"Saved forecast to {out_path}")
+    out_df.to_csv(out_path, index=False, header=False)
+    print(f"Saved interpolated path to {out_path}")
 
 if __name__ == "__main__":
     if len(sys.argv) >= 4:
