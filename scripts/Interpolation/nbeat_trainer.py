@@ -140,7 +140,8 @@ def train_nbeats_model_single(current_animal, file_rawdata_name, file_rawdata_co
     max_speed_mps = 1.67 # ~6 km/h
     # Relax it a bit to 2.5 m/s (~9 km/h) to avoid penalizing running/sprinting too hard
     # but still kill the 20 km/h jumps.
-    max_speed_mps = 2.5 
+    #max_speed_mps = 2.5 
+    max_speed_mps = 1.2 
     
     step_limit_meters = max_speed_mps * median_seconds
     

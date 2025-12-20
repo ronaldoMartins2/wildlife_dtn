@@ -18,6 +18,8 @@ env/
 *.sublime-workspace
 
 models/
+*.pkl
+*.pth
 
 # Ignorar caches e repositórios
 .DS_Store

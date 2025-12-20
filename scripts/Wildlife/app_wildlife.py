@@ -142,21 +142,21 @@ file_rawdata_columns = sys.argv [2]
 results_dir = results_folder(file_rawdata)
 hiper_path = os.path.join(results_dir, 'hiperparameters.txt')
 
-# Check if the file exists before trying to delete it
-# if os.path.exists(hiper_path):
-#     os.remove(hiper_path)
-#     print(f"Deleted: {hiper_path}")
-# else:
-#     print(f"No file found at: {hiper_path}")
+#Check if the file exists before trying to delete it
+if os.path.exists(hiper_path):
+    os.remove(hiper_path)
+    print(f"Deleted: {hiper_path}")
+else:
+    print(f"No file found at: {hiper_path}")
 
 list_animals = get_list_animals( file_rawdata, file_rawdata_columns )
-
 len_animals = len(list_animals)
 
 print(f' list_animals { len_animals }')
-
 print(f'{list_animals}')
 
+#Rodando Dispersao Geral dos animais: Tangara e Jaguar
+run_all_dispersion(file_rawdata)
 
 for current_animal in list_animals:
     run_preparation( current_animal, file_rawdata, file_rawdata_columns )
@@ -175,125 +175,73 @@ for current_animal in list_animals:
 tangara = file_rawdata.split('.')[-2]
 tangara = tangara.split('/')[-1]
 
-#if tangara == 'tangara_mata_atlantica':
-    #list_animals = ['E62718', 'E62726', 'OR34MGA', 'G21547', 'E62705', 'E57527', 'E49920', 'E62722', 'G56076' ]
-#    list_animals = ['OR34MGA' ]
-#else:
-#    list_animals = [94]
-
-# E62724 loop
-# G56068 empty
-
-# TRAIN step
-
-#for current_animal in list_animals:
-#    trainer = main_training(current_animal, file_rawdata, file_rawdata_columns)
-
 ################ call for training models Nbeat and Nhits #########################################################
 
 #nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
 
-
 # 2. RUN FULL N-BEATS PIPELINE (Train -> Eval -> Interpolate)
-# This replaces the old separated steps.
 run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns)
 
 for current_animal in list_animals:
     merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )
     merge_csvs( current_animal, 'N_HITS', file_rawdata, file_rawdata_columns )
 
-#exit()
-
 # for current_animal in list_animals:
-
 #     calc_average_by_method( current_animal, 'N_BEATS', file_rawdata )
 #     calc_average_by_method( current_animal, 'N_HITS', file_rawdata )
 
 #run_average_comparison( len_animals, file_rawdata )
 
-#sys.exit()
-
 ############## CLUSTERIZATION ##############################
-# run clusterization kmeans
-
-#Rodando Dispersao Geral dos animais: Tangara e Jaguar
 #Criando csv das coordenadas interpoladas
-
-file_interpolated_nbeats = merge_all_interpolations_nbeat(file_rawdata)
-file_interpolated_nhits = merge_all_interpolations_nhits(file_rawdata)
 file_merged = merge_maps(file_rawdata, list_animals)
+file_interpolated_nbeats = merge_all_interpolations_nbeat(file_rawdata)
+#file_interpolated_nhits = merge_all_interpolations_nhits(file_rawdata)
 file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
-file_merged_nhits = merge_csv(file_merged, file_interpolated_nhits, file_rawdata, tangara, 'nhits')
+#file_merged_nhits = merge_csv(file_merged, file_interpolated_nhits, file_rawdata, tangara, 'nhits')
 
-for current_animal in list_animals:
-    map_animal_interpolated_nbeats = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')
+############## INTERPOLATED DATA CLUSTERIZATION ############################## N-hits nao funcionando por enquanto
+run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
+#run_all_kmeans(file_interpolated_nhits, file_rawdata, 'nhits')
+run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
+#run_birch_all(file_interpolated_nhits, file_rawdata, 'nhits')
+run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
+#run_som_all(file_interpolated_nhits, file_rawdata, 'nhits')
+
+####
+#file_merged_nhits = merge_csv(file_merged, file_interpolated_nhits, file_rawdata, tangara, 'nhits')
+
+# for current_animal in list_animals:
+#     map_animal_interpolated_nbeats = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')
     
-    # Check if file exists and is not empty before clustering
-    if os.path.exists(map_animal_interpolated_nbeats) and os.path.getsize(map_animal_interpolated_nbeats) > 0:
-        print(f"Clustering interpolated data for {current_animal}...")
-        run_all_kmeans(map_animal_interpolated_nbeats, file_rawdata, f'map_{current_animal}_INTERPOLATED_NBEATS')
-        run_birch_all(map_animal_interpolated_nbeats, file_rawdata, f'map_{current_animal}_INTERPOLATED_NBEATS')
-        run_som_all(map_animal_interpolated_nbeats, file_rawdata, f'map_{current_animal}_INTERPOLATED_NBEATS')
-    else:
-        print(f"Skipping clustering for {current_animal}: Interpolation file not found or empty.")
-
-
-#map_animal_93 = os.path.join(results_dir, f'map_93.csv')
-#map_animal_93_interpolated_nhits = os.path.join(results_dir, f'Interpolation/map_93_interpolation_nhits.csv')
-#####
+#     # Check if file exists and is not empty before clustering
+#     if os.path.exists(map_animal_interpolated_nbeats) and os.path.getsize(map_animal_interpolated_nbeats) > 0:
+#         print(f"Clustering interpolated data for {current_animal}...")
+#         run_all_kmeans(map_animal_interpolated_nbeats, file_rawdata, f'map_{current_animal}_INTERPOLATED_NBEATS')
+#         run_birch_all(map_animal_interpolated_nbeats, file_rawdata, f'map_{current_animal}_INTERPOLATED_NBEATS')
+#         run_som_all(map_animal_interpolated_nbeats, file_rawdata, f'map_{current_animal}_INTERPOLATED_NBEATS')
+#     else:
+#         print(f"Skipping clustering for {current_animal}: Interpolation file not found or empty.")
+####
 
 run_all_kmeans(file_merged_nbeats, file_rawdata, 'merged_nbeats')
 run_birch_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
 run_som_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
 sys.exit()
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
-data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
-hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+# script_dir = os.path.dirname(os.path.abspath(__file__))
+# data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
+# hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
 #n_c_BIRCH = read_field_from_json(hyperparam_path, "BIRCH_NCLUSTERS")
-n_c_KMEANS = read_field_from_json(hyperparam_path, "n_clusters_kmeans")
-n_c_SOM_x = read_field_from_json(hyperparam_path, "som_x")
-n_c_SOM_y = read_field_from_json(hyperparam_path, "som_y")
+#n_c_KMEANS = read_field_from_json(hyperparam_path, "n_clusters_kmeans")
+#n_c_SOM_x = read_field_from_json(hyperparam_path, "som_x")
+#n_c_SOM_y = read_field_from_json(hyperparam_path, "som_y")
 
-run_all_kmeans(file_merged, file_rawdata, f'RawData_{n_c_KMEANS}_{tangara}')
+#run_all_kmeans(file_merged, file_rawdata, f'RawData_{n_c_KMEANS}_{tangara}')
 #run_birch_all(file_merged, file_rawdata, f'RawData_{n_c_BIRCH}_{tangara}')
-run_som_all(file_merged, file_rawdata, f'RawData_{n_c_SOM_x * n_c_SOM_y}_{tangara}')
+#run_som_all(file_merged, file_rawdata, f'RawData_{n_c_SOM_x * n_c_SOM_y}_{tangara}')
 sys.exit()
-
-run_all_kmeans(map_animal_93, file_rawdata, 'map_93RAWDATA')
-run_birch_all(map_animal_93, file_rawdata, 'map_93RAWDATA')
-run_som_all(map_animal_93, file_rawdata, 'map_93RAWDATA')
-
-run_all_kmeans(map_animal_93_interpolated_nbeats, file_rawdata, 'map_93_INTERPOLATED_NBEATS')
-run_birch_all(map_animal_93_interpolated_nbeats, file_rawdata, 'map_93_INTERPOLATED_NBEATS')
-run_som_all(map_animal_93_interpolated_nbeats, file_rawdata, 'map_93_INTERPOLATED_NBEATS')
-sys.exit()
-run_all_kmeans(map_animal_93_interpolated_nhits, file_rawdata, 'map_93_INTERPOLATED_NHITS')
-run_birch_all(map_animal_93_interpolated_nhits, file_rawdata, 'map_93_INTERPOLATED_NHITS')
-run_som_all(map_animal_93_interpolated_nhits, file_rawdata, 'map_93_INTERPOLATED_NHITS')
-
-sys.exit()
-
-#Chamar as funções abaixo con os dados brutos file_merged
-############## RAWDATA CLUSTERIZATION ##############################
-
-
-############## INTERPOLATED DATA CLUSTERIZATION ##############################
-run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
-run_all_kmeans(file_interpolated_nhits, file_rawdata, 'nhits')
-run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
-run_birch_all(file_interpolated_nhits, file_rawdata, 'nhits')
-run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
-run_som_all(file_interpolated_nhits, file_rawdata, 'nhits')
-
-#Por enquanto desabilitado
-#run_mean_shift_all(file_interpolated_nbeats, 'nbeats')
-#run_mean_shift_all(file_interpolated_nhits, 'nhits')
-
-#Roda dispersao geral para o dataset atual
-run_all_dispersion(file_rawdata)
-#sys.exit()
 
 for current_animal in list_animals:
     run_plot_kmeans_som_birch_mean_shift(current_animal)

@@ -351,11 +351,11 @@ def append_variables_to_file(up, down, filename="variables.txt"):
 
 def merge_all_interpolations_nbeat(file_rawdata):
     """
-    Junta todos os arquivos map_{animal}_interpolation_nbeats_merged.csv em um único arquivo.
+    Junta todos os arquivos map_{animal}_interpolation_nbeats.csv em um único arquivo.
     """
     results_dir = results_folder(file_rawdata)
     interpolation_dir = os.path.join(results_dir, "Interpolation")
-    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nbeats_merged.csv")]
+    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nbeats.csv")]
 
     if not files:
         print("Nenhum arquivo nbeats encontrado para merge.")
