@@ -134,6 +134,10 @@ def train_nbeats_model_single(current_animal, file_rawdata_name, file_rawdata_co
     scaler_mean = scaler.mean_
     scaler_std = scaler.scale_
     
+    animal_name = file_rawdata_name.split('_')[0]
+
+
+
     # Calculate speed limit based on median_delta
     # 6 km/h = 1.67 m/s
     median_seconds = metadata['median_delta_seconds']
@@ -141,7 +145,10 @@ def train_nbeats_model_single(current_animal, file_rawdata_name, file_rawdata_co
     # Relax it a bit to 2.5 m/s (~9 km/h) to avoid penalizing running/sprinting too hard
     # but still kill the 20 km/h jumps.
     #max_speed_mps = 2.5 
-    max_speed_mps = 1.2 
+    if  "jaguar" in animal_name:
+        max_speed_mps = 1.2 # ~4.32 km/h
+    elif "tangara" in animal_name:
+        max_speed_mps  = 8 # ~28.8 km/h
     
     step_limit_meters = max_speed_mps * median_seconds
     
