@@ -6,7 +6,7 @@ import pandas as pd
 from Data_preparation.data_field import DataField
 from Data_preparation.raw_data_integration import get_id_from_json
 
-interpolations_methods = ['N_BEATS', 'N_HITS']
+interpolations_methods = ['N_BEATS', 'N_HITS', 'PIDL']
 
 #Modifiquei a ordem das funções somente. Coloquei as funções que nao dependem da variavel global sobre elas.
 
@@ -197,6 +197,8 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
         interp_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')
     elif method == 'N_HITS':
         interp_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits.csv')
+    elif method == 'PIDL':
+        interp_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_pidl.csv')
     else:
         print(f"Unknown method '{method}'.")
         return None
@@ -225,6 +227,8 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
 
     if method == 'N_BEATS':
         out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats_merged.csv')
+    elif method == 'PIDL':
+        out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_pidl_merged.csv')
     else:
         out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits_merged.csv')
 
@@ -421,6 +425,43 @@ def merge_all_interpolations_nhits(file_rawdata):
         return output_path
     except Exception as e:
         print(f"Erro ao realizar merge nhits: {e}")
+        return
+
+def merge_all_interpolations_pidl(file_rawdata):
+    """
+    Junta todos os arquivos map_{animal}_interpolation_pidl.csv em um único arquivo.
+    """
+    results_dir = results_folder(file_rawdata)
+    if not os.path.exists(results_dir):
+        print(f"Diretório de resultados não encontrado: {results_dir}")
+        return
+
+    interpolation_dir = os.path.join(results_dir, "Interpolation")
+    if not os.path.exists(interpolation_dir):
+        print(f"Diretório de interpolação não encontrado: {interpolation_dir}")
+        return
+
+    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_pidl.csv")]
+
+    if not files:
+        print("Nenhum arquivo pidl encontrado para merge.")
+        return
+    
+    try:
+        dfs = [pd.read_csv(os.path.join(interpolation_dir, f), header=None) for f in files]
+        if not dfs:
+            print("Nenhum dado válido encontrado nos arquivos.")
+            return
+
+        df_merged = pd.concat(dfs, ignore_index=True)
+        animal_name = os.path.basename(file_rawdata).split('.')[0]
+        output_path = os.path.join(interpolation_dir, f"map_{animal_name}_interpolation_pidl_all.csv")
+        df_merged.to_csv(output_path, index=False, header=False)
+        
+        print(f"Arquivo gerado: {output_path}")
+        return output_path
+    except Exception as e:
+        print(f"Erro ao realizar merge pidl: {e}")
         return
 
 def merge_maps(file_rawdata, list_animals):

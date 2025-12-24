@@ -36,6 +36,7 @@ from Common.utils import (
     results_folder,
     merge_all_interpolations_nbeat,
     merge_all_interpolations_nhits,
+    merge_all_interpolations_pidl,
     remove_nan_data, 
     merge_maps,
     merge_csv
@@ -65,6 +66,10 @@ from Interpolation.run_nbeats_all import (
 
 from Interpolation.nhits_interpolation import (
     run as run_interpolation_nhits
+)
+
+from Interpolation.pidl_interpolation import (
+    run_pipeline_all_pidl
 )
 
 from Evaluation.average_by_individual import (
@@ -183,9 +188,14 @@ tangara = tangara.split('/')[-1]
 # 2. RUN FULL N-BEATS PIPELINE (Train -> Eval -> Interpolate)
 run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns)
 
+# 3. RUN PER-DATASET PIDL PIPELINE
+run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
+sys.exit()
+
 for current_animal in list_animals:
     merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )
     merge_csvs( current_animal, 'N_HITS', file_rawdata, file_rawdata_columns )
+    merge_csvs( current_animal, 'PIDL', file_rawdata, file_rawdata_columns )
 
 # for current_animal in list_animals:
 #     calc_average_by_method( current_animal, 'N_BEATS', file_rawdata )
@@ -197,12 +207,22 @@ for current_animal in list_animals:
 #Criando csv das coordenadas interpoladas
 file_merged = merge_maps(file_rawdata, list_animals)
 file_interpolated_nbeats = merge_all_interpolations_nbeat(file_rawdata)
+file_interpolated_pidl = merge_all_interpolations_pidl(file_rawdata)
+
 #file_interpolated_nhits = merge_all_interpolations_nhits(file_rawdata)
 file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
+if file_interpolated_pidl:
+    file_merged_pidl = merge_csv(file_merged, file_interpolated_pidl, file_rawdata, tangara, 'pidl')
+
 #file_merged_nhits = merge_csv(file_merged, file_interpolated_nhits, file_rawdata, tangara, 'nhits')
 
 ############## INTERPOLATED DATA CLUSTERIZATION ############################## N-hits nao funcionando por enquanto
 run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
+if file_interpolated_pidl:
+    run_all_kmeans(file_interpolated_pidl, file_rawdata, 'pidl')
+    run_birch_all(file_interpolated_pidl, file_rawdata, 'pidl')
+    run_som_all(file_interpolated_pidl, file_rawdata, 'pidl')
+
 #run_all_kmeans(file_interpolated_nhits, file_rawdata, 'nhits')
 run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
 #run_birch_all(file_interpolated_nhits, file_rawdata, 'nhits')
