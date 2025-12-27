@@ -17,7 +17,8 @@ env/
 *.sublime-project
 *.sublime-workspace
 
-models/
+# Ignorar ficheiros de modelos
+scripts/Interpolation/models/
 *.pkl
 *.pth
 
