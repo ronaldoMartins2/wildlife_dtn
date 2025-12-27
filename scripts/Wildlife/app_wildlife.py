@@ -220,6 +220,7 @@ if __name__ == "__main__":
 # source ./venv/bin/activate
 # inside wildlife_dtn folder
 # python3 scripts/Wildlife/app_wildlife.py rawdata/jaguar_mamiraua.csv rawdata/jaguar_columns.json
+# python3 scripts/Wildlife/app_wildlife.py rawdata/tangara_mata_atlantica.csv rawdata/tangara_columns.json
 
 # SELECT * FROM jaguar_contacts;
 
