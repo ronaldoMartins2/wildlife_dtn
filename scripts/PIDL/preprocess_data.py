@@ -110,19 +110,32 @@ def process_dataset(filepath, dataset_type, output_path):
     print(f"Saved to {output_path}")
 
 if __name__ == "__main__":
-    base_raw = "/home/abinadabe/projetos/wildlife_dtn/rawdata"
-    base_out = "/home/abinadabe/projetos/wildlife_dtn/scripts/Results/PIDL_Preprocessed"
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Preprocess data for PIDL")
+    parser.add_argument("--raw_dir", type=str, default="rawdata", help="Directory containing raw CSVs")
+    parser.add_argument("--output_dir", type=str, default="scripts/Results/PIDL_Preprocessed", help="Output directory")
+    
+    args = parser.parse_args()
     
     # Process Tangara
-    process_dataset(
-        os.path.join(base_raw, "tangara_mata_atlantica.csv"),
-        "tangara",
-        os.path.join(base_out, "tangara_preprocessed.csv")
-    )
+    tangara_in = os.path.join(args.raw_dir, "tangara_mata_atlantica.csv")
+    if os.path.exists(tangara_in):
+        process_dataset(
+            tangara_in,
+            "tangara",
+            os.path.join(args.output_dir, "tangara_preprocessed.csv")
+        )
+    else:
+        print(f"Skipping Tangara: {tangara_in} not found.")
     
     # Process Jaguar
-    process_dataset(
-        os.path.join(base_raw, "jaguar_mamiraua.csv"),
-        "jaguar",
-        os.path.join(base_out, "jaguar_preprocessed.csv")
-    )
+    jaguar_in = os.path.join(args.raw_dir, "jaguar_mamiraua.csv")
+    if os.path.exists(jaguar_in):
+        process_dataset(
+            jaguar_in,
+            "jaguar",
+            os.path.join(args.output_dir, "jaguar_preprocessed.csv")
+        )
+    else:
+        print(f"Skipping Jaguar: {jaguar_in} not found.")

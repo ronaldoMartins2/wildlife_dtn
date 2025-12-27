@@ -210,12 +210,15 @@ def run_single_pidl(current_animal, file_rawdata, model, device, epsg):
     out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_pidl.csv')
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     
-    # Formatting Timestamp
-    # Try to match input format if possible or standard
-    # Logic from nbeat_interpolation:
-    # out_df['Timestamp'] = out_df['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
-    
-    df_imputed['timestamp'] = df_imputed['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+    # Format
+    try:
+        mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
+        if mask:
+             df_imputed['timestamp'] = df_imputed['timestamp'].dt.strftime(mask)
+        else:
+             df_imputed['timestamp'] = df_imputed['timestamp'].dt.strftime('%m/%d/%y %H:%M')
+    except:
+        df_imputed['timestamp'] = df_imputed['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
     
     # Filter only rows that were NOT present originally?
     # Usually interpolation pipelines output the FILLED gaps + original data (Mixed) OR just the gaps.

@@ -3,31 +3,14 @@ import sys
 import os
 import time
 
-# environment preparation
-
-# pip3 install -r scripts/requirements.txt 
-
-# python3 -m venv venv
-
-# Segundo passo
-# source ./venv/bin/activate
-
-# pip3 install -r scripts/requirements.txt 
-
-# ========== to run ==========
-
-# Terceiro passo
-# pip3 install -r scripts/requirements.txt
-
-# Quarto passo
-# inside wildlife_dtn folder
-# python3 scripts/Wildlife/app_wildlife.py rawdata/jaguar_mamiraua.csv rawdata/jaguar_columns.json
-# python3 scripts/Wildlife/app_wildlife.py rawdata/tangara_mata_atlantica.csv rawdata/tangara_columns.json
-
-# SELECT * FROM jaguar_contacts;
-
+# Environment preparation
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 
+# =================================================================================================
+# IMPORTS
+# =================================================================================================
+
+# Common Utils
 from Common.utils import (
     read_field_from_json,
     get_list_animals,
@@ -39,216 +22,220 @@ from Common.utils import (
     merge_all_interpolations_pidl,
     remove_nan_data, 
     merge_maps,
-    merge_csv
-    )
-
-from Data_preparation.separar_localizacoes_individuais import (
-    run as run_preparation
+    merge_csv,
+    interpolations_methods
 )
 
-from Interpolation.nhits_trainer import (
-    main_training,
-    nhits_main_training_list
-)
+# Data Preparation
+from Data_preparation.separar_localizacoes_individuais import run as run_preparation
 
-from Interpolation.nbeat_trainer import (
-    train_nbeats_model_single,
-    #train_nbeats_model_list
-)
+# Interpolation
+from Interpolation.nhits_trainer import main_training, nhits_main_training_list
+from Interpolation.nbeat_trainer import train_nbeats_model_single
+from Interpolation.nbeat_interpolation import run as run_interpolation_nbeat
+from Interpolation.run_nbeats_all import run_pipeline_all as run_pipeline_all_nbeats
+from Interpolation.nhits_interpolation import run as run_interpolation_nhits
+from Interpolation.pidl_interpolation import run_pipeline_all_pidl
 
-from Interpolation.nbeat_interpolation import (
-    run as run_interpolation_nbeat
-)
-
-from Interpolation.run_nbeats_all import (
-    run_pipeline_all as run_pipeline_all_nbeats
-)
-
-from Interpolation.nhits_interpolation import (
-    run as run_interpolation_nhits
-)
-
-from Interpolation.pidl_interpolation import (
-    run_pipeline_all_pidl
-)
-
+# Evaluation
 from Evaluation.average_by_individual import (
     run as run_average_by_individual,
     calc_average_by_method,
     get_len_animal,
     get_top_botom_date
 )
+from Evaluation.media_tempos_hist import run as run_media_tempos_hist
+from Evaluation.average_comparison import run as run_average_comparison
 
-from Evaluation.media_tempos_hist import (
-    run as run_media_tempos_hist
-)
+# Clusterization
+from Clusterization.kmeans_individual_csv import run as run_kmeans, run_all as run_all_kmeans
+from Clusterization.SOM_individual import run as run_som, run_all as run_som_all
+from Clusterization.Mean_Shift import run as run_mean_shift, run_all as run_mean_shift_all
+from Clusterization.BIRCH import run as run_birch, run_all as run_birch_all
+from Clusterization.plot_kmeans_som_birch_mean_shift import run as run_plot_kmeans_som_birch_mean_shift
+from Clusterization.plot_dispersion import run as run_dispersion_plot
+from Clusterization.plot_dispersion_geral import run_all_dispersion as run_all_dispersion
 
-from Evaluation.average_comparison import (
-    run as run_average_comparison
-)
+# DTN (Mobility / Contacts)
+from DTN.mobility_contacts import run as run_contacts
+from DTN.cluster_contacts_fixed_points import run as run_cluster_contacts
+from DTN.find_contacts_between_nodes import run as run_find_contacts_between_nodes
+from DTN.add_down_event import run as run_add_down_event
 
-from Common.utils import (
-    interpolations_methods
-)
 
-from Clusterization.kmeans_individual_csv import (
-    run as run_kmeans,
-    run_all as run_all_kmeans
-)
+# =================================================================================================
+# MAIN PIPELINE
+# =================================================================================================
 
-from Clusterization.SOM_individual import (
-    run as run_som,
-    run_all as run_som_all
-)
+def main():
+    print("=== STARTING WILDLIFE PIPELINE ===")
+    
+    # 1. ARGS & SETUP
+    if len(sys.argv) < 3:
+        print("Usage: python3 app_wildlife.py <rawdata.csv> <columns.json>")
+        sys.exit(1)
 
-from Clusterization.Mean_Shift import (
-    run as run_mean_shift,
-    run_all as run_mean_shift_all
-)
+    file_rawdata = sys.argv[1]
+    file_rawdata_columns = sys.argv[2]
+    
+    tangara = file_rawdata.split('.')[-2]
+    tangara = tangara.split('/')[-1]
 
-from Clusterization.BIRCH import (
-    run as run_birch,
-    run_all as run_birch_all
-)
+    results_dir = results_folder(file_rawdata)
+    hiper_path = os.path.join(results_dir, 'hiperparameters.txt')
 
-from Clusterization.plot_kmeans_som_birch_mean_shift import (
-    run as run_plot_kmeans_som_birch_mean_shift
-)
+    # Delete old hyperparameters file if exists
+    if os.path.exists(hiper_path):
+        os.remove(hiper_path)
+        print(f"Deleted old hyperparameters file: {hiper_path}")
 
-from Clusterization.plot_dispersion import (
-    run as run_dispersion_plot
-)
+    # Get Animal List
+    list_animals = get_list_animals(file_rawdata, file_rawdata_columns)
+    len_animals = len(list_animals)
+    print(f'Found {len_animals} animals: {list_animals}')
 
-from Clusterization.plot_dispersion_geral import (
-    run_all_dispersion as run_all_dispersion
-)
+    # 2. DATA PREPARATION & DISPERSION
+    print("\n--- Data Preparation & Dispersion ---")
+    run_all_dispersion(file_rawdata)
 
-from DTN.mobility_contacts import (
-    run as run_contacts
-)
+    for current_animal in list_animals:
+        run_preparation(current_animal, file_rawdata, file_rawdata_columns)
+        run_average_by_individual(current_animal, file_rawdata, file_rawdata_columns)
+        run_media_tempos_hist(current_animal, file_rawdata)
 
-from DTN.cluster_contacts_fixed_points import (
-    run as run_cluster_contacts
-)
+    # 3. INTERPOLATION (Training & Serving)
+    print("\n--- Interpolation Phase ---")
+    
+    # Run N-BEATS Pipeline (Train -> Eval -> Interpolate)
+    run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns)
 
-from DTN.find_contacts_between_nodes import (
-    run as run_find_contacts_between_nodes
-)
+    # Run PER-DATASET PIDL Pipeline
+    run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
 
-from DTN.add_down_event import (
-    run as run_add_down_event
-)
+    # Merge Interpolation Results per Animal (Optional step for individual CSVs?)
+    # This loop merges the specific results into lists, presumably for analysis?
+    for current_animal in list_animals:
+        merge_csvs(current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns)
+        merge_csvs(current_animal, 'N_HITS', file_rawdata, file_rawdata_columns)
+        merge_csvs(current_animal, 'PIDL', file_rawdata, file_rawdata_columns)
 
-# ========== data preparation ==========
+    # 4. DATA MERGING FOR CLUSTERING
+    print("\n--- Preparing Data for Clustering ---")
+    
+    # Create merged map of raw data
+    file_merged = merge_maps(file_rawdata, list_animals)
+    
+    # Get Interpolated Files (Combined all animals)
+    file_interpolated_nbeats = merge_all_interpolations_nbeat(file_rawdata)
+    file_interpolated_pidl = merge_all_interpolations_pidl(file_rawdata)
 
-file_rawdata = sys.argv [1]
-file_rawdata_columns = sys.argv [2]
+    # Initialize merged file variables
+    file_merged_nbeats = None
+    file_merged_pidl = None
 
-results_dir = results_folder(file_rawdata)
-hiper_path = os.path.join(results_dir, 'hiperparameters.txt')
+    # 5. CLUSTERING: PART A - INTERPOLATED DATA ONLY
+    print("\n--- Clustering Part A: Interpolated Data Only ---")
+    
+    if file_interpolated_nbeats:
+        print(f"Running Clustering on N-BEATS Interpolated Data: {file_interpolated_nbeats}")
+        # Note: 'merged_nbeats' is created here to serve as the Combined(Raw+Interp) later
+        file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
+        
+        # Cluster ONLY the interpolated points
+        run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
+        run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
+        run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
+    
+    if file_interpolated_pidl:
+        print(f"Running Clustering on PIDL Interpolated Data: {file_interpolated_pidl}")
+        file_merged_pidl = merge_csv(file_merged, file_interpolated_pidl, file_rawdata, tangara, 'pidl')
+        
+        # Cluster ONLY the interpolated points
+        run_all_kmeans(file_interpolated_pidl, file_rawdata, 'pidl')
+        run_birch_all(file_interpolated_pidl, file_rawdata, 'pidl')
+        run_som_all(file_interpolated_pidl, file_rawdata, 'pidl')
 
-#Check if the file exists before trying to delete it
-if os.path.exists(hiper_path):
-    os.remove(hiper_path)
-    print(f"Deleted: {hiper_path}")
-else:
-    print(f"No file found at: {hiper_path}")
+    # 6. CLUSTERING: PART B - MERGED DATA (RAW + INTERPOLATED)
+    print("\n--- Clustering Part B: Merged Data (Raw + Interpolated) ---")
+    
+    if file_merged_pidl:
+        print("Running Clustering on Merged PIDL Data...")
+        run_all_kmeans(file_merged_pidl, file_rawdata, 'pidl_merged')
+        run_birch_all(file_merged_pidl, file_rawdata, 'pidl_merged')
+        run_som_all(file_merged_pidl, file_rawdata, 'pidl_merged')
+    
+    if file_merged_nbeats:
+        print("Running Clustering on Merged N-BEATS Data...")
+        run_all_kmeans(file_merged_nbeats, file_rawdata, 'merged_nbeats')
+        run_birch_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
+        run_som_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
 
-list_animals = get_list_animals( file_rawdata, file_rawdata_columns )
-len_animals = len(list_animals)
+    print("=== PIPELINE FINISHED SUCCESSFULLY ===")
+    sys.exit(0)
 
-print(f' list_animals { len_animals }')
-print(f'{list_animals}')
+    for current_animal in list_animals:
+        run_plot_kmeans_som_birch_mean_shift(current_animal)
 
-#Rodando Dispersao Geral dos animais: Tangara e Jaguar
-run_all_dispersion(file_rawdata)
+    #sys.exit()
 
-for current_animal in list_animals:
-    run_preparation( current_animal, file_rawdata, file_rawdata_columns )
-    run_average_by_individual( current_animal, file_rawdata, file_rawdata_columns )
-    run_media_tempos_hist( current_animal, file_rawdata)
+    '''
+    #for current_animal in list_animals:
+    #   run_cluster_contacts(current_animal)
 
-#time.sleep(2)
-# sys.exit()
+    #for current_animal in list_animals:
+    #        run_plot_kmeans_som_birch_mean_shift(current_animal)
+
+    #run_cluster_contacts(current_animal, file_rawdata)
+
+    #for current_animal in list_animals:
+    #    run_cluster_contacts(current_animal, file_rawdata, tangara)
+
+    #run_cluster_contacts(current_animal, file_rawdata)
+    #sys.exit()
+
+    ############## #DTN Contacts ##################################
+    #criar os conjunto dois a dois sem repetição
+
+    #Combinação sem repetições
+    pairs = create_combinations(list_animals)
+
+    for pair in pairs:
+        run_contacts(pair[0], pair[1], file_rawdata)
+
+    for pair in pairs:
+        run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
+        run_add_down_event(f'{pair[0]}_{pair[1]}', file_rawdata)
+    '''
+
+if __name__ == "__main__":
+    main()
+
+
+# =================================================================================================
+# ======================================= LEGACY / OLD CODE =======================================
+# =================================================================================================
+"""
+# pip3 install -r scripts/requirements.txt 
+# python3 -m venv venv
+# source ./venv/bin/activate
+# inside wildlife_dtn folder
+# python3 scripts/Wildlife/app_wildlife.py rawdata/jaguar_mamiraua.csv rawdata/jaguar_columns.json
+
+# SELECT * FROM jaguar_contacts;
 
 #run_preparation( 93, file_rawdata, file_rawdata_columns )
 #run_preparation( 'G54907', file_rawdata, file_rawdata_columns )
 #run_average_by_individual( 'G54907', file_rawdata, file_rawdata_columns )
 
-############## INTERPOLATION ##############################
-
-tangara = file_rawdata.split('.')[-2]
-tangara = tangara.split('/')[-1]
-
-################ call for training models Nbeat and Nhits #########################################################
-
+############### call for training models Nbeat and Nhits #########################################################
 #nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
-
-# 2. RUN FULL N-BEATS PIPELINE (Train -> Eval -> Interpolate)
-run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns)
-
-# 3. RUN PER-DATASET PIDL PIPELINE
-run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
-sys.exit()
-
-for current_animal in list_animals:
-    merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )
-    merge_csvs( current_animal, 'N_HITS', file_rawdata, file_rawdata_columns )
-    merge_csvs( current_animal, 'PIDL', file_rawdata, file_rawdata_columns )
 
 # for current_animal in list_animals:
 #     calc_average_by_method( current_animal, 'N_BEATS', file_rawdata )
 #     calc_average_by_method( current_animal, 'N_HITS', file_rawdata )
 
 #run_average_comparison( len_animals, file_rawdata )
-
-############## CLUSTERIZATION ##############################
-#Criando csv das coordenadas interpoladas
-file_merged = merge_maps(file_rawdata, list_animals)
-file_interpolated_nbeats = merge_all_interpolations_nbeat(file_rawdata)
-file_interpolated_pidl = merge_all_interpolations_pidl(file_rawdata)
-
-#file_interpolated_nhits = merge_all_interpolations_nhits(file_rawdata)
-file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
-if file_interpolated_pidl:
-    file_merged_pidl = merge_csv(file_merged, file_interpolated_pidl, file_rawdata, tangara, 'pidl')
-
-#file_merged_nhits = merge_csv(file_merged, file_interpolated_nhits, file_rawdata, tangara, 'nhits')
-
-############## INTERPOLATED DATA CLUSTERIZATION ############################## N-hits nao funcionando por enquanto
-run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
-if file_interpolated_pidl:
-    run_all_kmeans(file_interpolated_pidl, file_rawdata, 'pidl')
-    run_birch_all(file_interpolated_pidl, file_rawdata, 'pidl')
-    run_som_all(file_interpolated_pidl, file_rawdata, 'pidl')
-
-#run_all_kmeans(file_interpolated_nhits, file_rawdata, 'nhits')
-run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
-#run_birch_all(file_interpolated_nhits, file_rawdata, 'nhits')
-run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
-#run_som_all(file_interpolated_nhits, file_rawdata, 'nhits')
-
-####
-#file_merged_nhits = merge_csv(file_merged, file_interpolated_nhits, file_rawdata, tangara, 'nhits')
-
-# for current_animal in list_animals:
-#     map_animal_interpolated_nbeats = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')
-    
-#     # Check if file exists and is not empty before clustering
-#     if os.path.exists(map_animal_interpolated_nbeats) and os.path.getsize(map_animal_interpolated_nbeats) > 0:
-#         print(f"Clustering interpolated data for {current_animal}...")
-#         run_all_kmeans(map_animal_interpolated_nbeats, file_rawdata, f'map_{current_animal}_INTERPOLATED_NBEATS')
-#         run_birch_all(map_animal_interpolated_nbeats, file_rawdata, f'map_{current_animal}_INTERPOLATED_NBEATS')
-#         run_som_all(map_animal_interpolated_nbeats, file_rawdata, f'map_{current_animal}_INTERPOLATED_NBEATS')
-#     else:
-#         print(f"Skipping clustering for {current_animal}: Interpolation file not found or empty.")
-####
-
-run_all_kmeans(file_merged_nbeats, file_rawdata, 'merged_nbeats')
-run_birch_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
-run_som_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
-sys.exit()
 
 # script_dir = os.path.dirname(os.path.abspath(__file__))
 # data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
@@ -261,7 +248,6 @@ sys.exit()
 #run_all_kmeans(file_merged, file_rawdata, f'RawData_{n_c_KMEANS}_{tangara}')
 #run_birch_all(file_merged, file_rawdata, f'RawData_{n_c_BIRCH}_{tangara}')
 #run_som_all(file_merged, file_rawdata, f'RawData_{n_c_SOM_x * n_c_SOM_y}_{tangara}')
-sys.exit()
 
 for current_animal in list_animals:
     run_plot_kmeans_som_birch_mean_shift(current_animal)
@@ -282,11 +268,9 @@ run_cluster_contacts(current_animal, file_rawdata)
 #run_cluster_contacts(current_animal, file_rawdata)
 #sys.exit()
 
-'''
 ############## #DTN Contacts ##################################
 #criar os conjunto dois a dois sem repetição
 
-'''
 #Combinação sem repetições
 pairs = create_combinations(list_animals)
 
@@ -296,3 +280,4 @@ for pair in pairs:
 for pair in pairs:
     run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
     run_add_down_event(f'{pair[0]}_{pair[1]}', file_rawdata)
+"""
