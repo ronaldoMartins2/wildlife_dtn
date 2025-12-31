@@ -18,7 +18,6 @@ env/
 *.sublime-workspace
 
 # Ignorar ficheiros de modelos
-scripts/Interpolation/models/
 *.pkl
 *.pth
 
@@ -36,6 +35,7 @@ build/
 
 # Ignorar ficheiros de dados grandes
 scripts/Results/
+scripts/Interpolation/models/
 
 # Arquivos de backup e cópias temporárias
 *_copy.py

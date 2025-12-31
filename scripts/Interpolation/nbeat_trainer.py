@@ -146,7 +146,7 @@ def train_nbeats_model_single(current_animal, file_rawdata_name, file_rawdata_co
     # but still kill the 20 km/h jumps.
     #max_speed_mps = 2.5 
     if  "jaguar" in animal_name:
-        max_speed_mps = 1.2 # ~4.32 km/h
+        max_speed_mps = 0.07 # ~0.25 km/h
     elif "tangara" in animal_name:
         max_speed_mps  = 8 # ~28.8 km/h
     

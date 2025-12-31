@@ -13,33 +13,10 @@ torch.manual_seed(42)
 np.random.seed(42)
 
 class TrajectoryDataset(Dataset):
-    def __init__(self, data_path, window_size=30, mask_range=(3, 10), mode='train'):
-        self.df = pd.read_csv(data_path)
-        self.window_size = window_size
+    def __init__(self, windows, mask_range=(3, 10), mode='train'):
+        self.windows = windows
         self.mask_range = mask_range
         self.mode = mode
-        self.windows = []
-        
-        # Group by session
-        # Ensure data is sorted by session and time (done in preprocess but safe to check)
-        # We assume preprocess gave us clean session_ids
-        
-        for sid, group in self.df.groupby('session_id'):
-            coords = group[['pos_x', 'pos_y']].values.astype(np.float32)
-            times = pd.to_datetime(group['timestamp'])
-            dt = times.diff().dt.total_seconds().fillna(0).values.astype(np.float32)
-            
-            n = len(group)
-            if n < window_size:
-                continue
-            
-            # Stride
-            stride = 5 if mode == 'train' else window_size // 2
-            
-            for i in range(0, n - window_size + 1, stride):
-                w_coords = coords[i:i+window_size]
-                w_dt = dt[i:i+window_size]
-                self.windows.append((w_coords, w_dt))
 
     def __len__(self):
         return len(self.windows)
@@ -67,7 +44,7 @@ class TrajectoryDataset(Dataset):
                 start_idx = np.random.randint(2, seq_len - gap_len - 2)
                 mask[start_idx : start_idx + gap_len] = 1.0
         else:
-            # Deterministic mask for validation
+            # Deterministic mask for validation/test
             gap_len = self.mask_range[0] # Fixed size
             start_idx = seq_len // 2 - gap_len // 2
             mask[start_idx : start_idx + gap_len] = 1.0
@@ -88,6 +65,28 @@ class TrajectoryDataset(Dataset):
             'std': torch.tensor(std, dtype=torch.float32),
             'dt_raw': torch.tensor(dt, dtype=torch.float32)
         }
+
+def create_windows(data_path, window_size=30, stride=5):
+    df = pd.read_csv(data_path)
+    windows = []
+    
+    # Group by session
+    # Ensure data is sorted by session and time (done in preprocess but safe to check)
+    for sid, group in df.groupby('session_id'):
+        coords = group[['pos_x', 'pos_y']].values.astype(np.float32)
+        times = pd.to_datetime(group['timestamp'])
+        dt = times.diff().dt.total_seconds().fillna(0).values.astype(np.float32)
+        
+        n = len(group)
+        if n < window_size:
+            continue
+        
+        for i in range(0, n - window_size + 1, stride):
+            w_coords = coords[i:i+window_size]
+            w_dt = dt[i:i+window_size]
+            windows.append((w_coords, w_dt))
+            
+    return windows
 
 class BFBiLSTM(nn.Module):
     def __init__(self, input_dim=4, hidden_dim=64):
@@ -150,17 +149,48 @@ def train(args):
     dataset_name = args.dataset
     if dataset_name == 'jaguar':
         csv_path = "jaguar_preprocessed.csv"
-        v_max = 1.5 # m/s (5.4 km/h)
-        epochs = 20
+        #v_max = 1.5 # m/s (5.4 km/h) #Original
+        v_max = 0.07 # m/s (0.25 km/h)
     else:
         csv_path = "tangara_preprocessed.csv"
         v_max = 20.0
-        epochs = 20
+        
+    epochs = args.epochs
         
     full_path = os.path.join(args.data_dir, csv_path)
     
-    ds = TrajectoryDataset(full_path, mode='train')
-    dl = DataLoader(ds, batch_size=32, shuffle=True)
+    # Generate all windows
+    print(f"Generating windows from {full_path}...")
+    all_windows = create_windows(full_path, window_size=30, stride=5)
+    total_windows = len(all_windows)
+    
+    # Shuffle and Split
+    # Deterministic shuffle
+    indices = np.random.permutation(total_windows)
+    
+    n_train = int(total_windows * 0.70)
+    n_val = int(total_windows * 0.15)
+    n_test = total_windows - n_train - n_val
+    
+    train_idx = indices[:n_train]
+    val_idx = indices[n_train:n_train+n_val]
+    test_idx = indices[n_train+n_val:]
+    
+    train_windows = [all_windows[i] for i in train_idx]
+    val_windows = [all_windows[i] for i in val_idx]
+    test_windows = [all_windows[i] for i in test_idx]
+    
+    print(f"Total windows: {total_windows}")
+    print(f"Train: {len(train_windows)} | Val: {len(val_windows)} | Test: {len(test_windows)}")
+    
+    # Datasets
+    train_ds = TrajectoryDataset(train_windows, mode='train')
+    val_ds = TrajectoryDataset(val_windows, mode='val')
+    test_ds = TrajectoryDataset(test_windows, mode='test') # 'test' behaves like 'val' (deterministic mask)
+    
+    train_dl = DataLoader(train_ds, batch_size=32, shuffle=True)
+    val_dl = DataLoader(val_ds, batch_size=128, shuffle=False)
+    test_dl = DataLoader(test_ds, batch_size=128, shuffle=False)
     
     model = BFBiLSTM().cuda() if torch.cuda.is_available() else BFBiLSTM()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -170,7 +200,6 @@ def train(args):
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
     
     print(f"Starting training for {dataset_name} on {device}...")
-    print(f"Dataset size: {len(ds)} windows")
     
     metrics = []
     
@@ -181,15 +210,14 @@ def train(args):
         total_kin = 0
         
         # Curriculum: Ramp up physics weights
-        # Start pure MSE, then add physics
         if epoch < 5:
             w_kin = 0.0
             w_bio = 0.0
         else:
-            w_kin = args.w_kin * (min((epoch-5)/5.0, 1.0)) # Ramp up over 5 epochs
+            w_kin = args.w_kin * (min((epoch-5)/5.0, 1.0)) 
             w_bio = args.w_bio * (min((epoch-5)/5.0, 1.0))
             
-        for batch in dl:
+        for batch in train_dl:
             x = batch['input'].to(device)
             target = batch['target'].to(device)
             mask = batch['mask'].to(device)
@@ -216,17 +244,47 @@ def train(args):
             total_mse += mse_val
             total_kin += kin_val
             
-        avg_loss = total_loss / len(dl)
-        avg_mse = total_mse / len(dl)
-        print(f"Epoch {epoch+1}/{epochs} | Loss: {avg_loss:.4f} | MSE (Norm): {avg_mse:.4f} | Kin: {total_kin/len(dl):.4f} | W_Kin: {w_kin:.2f}")
+        avg_loss = total_loss / len(train_dl)
+        avg_mse = total_mse / len(train_dl)
+        print(f"Epoch {epoch+1}/{epochs} | Loss: {avg_loss:.4f} | MSE: {avg_mse:.4f} | Kin: {total_kin/len(train_dl):.4f}")
+        
+        # Validation Step
+        model.eval()
+        total_val_ade = 0
+        total_val_count = 0
+        
+        with torch.no_grad():
+            for batch in val_dl:
+                 x = batch['input'].to(device)
+                 target = batch['target'].to(device)
+                 mask = batch['mask'].to(device)
+                 mean = batch['mean'].to(device)
+                 std = batch['std'].to(device)
+                 
+                 pred = model(x)
+                 
+                 pred_real = pred * std.unsqueeze(1) + mean.unsqueeze(1)
+                 target_real = target * std.unsqueeze(1) + mean.unsqueeze(1)
+                 
+                 diff = torch.norm(pred_real - target_real, dim=2)
+                 ade_sum = (diff * mask).sum()
+                 mask_sum = mask.sum()
+                 
+                 if mask_sum > 0:
+                     total_val_ade += ade_sum.item()
+                     total_val_count += mask_sum.item()
+        
+        val_ade = total_val_ade / total_val_count if total_val_count > 0 else 0
+        print(f"  >> Val ADE: {val_ade:.4f}")
         
         metrics.append({
             'epoch': epoch,
             'mse': avg_mse,
-            'kin': total_kin/len(dl)
+            'kin': total_kin/len(train_dl),
+            'val_ade': val_ade
         })
         
-        scheduler.step(avg_mse)
+        scheduler.step(val_ade) # Schedule on Val ADE
 
     # Save Results
     results_file = os.path.join(args.results_dir, f"{dataset_name}_metrics.csv")
@@ -237,23 +295,16 @@ def train(args):
     torch.save(model.state_dict(), model_path)
     print(f"Saved model to {model_path}")
 
-    # --- Validation / Test Sanity Check ---
+    # --- Test Logic ---
+    print("\n--- Running Test ---")
     model.eval()
     
-    # Get a batch for validation
-    val_ds = TrajectoryDataset(full_path, mode='val') 
-    if len(val_ds) == 0:
-        print("Validation set empty!")
-        return
-
-    val_dl = DataLoader(val_ds, batch_size=min(len(val_ds), 128))
-    
+    total_test_ade = 0
+    total_test_count = 0
     all_v = []
-    total_ade = 0
-    total_count = 0
     
     with torch.no_grad():
-        for batch in val_dl:
+        for batch in test_dl:
             x = batch['input'].to(device)
             target = batch['target'].to(device)
             mask = batch['mask'].to(device)
@@ -267,16 +318,14 @@ def train(args):
             pred_real = pred * std.unsqueeze(1) + mean.unsqueeze(1)
             target_real = target * std.unsqueeze(1) + mean.unsqueeze(1)
             
-            # Calculate ADE/FDE on Masked Region
-            diff = torch.norm(pred_real - target_real, dim=2) # [B, L]
-            
-            # ADE: Mean error on masked points
+            # Calculate ADE
+            diff = torch.norm(pred_real - target_real, dim=2) 
             ade_sum = (diff * mask).sum()
             mask_sum = mask.sum()
             
             if mask_sum > 0:
-                total_ade += ade_sum.item()
-                total_count += mask_sum.item()
+                total_test_ade += ade_sum.item()
+                total_test_count += mask_sum.item()
             
             # Velocity sanity check (histogram data)
             d_pos = pred_real[:, 1:, :] - pred_real[:, :-1, :]
@@ -285,12 +334,11 @@ def train(args):
             v = dist / dt_seg
             
             v_np = v.cpu().numpy().flatten()
-            # Remove NaNs if any
             v_np = v_np[~np.isnan(v_np)]
             all_v.extend(v_np)
         
-        avg_ade = total_ade / total_count if total_count > 0 else 0
-        print(f"Validation ADE: {avg_ade:.2f} meters")
+        test_ade = total_test_ade / total_test_count if total_test_count > 0 else 0
+        print(f"TEST ADE: {test_ade:.4f} meters")
         
         # Flatten velocities
         v_flat = np.array(all_v)
@@ -298,9 +346,9 @@ def train(args):
         if len(v_flat) > 0:
             plt.figure()
             try:
-                plt.hist(v_flat, bins=50, alpha=0.7, label='Predicted Velocities')
+                plt.hist(v_flat, bins=50, alpha=0.7, label='Predicted Velocities (Test)')
                 plt.axvline(v_max, color='r', linestyle='--', label='Max Limit')
-                plt.title(f"Velocity Distribution ({dataset_name})")
+                plt.title(f"Velocity Distribution ({dataset_name}) - Test Set")
                 plt.xlabel("Velocity (m/s)")
                 plt.legend()
                 plt.savefig(os.path.join(args.results_dir, f"{dataset_name}_vel_hist.png"))
@@ -308,21 +356,17 @@ def train(args):
             except Exception as e:
                 print(f"Plotting failed: {e}")
             
-            # Check for Super-Jaguar/Tangara (percentile)
             p99 = np.percentile(v_flat, 99)
             print(f"99th Percentile Velocity: {p99:.2f} m/s (Limit: {v_max} m/s)")
-            if p99 > v_max * 1.5:
-                 print("WARNING: 'Super-Animal' anomaly detected! Kinematic constraints may need higher weight.")
-        else:
-            print("No velocity data collected.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, required=True, choices=['jaguar', 'tangara'])
-    parser.add_argument('--data_dir', type=str, default='/home/abinadabe/projetos/wildlife_dtn/scripts/Results/PIDL_Preprocessed')
-    parser.add_argument('--results_dir', type=str, default='/home/abinadabe/projetos/wildlife_dtn/scripts/Results/PIDL_Output')
+    parser.add_argument('--data_dir', type=str, default='scripts/Results/PIDL_Preprocessed')
+    parser.add_argument('--results_dir', type=str, default='scripts/Results/PIDL_Output')
     parser.add_argument('--w_kin', type=float, default=0.1)
     parser.add_argument('--w_bio', type=float, default=0.01)
+    parser.add_argument('--epochs', type=int, default=20)
     
     args = parser.parse_args()
     
