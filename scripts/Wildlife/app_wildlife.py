@@ -36,6 +36,8 @@ from Interpolation.nbeat_interpolation import run as run_interpolation_nbeat
 from Interpolation.run_nbeats_all import run_pipeline_all as run_pipeline_all_nbeats
 from Interpolation.nhits_interpolation import run as run_interpolation_nhits
 from Interpolation.pidl_interpolation import run_pipeline_all_pidl
+from Interpolation.train_nbeats_global import train_nbeats_global
+from Interpolation.clean_interpolations import run_cleaning_pipeline
 
 # Evaluation
 from Evaluation.average_by_individual import (
@@ -63,9 +65,9 @@ from DTN.find_contacts_between_nodes import run as run_find_contacts_between_nod
 from DTN.add_down_event import run as run_add_down_event
 
 
-# =================================================================================================
+# ============================================================================
 # MAIN PIPELINE
-# =================================================================================================
+# ============================================================================
 
 def main():
     print("=== STARTING WILDLIFE PIPELINE ===")
@@ -107,13 +109,17 @@ def main():
     print("\n--- Interpolation Phase ---")
     
     # Run N-BEATS Pipeline (Train -> Eval -> Interpolate)
-    run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns)
+    train_nbeats_global(file_rawdata, file_rawdata_columns)
+
+    run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=False, run_eval=False, run_predict=True)
 
     # Run PER-DATASET PIDL Pipeline
     run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
 
-    # Merge Interpolation Results per Animal (Optional step for individual CSVs?)
-    # This loop merges the specific results into lists, presumably for analysis?
+    # CLEAN Interpolation Results
+    run_cleaning_pipeline(file_rawdata)
+
+    # Merge Interpolation Results per Animal
     for current_animal in list_animals:
         merge_csvs(current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns)
         merge_csvs(current_animal, 'N_HITS', file_rawdata, file_rawdata_columns)
@@ -125,11 +131,9 @@ def main():
     # Create merged map of raw data
     file_merged = merge_maps(file_rawdata, list_animals)
     
-    # Get Interpolated Files (Combined all animals)
     file_interpolated_nbeats = merge_all_interpolations_nbeat(file_rawdata)
     file_interpolated_pidl = merge_all_interpolations_pidl(file_rawdata)
 
-    # Initialize merged file variables
     file_merged_nbeats = None
     file_merged_pidl = None
 
@@ -138,7 +142,6 @@ def main():
     
     if file_interpolated_nbeats:
         print(f"Running Clustering on N-BEATS Interpolated Data: {file_interpolated_nbeats}")
-        # Note: 'merged_nbeats' is created here to serve as the Combined(Raw+Interp) later
         file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
         
         # Cluster ONLY the interpolated points
@@ -160,12 +163,16 @@ def main():
     
     if file_merged_pidl:
         print("Running Clustering on Merged PIDL Data...")
+
+        # Cluster the merged points
         run_all_kmeans(file_merged_pidl, file_rawdata, 'pidl_merged')
         run_birch_all(file_merged_pidl, file_rawdata, 'pidl_merged')
         run_som_all(file_merged_pidl, file_rawdata, 'pidl_merged')
     
     if file_merged_nbeats:
         print("Running Clustering on Merged N-BEATS Data...")
+
+        # Cluster the merged points
         run_all_kmeans(file_merged_nbeats, file_rawdata, 'merged_nbeats')
         run_birch_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
         run_som_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
@@ -178,7 +185,6 @@ def main():
 
     #sys.exit()
 
-    '''
     #for current_animal in list_animals:
     #   run_cluster_contacts(current_animal)
 
@@ -205,7 +211,7 @@ def main():
     for pair in pairs:
         run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
         run_add_down_event(f'{pair[0]}_{pair[1]}', file_rawdata)
-    '''
+   
 
 if __name__ == "__main__":
     main()
