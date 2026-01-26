@@ -163,9 +163,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
 
     # Plota e salva o gráfico
     plt.figure(figsize=(10, 6))
-    for cluster_id in np.unique(clusters):
-        cluster_points = coords[clusters == cluster_id]
-        plt.scatter(cluster_points[:, 0], cluster_points[:, 1], label=f'Cluster {cluster_id + 1}', alpha=0.7)
+    plt.scatter(coords[:, 0], coords[:, 1], c=clusters, cmap='viridis', label='Data Points', alpha=0.7)
 
     # Adiciona centroides reais ao gráfico
     plt.scatter(centroids_real[:, 0], centroids_real[:, 1], color='red', marker='x', s=100, label='Centroids')
@@ -266,9 +264,7 @@ def run(current_animal, file_rawdata_name):
 
     # Plota e salva o gráfico
     plt.figure(figsize=(10, 6))
-    for cluster_id in np.unique(clusters):
-        cluster_points = coords[clusters == cluster_id]
-        plt.scatter(cluster_points[:, 0], cluster_points[:, 1], label=f'Centroíde {cluster_id}', alpha=0.7)
+    plt.scatter(coords[:, 0], coords[:, 1], c=clusters, cmap='viridis', label='Data Points', alpha=0.7)
     
     plt.title(lang["grafico_SOM_individual"])
     plt.xlabel(lang["xlabel_SOM_individual"])
@@ -300,3 +296,16 @@ def run_mock():
     current_animal = sys.argv[1]
     file_rawdata_name = sys.argv[2]
     run(current_animal, file_rawdata_name)
+
+# --- LEGACY CODE ---
+# The following code was replaced to standardize the legend with kmeans style.
+
+# In run_all():
+#     for cluster_id in np.unique(clusters):
+#         cluster_points = coords[clusters == cluster_id]
+#         plt.scatter(cluster_points[:, 0], cluster_points[:, 1], label=f'Cluster {cluster_id + 1}', alpha=0.7)
+
+# In run():
+#     for cluster_id in np.unique(clusters):
+#         cluster_points = coords[clusters == cluster_id]
+#         plt.scatter(cluster_points[:, 0], cluster_points[:, 1], label=f'Centroíde {cluster_id}', alpha=0.7)

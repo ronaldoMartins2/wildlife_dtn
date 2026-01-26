@@ -23,7 +23,7 @@ def extract_folder_name(file_rawdata):
 # python3 11_BIRCH.py 93
 
 def run_all(file_rawdata_name, file_rawdata, output_prefix):
-    # --- CAMINHO DE SAÍDA (para salvar os resultados) ---
+    # --- Caminho de saída ---
     script_dir = os.path.dirname(os.path.abspath(__file__))
     folder_name = extract_folder_name(file_rawdata)
     results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
@@ -112,9 +112,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
 
     # Plota e salva o gráfico
     plt.figure(figsize=(10, 6))
-    for cluster_id in np.unique(clusters):
-        cluster_data = data_cleaned[data_cleaned['Cluster'] == cluster_id]
-        plt.scatter(cluster_data.iloc[:, 2], cluster_data.iloc[:, 3], label=f"Cluster {cluster_id + 1}")
+    plt.scatter(data_cleaned.iloc[:, 2], data_cleaned.iloc[:, 3], c=clusters, cmap='viridis', alpha=0.7, label='Data Points')
 
     # Adiciona centroides ao gráfico (corrigido!)
     plt.scatter(centroids_final[:, 0], centroids_final[:, 1], color='red', marker='x', s=100, label='Centroids')
@@ -142,11 +140,11 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     print(f"[BIRCH] threshold usado: {threshold}")
 
 def run(current_animal, file_rawdata_name):
-    # --- CAMINHO DE ENTRADA (para ler os dados) ---
+    # --- Caminho de entrada ---
     input_results_dir = results_folder(file_rawdata_name)
     input_file_path = os.path.join(input_results_dir, f'map_{current_animal}.csv')
 
-    # --- CAMINHO DE SAÍDA (para salvar os resultados) ---
+    # --- Caminhos para saida ---
     script_dir = os.path.dirname(os.path.abspath(__file__))
     folder_name = extract_folder_name(file_rawdata_name)
     results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
@@ -205,9 +203,7 @@ def run(current_animal, file_rawdata_name):
 
     # Plota e salva o gráfico
     plt.figure(figsize=(10, 6))
-    for cluster_id in np.unique(df['Cluster']):
-        cluster_data = df[df['Cluster'] == cluster_id]
-        plt.scatter(cluster_data['Longitude'], cluster_data['Latitude'], label=f"Cluster {cluster_id}")
+    plt.scatter(df['Longitude'], df['Latitude'], c=df['Cluster'], cmap='viridis', label='Data Points', alpha=0.7)
 
     plt.title(lang["grafico_BIRCH"])
     plt.xlabel(lang["xlabel_BIRCH"])
@@ -229,3 +225,16 @@ def run_mock():
     current_animal = sys.argv[1]
     file_rawdata_name = sys.argv[2]
     run(current_animal, file_rawdata_name)
+
+# --- LEGACY CODE ---
+# The following code was replaced to standardize the legend with kmeans style.
+
+# In run_all():
+#     for cluster_id in np.unique(clusters):
+#         cluster_data = data_cleaned[data_cleaned['Cluster'] == cluster_id]
+#         plt.scatter(cluster_data.iloc[:, 2], cluster_data.iloc[:, 3], label=f"Cluster {cluster_id + 1}")
+
+# In run():
+#     for cluster_id in np.unique(df['Cluster']):
+#         cluster_data = df[df['Cluster'] == cluster_id]
+#         plt.scatter(cluster_data['Longitude'], cluster_data['Latitude'], label=f"Cluster {cluster_id}")

@@ -145,18 +145,18 @@ def main():
         file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
         
         # Cluster ONLY the interpolated points
-        run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
-        run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
-        run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
+        #run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
+        #run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
+        #run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
     
     if file_interpolated_pidl:
         print(f"Running Clustering on PIDL Interpolated Data: {file_interpolated_pidl}")
         file_merged_pidl = merge_csv(file_merged, file_interpolated_pidl, file_rawdata, tangara, 'pidl')
         
         # Cluster ONLY the interpolated points
-        run_all_kmeans(file_interpolated_pidl, file_rawdata, 'pidl')
-        run_birch_all(file_interpolated_pidl, file_rawdata, 'pidl')
-        run_som_all(file_interpolated_pidl, file_rawdata, 'pidl')
+        #run_all_kmeans(file_interpolated_pidl, file_rawdata, 'pidl')
+        #run_birch_all(file_interpolated_pidl, file_rawdata, 'pidl')
+        #run_som_all(file_interpolated_pidl, file_rawdata, 'pidl')
 
     # 6. CLUSTERING: PART B - MERGED DATA (RAW + INTERPOLATED)
     print("\n--- Clustering Part B: Merged Data (Raw + Interpolated) ---")
@@ -165,17 +165,27 @@ def main():
         print("Running Clustering on Merged PIDL Data...")
 
         # Cluster the merged points
-        run_all_kmeans(file_merged_pidl, file_rawdata, 'pidl_merged')
-        run_birch_all(file_merged_pidl, file_rawdata, 'pidl_merged')
-        run_som_all(file_merged_pidl, file_rawdata, 'pidl_merged')
+        #run_all_kmeans(file_merged_pidl, file_rawdata, 'pidl_merged')
+        #run_birch_all(file_merged_pidl, file_rawdata, 'pidl_merged')
+        #run_som_all(file_merged_pidl, file_rawdata, 'pidl_merged')
     
     if file_merged_nbeats:
         print("Running Clustering on Merged N-BEATS Data...")
 
         # Cluster the merged points
-        run_all_kmeans(file_merged_nbeats, file_rawdata, 'merged_nbeats')
-        run_birch_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
-        run_som_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
+        #run_all_kmeans(file_merged_nbeats, file_rawdata, 'merged_nbeats')
+        #run_birch_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
+        #run_som_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
+
+    print("\n--- Clustering Part C: Raw Data Only ---")
+
+    if file_merged:
+        print("Running Clustering on Merged Raw Data...")
+
+        # Cluster the merged points
+        run_all_kmeans(file_merged, file_rawdata, 'raw_data')
+        run_birch_all(file_merged, file_rawdata, 'raw_data')
+        run_som_all(file_merged, file_rawdata, 'raw_data')
 
     print("=== PIPELINE FINISHED SUCCESSFULLY ===")
     sys.exit(0)

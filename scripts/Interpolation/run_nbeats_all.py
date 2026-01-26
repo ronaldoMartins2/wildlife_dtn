@@ -12,7 +12,9 @@ from Interpolation.nbeat_interpolation import run as run_interpolation
 from Data_preparation.separar_localizacoes_individuais import run as run_preparation
 
 def run_pipeline_all(file_rawdata, file_columns, 
-                     run_train=True, run_eval=True, run_predict=True, 
+                     run_train=True, 
+                     run_eval=True, 
+                     run_predict=True, 
                      forecast_steps=50):
     
     print(f"--- Starting N-Beats Pipeline for ALL animals in {file_rawdata} ---")
@@ -32,8 +34,8 @@ def run_pipeline_all(file_rawdata, file_columns,
              results_dir = results_folder(file_rawdata)
              map_path = os.path.join(results_dir, f'map_{animal_id}.csv')
              if not os.path.exists(map_path):
-                 print(f"Map file not found for {animal_id}. Running preparation...")
-                 run_preparation(animal_id, file_rawdata, file_columns)
+                print(f"Map file not found for {animal_id}. Running preparation...")
+                run_preparation(animal_id, file_rawdata, file_columns)
         except Exception as e:
             print(f"Error checking/preparing data for {animal_id}: {e}")
             continue

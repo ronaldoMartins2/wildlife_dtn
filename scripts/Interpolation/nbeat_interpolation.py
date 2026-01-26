@@ -266,6 +266,7 @@ def run(current_animal, legacy_number, file_rawdata_name, file_rawdata_columns):
     
     gap_count = 0
     filled_points = 0
+    skipped_context_count = 0
     
     for k, g in groupby(enumerate(nan_indices), lambda x: x[0]-x[1]):
         group = list(map(itemgetter(1), g))
@@ -282,6 +283,15 @@ def run(current_animal, legacy_number, file_rawdata_name, file_rawdata_columns):
         # Extract context window
         c_start = start_gap - metadata['input_width']
         c_end = end_gap + metadata['input_width']
+
+        # Clean Context Check
+        pre_context = df_resampled.iloc[c_start : start_gap]['E']
+        post_context = df_resampled.iloc[end_gap + 1 : c_end + 1]['E']
+        
+        if pre_context.isna().any() or post_context.isna().any():
+             # Context contains gaps. N-Beats cannot run on dirty context.
+             skipped_context_count += 1
+             continue
         
         context_subset = df_resampled.iloc[c_start : c_end + 1]
         
@@ -295,6 +305,8 @@ def run(current_animal, legacy_number, file_rawdata_name, file_rawdata_columns):
              filled_points += len(reconstructed_path)
         
     print(f"Filled {gap_count} gaps ({filled_points} points).")
+    if skipped_context_count > 0:
+        print(f"Skipped {skipped_context_count} gaps due to insufficient continuous context ({metadata['input_width']} steps).")
     
     final_e = filled_df['E'].values
     final_n = filled_df['N'].values

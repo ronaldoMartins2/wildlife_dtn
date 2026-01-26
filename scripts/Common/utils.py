@@ -485,7 +485,7 @@ def merge_maps(file_rawdata, list_animals):
     # Ler e mesclar TODOS os arquivos em um único DataFrame
     dfs = [pd.read_csv(os.path.join(results_dir, f), header=None) for f in all_files]
     df_merged = pd.concat(dfs, ignore_index=True)
-    df_merged.dropna(subset=[2, 3])
+    df_merged.dropna(subset=[2, 3], inplace=True)
     output_path = os.path.join(results_dir, f"map_{animal_name}_all_animals.csv")
     df_merged.to_csv(output_path, index=False, header=False)
 
