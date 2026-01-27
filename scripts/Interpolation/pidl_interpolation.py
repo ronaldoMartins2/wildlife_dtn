@@ -211,6 +211,7 @@ def run_single_pidl(current_animal, file_rawdata, model, device, epsg):
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     
     # Format
+    '''
     try:
         mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
         if mask:
@@ -219,45 +220,10 @@ def run_single_pidl(current_animal, file_rawdata, model, device, epsg):
              df_imputed['timestamp'] = df_imputed['timestamp'].dt.strftime('%m/%d/%y %H:%M')
     except:
         df_imputed['timestamp'] = df_imputed['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+    '''
     
-    # Filter only rows that were NOT present originally?
-    # Usually interpolation pipelines output the FILLED gaps + original data (Mixed) OR just the gaps.
-    # N-BEATS code (nbeat_interpolation.py) seems to output filled_df which is Resampled (includes filled + original).
-    # AND `merge_csvs` in utils.py merges original + interpolated.
-    # BUT if interpolated contains everything, we double data.
-    # Standard: Output ONLY the imputed points? Or Full?
-    # nbeat_interpolation.py returns `out_df` which is from `filled_df`.
-    # `merge_csvs` receives this.
-    # Wait, `merge_csvs` in utils.py does `pd.concat([df_raw, df_interpolation])`.
-    # This implies `df_interpolation` should probably NOT duplicate `df_raw`.
-    # BUT `nbeat_interpolation.py` fills gaps on a resampled grid.
-    # Ideally, we should filter out the points that closely match original timestamps.
-    
-    # For now, let's output the FULL result from the resampled grid.
-    # Duplicates might be handled by exact timestamp match or just ignored in plots.
-    # Refinement: exclude points where mask == 0 (original data).
-    
-    # Check `interpolate_session`: it returns `df_filled` which has EVERYTHING.
-    # We should probably only save the ones where it was originally NaN (mask=1 in logic).
-    # BUT `interpolate_session` logic lost the exact mask reference after `reset_index`.
-    # Let's re-identify.
-    
-    # Actually, simpler: The pipeline logic for N-BEATS outputs EVERYTHING in `map_animal_nbeats.csv`.
-    # Merging logic handles it?
-    # `merge_csvs` just CATS them. If N-Beats outputs everything, we get doubles.
-    # Let's check `merge_csvs` again.
-    # It sorts by DateTime. It doesn't drop duplicates.
-    # This suggests `nbeat_interpolation.py` outputs ONLY the *newly created* points?
-    # Let's check `nbeat_interpolation.py` lines 292: `filled_df.iloc[start_gap : end_gap + 1, 0] = reconstructed`.
-    # It fills the gaps.
-    # Then `out_df` is created from `filled_df` (Line 311).
-    # THIS INCLUDES ORIGINAL DATA if `filled_df` was a copy of `df_resampled` which had original data.
-    # Yes, line 265: `filled_df = df_resampled.copy()`.
-    # So N-BEATS outputs FULL TRAJECTORY.
-    # Meaning `merge_csvs` effectively DOUBLES the original points (Original Raw + Resampled Original).
-    # This might be intended for some comparison metrics or just a flaw.
-    # I will follow the pattern: Output Full Trajectory.
-    
+    df_imputed['timestamp'] = df_imputed['timestamp'].dt.strftime('%m/%d/%y %H:%M')
+
     save_cols = ['ID', 'timestamp', 'Longitude', 'Latitude']
     df_imputed[save_cols].to_csv(out_path, index=False, header=False)
     print(f"Saved PIDL interpolation for {current_animal}")

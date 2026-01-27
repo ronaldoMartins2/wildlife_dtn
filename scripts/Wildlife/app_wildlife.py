@@ -109,9 +109,9 @@ def main():
     print("\n--- Interpolation Phase ---")
     
     # Run N-BEATS Pipeline (Train -> Eval -> Interpolate)
-    train_nbeats_global(file_rawdata, file_rawdata_columns)
+    #train_nbeats_global(file_rawdata, file_rawdata_columns)
 
-    run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=False, run_eval=False, run_predict=True)
+    #run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=False, run_eval=False, run_predict=True)
 
     # Run PER-DATASET PIDL Pipeline
     run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
