@@ -1,0 +1,7 @@
+{
+    "ID": "individual.local.identifier (ID)",
+    "LATITUDE": "location.lat",
+    "LONGITUDE": "location.long",
+    "DATETIME": "timestamp",
+    "DATETIME_MASK": "%m/%d/%y %H:%M"
+}

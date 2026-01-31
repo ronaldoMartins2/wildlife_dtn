@@ -1,0 +1,7 @@
+{
+    "ID": "tag-local-identifier",
+    "LATITUDE": "location-lat",
+    "LONGITUDE": "location-long",
+    "DATETIME": "timestamp",
+    "DATETIME_MASK": "%Y-%m-%d %H:%M:%S.%f"
+}
