@@ -7,11 +7,57 @@ import os
 import json
 import sys
 
+from sklearn.metrics.cluster import contingency_matrix
+
 from Common.utils import (
     create_clusterization_results,
     results_folder,
     read_field_from_json
 )
+
+def calculate_quality_metrics(y_true, y_pred):
+    """
+    Calcula Purity, F-measure e Entropia baseados no PDF.
+    y_true: IDs dos animais (L)
+    y_pred: IDs dos clusters (C)
+    """
+    # Matriz de contingência: linhas são categorias reais (L), colunas são clusters (C)
+    # n_ij = quantidade de itens da categoria i no cluster j
+    matrix = contingency_matrix(y_true, y_pred)
+    N = np.sum(matrix)
+    
+    # --- PURITY --- [cite: 36]
+    # Soma dos máximos de cada cluster dividida pelo total N
+    purity = np.sum(np.amax(matrix, axis=0)) / N
+    
+    # --- ENTROPIA --- [cite: 54, 55]
+    total_entropy = 0
+    cluster_sums = np.sum(matrix, axis=0)
+    for j in range(matrix.shape[1]):
+        nj = cluster_sums[j]
+        if nj > 0:
+            # Probabilidade p(i,j) de encontrar animal i no cluster j
+            p_ij = matrix[:, j] / nj
+            # Apenas valores maiores que zero para o log
+            p_ij_nonzero = p_ij[p_ij > 0]
+            cluster_entropy = -np.sum(p_ij_nonzero * np.log2(p_ij_nonzero))
+            total_entropy += (nj / N) * cluster_entropy
+            
+    # --- F-MEASURE --- [cite: 45, 50]
+    # F = (2 * Recall * Precision) / (Recall + Precision)
+    precision = matrix / matrix.sum(axis=0) # Precisão por cluster
+    recall = matrix / matrix.sum(axis=1)[:, None] # Revocação por categoria
+    
+    # Substituir NaNs por 0 em casos de divisão por zero
+    f_matrix = np.nan_to_num((2 * precision * recall) / (precision + recall))
+    # Para cada categoria real, pega o melhor F-measure entre os clusters e faz a média ponderada
+    f_measured = np.sum(np.amax(f_matrix, axis=1) * matrix.sum(axis=1)) / N
+    
+    return {
+        "Purity": purity,
+        "Entropy": total_entropy,
+        "F-Measure": f_measured
+    }
 
 def extract_folder_name(file_rawdata):
     """Extrai o nome da pasta do file_rawdata_name"""
@@ -103,6 +149,21 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     map_file = os.path.join(cluster_output_dir, f'points_birch_mapping_{output_prefix}.csv')
     df_map.to_csv(map_file, index=False)
     print(f"Point->centroid mapping saved to {map_file}")
+
+    # --- Metrics ---
+    metrics = calculate_quality_metrics(df_points.iloc[:, 0].values, labels + 1)
+    metrics['Algorithm'] = 'BIRCH'
+    metrics_file = os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv')
+    
+    if os.path.exists(metrics_file):
+        existing_df = pd.read_csv(metrics_file)
+        new_df = pd.DataFrame([metrics])
+        final_df = pd.concat([existing_df, new_df], ignore_index=True)
+    else:
+        final_df = pd.DataFrame([metrics])
+        
+    final_df.to_csv(metrics_file, index=False)
+    print(f"Metrics saved to {metrics_file}")
 
     # Carrega idioma
     language = read_field_from_json(hyperparam_path, "language")

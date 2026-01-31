@@ -114,10 +114,10 @@ def main():
     #run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=False, run_eval=False, run_predict=True)
 
     # Run PER-DATASET PIDL Pipeline
-    run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
+    #run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
 
     # CLEAN Interpolation Results
-    run_cleaning_pipeline(file_rawdata)
+    #run_cleaning_pipeline(file_rawdata)
 
     # Merge Interpolation Results per Animal
     for current_animal in list_animals:
