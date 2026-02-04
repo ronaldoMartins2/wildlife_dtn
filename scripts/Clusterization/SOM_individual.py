@@ -14,46 +14,60 @@ from Common.utils import (
 
 def calculate_quality_metrics(y_true, y_pred):
     """
-    Calcula Purity, F-measure e Entropia baseados no PDF.
-    y_true: IDs dos animais (L)
-    y_pred: IDs dos clusters (C)
+    Calcula as 4 métricas do PDF: Purity, Entropy, F-Measure e Partition Coefficient (PC).
+    y_true: IDs reais (ex: ID do animal)
+    y_pred: IDs dos clusters gerados pelo algoritmo
     """
-    # Matriz de contingência: linhas são categorias reais (L), colunas são clusters (C)
-    # n_ij = quantidade de itens da categoria i no cluster j
+    # Matriz de contingência (linhas = classes reais, colunas = clusters)
     matrix = contingency_matrix(y_true, y_pred)
-    N = np.sum(matrix)
+    N = np.sum(matrix) # Total de itens [cite: 35]
     
-    # --- PURITY --- [cite: 36]
-    # Soma dos máximos de cada cluster dividida pelo total N
+    # 1. PURITY [cite: 36]
     purity = np.sum(np.amax(matrix, axis=0)) / N
     
-    # --- ENTROPIA --- [cite: 54, 55]
+    # 2. ENTROPIA (Global) [cite: 54]
     total_entropy = 0
     cluster_sums = np.sum(matrix, axis=0)
     for j in range(matrix.shape[1]):
         nj = cluster_sums[j]
         if nj > 0:
-            # Probabilidade p(i,j) de encontrar animal i no cluster j
             p_ij = matrix[:, j] / nj
-            # Apenas valores maiores que zero para o log
             p_ij_nonzero = p_ij[p_ij > 0]
             cluster_entropy = -np.sum(p_ij_nonzero * np.log2(p_ij_nonzero))
             total_entropy += (nj / N) * cluster_entropy
             
-    # --- F-MEASURE --- [cite: 45, 50]
-    # F = (2 * Recall * Precision) / (Recall + Precision)
-    precision = matrix / matrix.sum(axis=0) # Precisão por cluster
-    recall = matrix / matrix.sum(axis=1)[:, None] # Revocação por categoria
+    # 3. F-MEASURED [cite: 50]
+    # Precisão = n_ij / col_sum; Revocação = n_ij / row_sum
+    # Avoid division by zero
+    col_sums = matrix.sum(axis=0)
+    row_sums = matrix.sum(axis=1)
     
-    # Substituir NaNs por 0 em casos de divisão por zero
-    f_matrix = np.nan_to_num((2 * precision * recall) / (precision + recall))
-    # Para cada categoria real, pega o melhor F-measure entre os clusters e faz a média ponderada
-    f_measured = np.sum(np.amax(f_matrix, axis=1) * matrix.sum(axis=1)) / N
+    precision = np.divide(matrix, col_sums, out=np.zeros_like(matrix, dtype=float), where=col_sums!=0)
+    recall = np.divide(matrix, row_sums[:, None], out=np.zeros_like(matrix, dtype=float), where=row_sums[:, None]!=0)
+    
+    f_matrix = np.divide(2 * precision * recall, precision + recall, 
+                         out=np.zeros_like(matrix, dtype=float), where=(precision + recall)!=0)
+    # Média ponderada do melhor F-measure por categoria [cite: 40, 45]
+    f_measured = np.sum(np.amax(f_matrix, axis=1) * row_sums) / N
+    
+    # 4. PARTITION COEFFICIENT (PC) [cite: 57]
+    # Para cada cluster j, calcula a soma dos quadrados das proporções de cada animal
+    pc_clusters = []
+    for j in range(matrix.shape[1]):
+        nj = cluster_sums[j]
+        if nj > 0:
+            # Fração de cada animal no cluster j: |Cp ∩ Cp+| / |Cp|
+            proportions = matrix[:, j] / nj
+            pc_j = np.sum(proportions**2) # Segundo a descrição do PDF de ser entre 1/k+ e 1 
+            pc_clusters.append(pc_j)
+    
+    avg_pc = np.mean(pc_clusters) if pc_clusters else 0
     
     return {
         "Purity": purity,
         "Entropy": total_entropy,
-        "F-Measure": f_measured
+        "F-Measure": f_measured,
+        "PC": avg_pc
     }
 
 def extract_folder_name(file_rawdata):
@@ -208,6 +222,13 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
 
     # --- Metrics ---
     metrics = calculate_quality_metrics(df_points.iloc[:, 0].values, labels)
+    
+    print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
+    print(f"Purity:      {metrics['Purity']:.4f}")
+    print(f"Entropy:     {metrics['Entropy']:.4f}")
+    print(f"F-Measure:   {metrics['F-Measure']:.4f}")
+    print(f"Partition Coeff (PC): {metrics['PC']:.4f}")
+    
     metrics['Algorithm'] = 'SOM'
     metrics_file = os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv')
     
@@ -220,6 +241,13 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
         
     final_df.to_csv(metrics_file, index=False)
     print(f"Metrics saved to {metrics_file}")
+    
+    # Opcional: Salvar em arquivo txt também
+    results_path_txt = os.path.join(cluster_output_dir, f'metrics_{output_prefix}.txt')
+    with open(results_path_txt, "w") as f:
+        for k, v in metrics.items():
+            if k != 'Algorithm':
+                f.write(f"{k}: {v}\n")
 
     # Plota e salva o gráfico
     plt.figure(figsize=(10, 6))
@@ -351,6 +379,21 @@ def run(current_animal, file_rawdata_name):
     map_file_slice = os.path.join(cluster_output_dir, f'points_som_mapping_{current_animal}.csv')
     df_map_slice.to_csv(map_file_slice, index=False)
     print(f"Point->centroid mapping (slice) saved to {map_file_slice}")
+
+    # --- INSERÇÃO DAS MÉTRICAS ---
+    metrias = calculate_quality_metrics(df_map_slice['id_animal'], df_map_slice['id_centroid'])
+    
+    print("\n--- Resultados de Qualidade da Clusterização ---")
+    print(f"Purity:      {metrias['Purity']:.4f}")
+    print(f"Entropy:     {metrias['Entropy']:.4f}")
+    print(f"F-Measure:   {metrias['F-Measure']:.4f}")
+    print(f"Partition Coeff (PC): {metrias['PC']:.4f}")
+    
+    # Opcional: Salvar em arquivo
+    results_path = os.path.join(cluster_output_dir, f'metrics_{current_animal}.txt')
+    with open(results_path, "w") as f:
+        for k, v in metrias.items():
+            f.write(f"{k}: {v}\n")
 
 def run_mock():
     current_animal = sys.argv[1]

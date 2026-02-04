@@ -268,6 +268,9 @@ def run(current_animal, legacy_number, file_rawdata_name, file_rawdata_columns):
     filled_points = 0
     skipped_context_count = 0
     
+    # Create a mask to track which points are interpolated
+    is_interpolated = np.zeros(len(filled_df), dtype=bool)
+
     for k, g in groupby(enumerate(nan_indices), lambda x: x[0]-x[1]):
         group = list(map(itemgetter(1), g))
         start_gap = group[0]
@@ -301,6 +304,8 @@ def run(current_animal, legacy_number, file_rawdata_name, file_rawdata_columns):
         if reconstructed_path is not None:
              filled_df.iloc[start_gap : end_gap + 1, 0] = reconstructed_path[:, 0]
              filled_df.iloc[start_gap : end_gap + 1, 1] = reconstructed_path[:, 1]
+             # Mark these indices as interpolated
+             is_interpolated[start_gap : end_gap + 1] = True
              gap_count += 1
              filled_points += len(reconstructed_path)
         
@@ -308,16 +313,22 @@ def run(current_animal, legacy_number, file_rawdata_name, file_rawdata_columns):
     if skipped_context_count > 0:
         print(f"Skipped {skipped_context_count} gaps due to insufficient continuous context ({metadata['input_width']} steps).")
     
-    final_e = filled_df['E'].values
-    final_n = filled_df['N'].values
+    # Filter for only interpolated points
+    # We masked based on filled_df indices (which matches df_resampled)
     
-    # Clean up edges logic: if linear interpolation was removed, we might have NaNs at edges?
-    # We only filled internal gaps.
-    mask_final = ~np.isnan(final_e)
-    final_e = final_e[mask_final]
-    final_n = final_n[mask_final]
-    timestamps = filled_df.index[mask_final]
+    final_e = filled_df.loc[is_interpolated, 'E'].values
+    final_n = filled_df.loc[is_interpolated, 'N'].values
+    timestamps = filled_df.index[is_interpolated]
     
+    out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+    if len(final_e) == 0:
+        print("No gaps were successfully filled properly. Saving empty interpolation file.")
+        # Save empty file
+        pd.DataFrame(columns=['ID', 'Timestamp', 'Longitude', 'Latitude']).to_csv(out_path, index=False, header=False)
+        return
+
     final_lon, final_lat = transformer_back.transform(final_e, final_n)
     
     out_df = pd.DataFrame({
@@ -341,10 +352,9 @@ def run(current_animal, legacy_number, file_rawdata_name, file_rawdata_columns):
     except:
         out_df['Timestamp'] = out_df['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
 
-    out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
     
-    out_df.to_csv(out_path, index=False, header=False)
+    out_df.to_csv(out_path, index=False, header=False, date_format='%m/%d/%y %H:%M')
     print(f"Saved interpolated path to {out_path}")
 
 if __name__ == "__main__":
