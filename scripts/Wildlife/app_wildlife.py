@@ -46,6 +46,7 @@ from Evaluation.average_by_individual import (
     get_len_animal,
     get_top_botom_date
 )
+from Interpolation.evaluate_pidl import run_evaluation_all_pidl
 from Evaluation.media_tempos_hist import run as run_media_tempos_hist
 from Evaluation.average_comparison import run as run_average_comparison
 
@@ -111,10 +112,11 @@ def main():
     # Run N-BEATS Pipeline (Train -> Eval -> Interpolate)
     #train_nbeats_global(file_rawdata, file_rawdata_columns)
 
-    #run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=False, run_eval=False, run_predict=True)
+    run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=True, run_eval=True, run_predict=True)
 
     # Run PER-DATASET PIDL Pipeline
-    #run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
+    run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
+    run_evaluation_all_pidl(file_rawdata, file_rawdata_columns)
 
     # CLEAN Interpolation Results
     #run_cleaning_pipeline(file_rawdata)

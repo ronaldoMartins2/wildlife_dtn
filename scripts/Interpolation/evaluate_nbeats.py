@@ -9,6 +9,10 @@ from pyproj import Transformer
 import torch
 from Interpolation.nbeat_model import NBeats
 from Common.utils import read_field_from_json
+from Evaluation.metrics import (
+    calculate_mae, calculate_mse, calculate_rmse, 
+    calculate_mape, calculate_smape, calculate_mase, calculate_owa
+)
 
 
 def haversine(lon1, lat1, lon2, lat2):
@@ -129,7 +133,13 @@ def evaluate(file_map_path, file_rawdata_name, file_rawdata_columns, model_dir=N
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     for h in horizons:
-        dists = []
+        true_lons = []
+        true_lats = []
+        pred_lons = []
+        pred_lats = []
+        naive_lons = []
+        naive_lats = []
+
         # sliding windows over test
         for s in range(0, n_test - h + 1):
             if s == 0:
@@ -140,16 +150,76 @@ def evaluate(file_map_path, file_rawdata_name, file_rawdata_columns, model_dir=N
             preds = predict_n_steps_from_obs(start_row, h, model, scaler_X, scaler_y, transformer_to_utm, transformer_to_wgs, median_time_diff, device=device)
             pred_pos = preds[-1]
             actual = df_te.iloc[s + h - 1]
+            
+            # Naive forecast: last observation carried forward
+            naive_lon = float(start_row['Longitude'])
+            naive_lat = float(start_row['Latitude'])
+
             dist = haversine(pred_pos['Longitude'], pred_pos['Latitude'], float(actual['Longitude']), float(actual['Latitude']))
             dists.append(dist)
+            
+            true_lons.append(float(actual['Longitude']))
+            true_lats.append(float(actual['Latitude']))
+            pred_lons.append(pred_pos['Longitude'])
+            pred_lats.append(pred_pos['Latitude'])
+            naive_lons.append(naive_lon)
+            naive_lats.append(naive_lat)
 
         dists = np.array(dists)
+        
+        # Calculate extended metrics for Lat and Lon
+        metrics_lat = {}
+        metrics_lon = {}
+        metrics_lat_naive = {}
+        metrics_lon_naive = {}
+        
+        if len(dists) > 0:
+            # Training data for MASE (Lat/Lon)
+            train_lons = df_t['Longitude'].values
+            train_lats = df_t['Latitude'].values
+
+            # --- Latitude Metrics ---
+            metrics_lat['MAE'] = calculate_mae(true_lats, pred_lats)
+            metrics_lat['MSE'] = calculate_mse(true_lats, pred_lats)
+            metrics_lat['RMSE'] = calculate_rmse(true_lats, pred_lats)
+            metrics_lat['MAPE'] = calculate_mape(true_lats, pred_lats)
+            metrics_lat['SMAPE'] = calculate_smape(true_lats, pred_lats)
+            metrics_lat['MASE'] = calculate_mase(true_lats, pred_lats, train_lats)
+
+            # Naive Latitude Metrics
+            metrics_lat_naive['SMAPE'] = calculate_smape(true_lats, naive_lats)
+            metrics_lat_naive['MASE'] = calculate_mase(true_lats, naive_lats, train_lats)
+            
+            metrics_lat['OWA'] = calculate_owa(metrics_lat, metrics_lat_naive)
+
+            # --- Longitude Metrics ---
+            metrics_lon['MAE'] = calculate_mae(true_lons, pred_lons)
+            metrics_lon['MSE'] = calculate_mse(true_lons, pred_lons)
+            metrics_lon['RMSE'] = calculate_rmse(true_lons, pred_lons)
+            metrics_lon['MAPE'] = calculate_mape(true_lons, pred_lons)
+            metrics_lon['SMAPE'] = calculate_smape(true_lons, pred_lons)
+            metrics_lon['MASE'] = calculate_mase(true_lons, pred_lons, train_lons)
+
+            # Naive Longitude Metrics
+            metrics_lon_naive['SMAPE'] = calculate_smape(true_lons, naive_lons)
+            metrics_lon_naive['MASE'] = calculate_mase(true_lons, naive_lons, train_lons)
+            
+            metrics_lon['OWA'] = calculate_owa(metrics_lon, metrics_lon_naive)
+
         results['horizons'][str(h)] = {
             'count': int(len(dists)),
             'mae_m': float(np.mean(np.abs(dists))) if len(dists)>0 else None,
             'rmse_m': float(np.sqrt(np.mean(dists**2))) if len(dists)>0 else None,
-            'median_m': float(np.median(dists)) if len(dists)>0 else None
+            'median_m': float(np.median(dists)) if len(dists)>0 else None,
+            'metrics_lat': metrics_lat,
+            'metrics_lon': metrics_lon
         }
+        
+        if len(dists) > 0:
+            l,u = bootstrap_ci(dists, n_boot=1000, ci=95)
+            results['horizons'][str(h)]['mae_ci95'] = [l,u]
+        else:
+            results['horizons'][str(h)]['mae_ci95'] = [None, None]
 
     # ADE/FDE from single-start (start at end of validation)
     if n_test>0:
@@ -218,6 +288,15 @@ def evaluate(file_map_path, file_rawdata_name, file_rawdata_columns, model_dir=N
             'mae_ci95_lower': (stats.get('mae_ci95') or [None, None])[0],
             'mae_ci95_upper': (stats.get('mae_ci95') or [None, None])[1]
         })
+        
+        # Flatten metrics for CSV
+        m_lat = stats.get('metrics_lat', {})
+        m_lon = stats.get('metrics_lon', {})
+        
+        for k, v in m_lat.items():
+            rows[-1][f'lat_{k}'] = v
+        for k, v in m_lon.items():
+            rows[-1][f'lon_{k}'] = v
     df_out = pd.DataFrame(rows)
     csv_out = os.path.join(models_dir, f'nbeats_eval_summary_{filename}.csv')
     df_out.to_csv(csv_out, index=False)

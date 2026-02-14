@@ -10,6 +10,7 @@ from math import radians, cos, sin, asin, sqrt
 from Common.utils import results_folder
 from Interpolation.nbeat_model import NBeats
 from Interpolation.nbeat_data_prep import preprocess_nbeats_data
+from Evaluation.metrics import calculate_mae, calculate_mse, calculate_rmse
 
 def haversine(lon1, lat1, lon2, lat2):
     """
@@ -92,9 +93,9 @@ def evaluate_nbeats_model(current_animal, file_rawdata_name, file_rawdata_column
     
     # Metrics Calculation
     # 1. Delta Errors (RMSE)
-    mse = np.mean((y_pred_deltas - y_truth_deltas)**2)
-    rmse = np.sqrt(mse)
-    mae = np.mean(np.abs(y_pred_deltas - y_truth_deltas))
+    mse = calculate_mse(y_truth_deltas, y_pred_deltas)
+    rmse = calculate_rmse(y_truth_deltas, y_pred_deltas)
+    mae = calculate_mae(y_truth_deltas, y_pred_deltas)
     
     print(f"[EVAL] Delta Metrics - RMSE: {rmse:.4f}, MAE: {mae:.4f}")
     
