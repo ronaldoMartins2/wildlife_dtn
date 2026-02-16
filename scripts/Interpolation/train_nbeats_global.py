@@ -30,7 +30,7 @@ def train_nbeats_global(file_rawdata, file_columns, forecast_steps=50):
     hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nbeat") or 64
     num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nbeat") or 2
     
-    input_width = 10 
+    input_width = read_field_from_json(hyperparam_path, 'input_width_nbeat') or 10 
     forecast_horizon = 5
 
     # 2. Accumulate Data

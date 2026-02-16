@@ -8,7 +8,14 @@ from datetime import datetime
 # Add scripts folder to path
 sys.path.append(os.path.abspath('scripts'))
 
-from Interpolation import nbeat_trainer, nbeat_interpolation
+from Interpolation import nbeat_trainer
+import importlib
+# Dynamically load permissive interpolator (avoid package __init__ export restrictions)
+try:
+    nbeat_interpolation = importlib.import_module('Interpolation.nbeat_interpolation_permissive')
+except Exception:
+    # Fallback to default interpolator
+    nbeat_interpolation = importlib.import_module('Interpolation.nbeat_interpolation')
 from Data_preparation.data_field import DataField
 
 def setup_verification():

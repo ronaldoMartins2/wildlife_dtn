@@ -110,14 +110,21 @@ def generate_bidirectional_forecast(df_gap_context, gap_size_steps, model, scale
     # Delta[i] = P[i] - P[i-1]
     # We need P[last_valid_before - input_width] to P[last_valid_before]
     
-    start_context_idx = last_valid_before - input_width
-    if start_context_idx < 0:
-        return None # Not enough history
-        
+    start_context_idx = max(0, last_valid_before - input_width)
     forward_segment = df_gap_context.iloc[start_context_idx : last_valid_before + 1][['E', 'N']].values
-    # Calc deltas
-    # (N+1 points -> N deltas)
-    forward_deltas = np.diff(forward_segment, axis=0) # (10, 2)
+    # If segment is shorter than required (input_width+1 points), pad by repeating the first point
+    needed_len = input_width + 1
+    if forward_segment.shape[0] < needed_len:
+        if forward_segment.shape[0] == 0:
+            # no history at all, create zeros
+            forward_segment = np.vstack([np.zeros(2) for _ in range(needed_len)])
+        else:
+            pad_count = needed_len - forward_segment.shape[0]
+            pad = np.tile(forward_segment[0], (pad_count, 1))
+            forward_segment = np.vstack([pad, forward_segment])
+
+    # Calc deltas (N+1 points -> N deltas)
+    forward_deltas = np.diff(forward_segment, axis=0)
     
     # BACKWARD Context
     # We need 'input_width' deltas starting from 'first_valid_after' going validly forward in time?
@@ -127,11 +134,16 @@ def generate_bidirectional_forecast(df_gap_context, gap_size_steps, model, scale
     # REVERSE them: P[N+input_width] ... P[N]
     # Calculate deltas on reversed sequence.
     
-    end_context_idx = first_valid_after + input_width
-    if end_context_idx >= len(df_gap_context):
-        return None # Not enough future
-        
+    end_context_idx = min(len(df_gap_context) - 1, first_valid_after + input_width)
     backward_segment = df_gap_context.iloc[first_valid_after : end_context_idx + 1][['E', 'N']].values
+    # If segment is shorter than required, pad by repeating the last point
+    if backward_segment.shape[0] < needed_len:
+        if backward_segment.shape[0] == 0:
+            backward_segment = np.vstack([np.zeros(2) for _ in range(needed_len)])
+        else:
+            pad_count = needed_len - backward_segment.shape[0]
+            pad = np.tile(backward_segment[-1], (pad_count, 1))
+            backward_segment = np.vstack([backward_segment, pad])
     # Reverse the points to simulate walking backwards
     backward_segment_rev = backward_segment[::-1]
     backward_deltas = np.diff(backward_segment_rev, axis=0) # (10, 2)

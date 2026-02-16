@@ -5,6 +5,7 @@
     "CONTACT_DISTANCE": 5000,
 
     "output_dim_nbeat": 3,
+    "input_width_nbeat": 20,
     "hidden_dim_nbeat": 64,
     "num_blocks_nbeat": 6,
     "lr_nbeats": 0.0001,

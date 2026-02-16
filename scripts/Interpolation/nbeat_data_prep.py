@@ -58,12 +58,19 @@ def preprocess_nbeats_data(df, file_rawdata_columns, input_width=10, forecast_ho
     # Round to nearest logical frequency (e.g., 10min, 1H, 4H)
     # Simple heuristic: round to nearest minute
     freq_seconds = median_delta.total_seconds()
+    # Build a pandas-compatible frequency string.
+    # pandas prefers explicit units like 's' (seconds) and 'min' (minutes).
     if freq_seconds < 60:
-        freq_str = '1T' # 1 min
+        secs = int(round(freq_seconds))
+        if secs <= 0:
+            secs = 1
+        freq_str = f'{secs}s'
     else:
         freq_minutes = int(round(freq_seconds / 60))
-        freq_str = f'{freq_minutes}T'
-        
+        if freq_minutes <= 0:
+            freq_minutes = 1
+        freq_str = f'{freq_minutes}min'
+
     if verbose: print(f"[Prep] Resampling to frequency: {freq_str} (Derived from median delta: {median_delta})")
     
     df = df.set_index('Timestamp')

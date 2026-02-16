@@ -6,4 +6,4 @@ pandas
 pyproj
 scikit-learn
 matplotlib
-psycopg2
+psycopg2-binary
