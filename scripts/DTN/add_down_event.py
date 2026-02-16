@@ -1,102 +1,117 @@
-import csv
-import sys
-from datetime import datetime as dt
+import os
+import pandas as pd
+import numpy as np
 import psycopg2
-from random import randrange
+from psycopg2.extras import execute_values
+from Common.utils import results_folder
 
-# python3 3_adicionar_evento_down.py contact_93_97.csv
+DB_CONFIG = {
+    "host": "localhost",
+    "database": "myappdb",
+    "port": "5435",
+    "user": "myuser",
+    "password": "mypassword"
+}
 
-from Common.utils import (
-    results_folder
-)
+def get_db_connection():
+    return psycopg2.connect(**DB_CONFIG)
 
-def run( fileTarget, file_rawdata_name ):
-
-    #fileTarget = sys.argv [1]
-
+def run(file_target, file_rawdata_name):
     results_dir = results_folder(file_rawdata_name)
+    
+    # --- Lógica de Nome de Arquivo ---
+    filename = f"{file_target}.csv"
+    path_original = os.path.join(results_dir, filename)
+    path_contact = os.path.join(results_dir, 'contacts', f"contact_{file_target}.csv")
+    
+    input_path = path_original
+    if not os.path.exists(path_original) and os.path.exists(path_contact):
+        input_path = path_contact
+        filename = f"contact_{file_target}.csv"
 
-    # open the file in the write mode
-    file_path = os.path.join(results_dir, f'down_{fileTarget}.csv')
+    # --- Verificações de Segurança ---
+    if not os.path.exists(input_path):
+        # Silencioso se o arquivo não existe (sem contatos)
+        return
+    if os.path.getsize(input_path) == 0:
+        return
 
-    # create the csv writer
-    # writer = csv . writer ( f )
-    file = open ( file_path, 'w')
+    try:
+        # Lê o CSV. O Script 1 salva com coluna 'id' (que é o tempo)
+        df = pd.read_csv(input_path, header=0)
+    except Exception:
+        return
 
-    fields = ( 'id', 'conn', 'for', 'to', 'state')
-    writer = csv . DictWriter ( file, fieldnames = fields, lineterminator= '\n')
+    if df.empty:
+        return
 
-    # database : dtn_contacts
-    conn = psycopg2 . connect (
-                                host = "localhost" ,
-                                database = "dtn_contacts" ,
-                                port = "5432" ,
-                                user = "postgres" ,
-                                password = "postgres" )
+    # Garante que 'id' (tempo) é numérico
+    df['id'] = pd.to_numeric(df['id'], errors='coerce')
+    df.dropna(subset=['id'], inplace=True)
+    if df.empty: return
 
-    print ( 'conn to database')
-    print ( conn )
+    # --- Lógica de Eventos UP/DOWN ---
+    # Adiciona delay aleatório ao tempo (id)
+    random_delays = np.random.randint(0, 5, size=len(df)) # Por que somar esse valor aleatório ao tempo?
+    df['id'] = df['id'] + random_delays
+    
+    # Cria evento DOWN (+1h = 3600s) - tempo de contato entre onças
+    df_down = df.copy()
+    df_down['id'] = df_down['id'] + 3600
+    df_down['state'] = 'down'
 
-    # create a cursor
-    cur = conn.cursor ()
+    final_df = pd.concat([df, df_down], ignore_index=True)
+    final_df.sort_values(by='id', inplace=True)
 
-    # execute a statement
-    print ( 'PostgreSQL database version : ')
-    cur . execute ( ' SELECT version () ')
+    # Salva o arquivo CSV processado
+    output_path = os.path.join(results_dir, 'contacts', f'down_{filename}')
+    final_df.to_csv(output_path, index=False)
+    print(f"Processado: {output_path}")
 
-    # display the PostgreSQL database server version
-    db_version = cur.fetchone ()
-    print ( db_version )
+    # --- INSERÇÃO NO BANCO (ATUALIZADA) ---
+    conn = get_db_connection()
+    cur = conn.cursor()
 
-    def convert_contact_number ( contact_number ) :
-        return int ( contact_number ) -93
+    # Prepara os dados. 
+    # Mapeamos: CSV 'id' -> Banco 'simulation_time'
+    # O Banco vai gerar o 'record_id' automaticamente.
+    
+    data_to_insert = []
+    
+    # Vamos usar itertuples mas com cuidado nos nomes das colunas
+    # Ordem esperada na query: simulation_time, conn, for_contact, to_contact, state
+    
+    for row in final_df.itertuples(index=False):
+        try:
+            # Pega os valores do DF (row.id é o tempo)
+            sim_time = float(row.id)
+            conn_val = row.conn
+            state_val = row.state
+            
+            # Ajuste seguro para colunas 'for' e 'to' (subtraindo 93)
+            # O Pandas pode ter renomeado 'for' para '_2' ou mantido se for dict
+            # Tentativa genérica de pegar os valores das posições 2 e 3
+            val_for = int(row[2]) - 93
+            val_to = int(row[3]) - 93
+            
+            data_to_insert.append((sim_time, conn_val, val_for, val_to, state_val))
+        except Exception as e:
+            # print(f"Erro linha: {e}") 
+            continue
 
-    def insert_contact ( id, conn_contact, for_contact, to_contact, state ) :
-        """ insert a new jaguar contact into the jaguar_contacts table """
+    query = """
+        INSERT INTO jaguar_contacts (simulation_time, conn, for_contact, to_contact, state)
+        VALUES %s
+    """
 
-        sql = """ INSERT INTO jaguar_contacts ( id, conn, for_contact, to_contact, state )
-                VALUES (%s, %s, %s, %s, %s ) RETURNING id ; """
-        
-        # conn = None
-        contact_id = None
-        try :
-
-            # execute the INSERT statement
-
-            cur.execute ( sql, ( float ( id ) , conn_contact, int (for_contact ) , int ( to_contact ) , state ) )
-            # cur . execute ( sql, (0 , ’ CONN ’, 0 , 1 , ’ up ’) )
-
-            # get the generated id back
-            contact_id = cur . fetchone () [ 0 ]
-
-        except ( Exception, psycopg2 . DatabaseError ) as error :
-            print ( error )
-
-            return contact_id
-
-    with open ( fileTarget + '.csv') as csv_file :
-        csv_reader = csv . reader ( csv_file, delimiter = ',')
-        line_count = 0
-
-        for row in csv_reader :
-
-            hour = float ( row [ 0 ] ) + randrange (5)
-            writer . writerow ( { 'id': hour, 'conn': row[1], 'for': row[2], 'to': row[3], 'state': row[4] } )
-            # writer . writerow ( { ’ id ’:( hour +1) , ’ conn ’: row[1], ’ for ’: row[2], ’ to ’: row[3], ’ state ’: ’ down ’} )
-            writer . writerow ( { 'id':( hour +60) , 'conn': row[1], 'for':row[2], 'to': row[3], 'state': 'down'} )
-
-            insert_contact( hour, row[1] , str ( convert_contact_number( row[2]) ) , str ( convert_contact_number (row[3]) ) , row[4] )
-            # insert_contact (( hour +1) , row [ 1 ] , str (convert_contact_number ( row [ 2 ] ) ) , str ( convert_contact_number (row [ 3 ] ) ) , ’ down ’)
-            insert_contact(( hour +60) , row [1] , str (convert_contact_number (row [2]) ) , str ( convert_contact_number (row[3]) ) , 'down')
-
-            line_count += 1
-            print ( f'Processed {line_count} lines . ')
-
-    # close the file
-    file . close ()
-
-    # commit the changes to the database
-    conn . commit ()
-
-    # close the communication with the PostgreSQL
-    cur.close ()
+    try:
+        if data_to_insert:
+            execute_values(cur, query, data_to_insert)
+            conn.commit()
+            print(f"DB: {len(data_to_insert)} registros inseridos.")
+    except psycopg2.DatabaseError as error:
+        print(f"Erro SQL: {error}")
+        conn.rollback()
+    finally:
+        cur.close()
+        conn.close()
