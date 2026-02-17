@@ -110,16 +110,17 @@ def main():
     print("\n--- Interpolation Phase ---")
     
     # Run N-BEATS Pipeline (Train -> Eval -> Interpolate)
-    train_nbeats_global(file_rawdata, file_rawdata_columns)
-    run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=True, run_eval=True, run_predict=True)
+    #train_nbeats_global(file_rawdata, file_rawdata_columns)
+    #run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=True, run_eval=True, run_predict=True)
+
 
     # Run PER-DATASET PIDL Pipeline
     #run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
     #run_evaluation_all_pidl(file_rawdata, file_rawdata_columns)
 
     # CLEAN Interpolation Results
-    #run_cleaning_pipeline(file_rawdata)
-
+    run_cleaning_pipeline(file_rawdata)
+    #sys.exit(0)
     # Merge Interpolation Results per Animal
     for current_animal in list_animals:
         merge_csvs(current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns)
@@ -137,6 +138,26 @@ def main():
 
     file_merged_nbeats = None
     file_merged_pidl = None
+
+    file_animal_93 = f'{results_dir}/map_93.csv'
+
+    file_interpolated_nbeats_93 = f'{results_dir}/Interpolation/map_93_interpolation_nbeats.csv'
+
+    if file_interpolated_nbeats_93: 
+        print("Running Clustering on 93 Interpolated Data...")
+
+        run_all_kmeans(file_interpolated_nbeats_93,file_rawdata, 'interpolated_93')
+        run_birch_all(file_interpolated_nbeats_93, file_rawdata, 'interpolated_93')
+        run_som_all(file_interpolated_nbeats_93, file_rawdata, 'interpolated_93')
+
+    if file_animal_93:
+        print("Running Clustering on Map 93 Raw Data...")
+
+        run_all_kmeans(file_animal_93,file_rawdata, 'map_93')
+        run_birch_all(file_animal_93, file_rawdata, 'map_93')
+        run_som_all(file_animal_93, file_rawdata, 'map_93')
+
+    sys.exit(0)
 
     # 5. CLUSTERING: PART A - INTERPOLATED DATA ONLY
     print("\n--- Clustering Part A: Interpolated Data Only ---")
@@ -187,7 +208,7 @@ def main():
         run_all_kmeans(file_merged, file_rawdata, 'raw_data')
         run_birch_all(file_merged, file_rawdata, 'raw_data')
         run_som_all(file_merged, file_rawdata, 'raw_data')
-
+        
     print("=== PIPELINE FINISHED SUCCESSFULLY ===")
     sys.exit(0)
 

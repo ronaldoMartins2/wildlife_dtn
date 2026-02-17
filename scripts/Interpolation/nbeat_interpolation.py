@@ -24,6 +24,9 @@ def generate_forecast_raw(model, scaler, input_deltas, metadata, steps=10, noise
     input_width = metadata['input_width']
     forecast_horizon = metadata['forecast_horizon']
     
+    # Sanitize input_deltas immediately to prevent Scaler errors
+    input_deltas = np.nan_to_num(input_deltas, nan=0.0, posinf=0.0, neginf=0.0)
+    
     current_input = input_deltas.copy() # (input_width, 2)
     generated_deltas = []
     
@@ -34,6 +37,8 @@ def generate_forecast_raw(model, scaler, input_deltas, metadata, steps=10, noise
         curr_shape = current_input.shape
         input_flat = current_input.reshape(-1, 2)
         input_scaled = scaler.transform(input_flat).reshape(curr_shape)
+        # Sanitize input
+        input_scaled = np.nan_to_num(input_scaled, nan=0.0, posinf=0.0, neginf=0.0)
         
         # Tensor
         input_t = torch.tensor(input_scaled, dtype=torch.float32).unsqueeze(0).to(device)
@@ -41,6 +46,8 @@ def generate_forecast_raw(model, scaler, input_deltas, metadata, steps=10, noise
         # Predict
         with torch.no_grad():
             pred_scaled = model(input_t).cpu().numpy().squeeze(0)
+            # Sanitize output
+            pred_scaled = np.nan_to_num(pred_scaled, nan=0.0, posinf=0.0, neginf=0.0)
             
         # Noise
         if noise_level > 0:
@@ -300,15 +307,27 @@ def run(current_animal, legacy_number, file_rawdata_name, file_rawdata_columns):
         c_end = end_gap + metadata['input_width']
 
         # Clean Context Check
+        context_subset = df_resampled.iloc[c_start : c_end + 1]
+        
         pre_context = df_resampled.iloc[c_start : start_gap]['E']
         post_context = df_resampled.iloc[end_gap + 1 : c_end + 1]['E']
         
         if pre_context.isna().any() or post_context.isna().any():
-             # Context contains gaps. N-Beats cannot run on dirty context.
-             skipped_context_count += 1
-             continue
-        
-        context_subset = df_resampled.iloc[c_start : c_end + 1]
+             # RELAXED: Fill small gaps in context with linear interpolation
+             # This allows N-BEATS to run even if history is imperfect.
+             # BUT we must NOT fill the gap itself, otherwise generate_bidirectional_forecast sees no gap!
+             
+             temp_filled = context_subset.interpolate(method='linear', limit_direction='both').ffill().bfill()
+             
+             # Re-introduce the target gap (relative to context_subset start)
+             rel_start = start_gap - c_start
+             rel_end = end_gap - c_start
+             
+             # Ensure we don't zero out data if indices are weird, but here they are clean.
+             # df columns are E, N.
+             temp_filled.iloc[rel_start : rel_end + 1] = np.nan
+             
+             context_subset = temp_filled
         
         # Interpolate
         reconstructed_path = generate_bidirectional_forecast(context_subset, gap_len, model, scaler, metadata)
@@ -322,8 +341,7 @@ def run(current_animal, legacy_number, file_rawdata_name, file_rawdata_columns):
              filled_points += len(reconstructed_path)
         
     print(f"Filled {gap_count} gaps ({filled_points} points).")
-    if skipped_context_count > 0:
-        print(f"Skipped {skipped_context_count} gaps due to insufficient continuous context ({metadata['input_width']} steps).")
+
     
     # Filter for only interpolated points
     # We masked based on filled_df indices (which matches df_resampled)
