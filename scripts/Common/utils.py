@@ -189,7 +189,7 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
     """
 
     results_dir = results_folder(file_rawdata_name)
-    raw_path = os.path.join(results_dir, f'map_{current_animal}_outliers_less_test_only.csv')
+    raw_path = os.path.join(results_dir, f'map_{current_animal}.csv')
 
     df_raw = _read_and_clean(raw_path)
 
@@ -239,7 +239,6 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
 
     # Save without NaN
     result[columns_to_save].to_csv(out_path, index=False, header=False)
-
 
 def read_field_from_json(json_file, field_name):
     """
