@@ -527,3 +527,23 @@ def merge_csv(file_csv1, file_csv2, file_rawdata, animal_name, method):
     print(f"Arquivo de geral de animais(Interpolação e Maps) salvo em {output_path}")
     
     return output_path
+
+def return_maps(file_rawdata, list_animals):
+    results_dir = results_folder(file_rawdata)
+    animal_name = os.path.basename(file_rawdata).split('.')[0]
+    
+    # Coletar todos os arquivos map_{animal}.csv de todos os animais
+    all_files = []
+    for current_animal in list_animals:
+        files = [f for f in os.listdir(results_dir) if f == f"map_{current_animal}.csv"]
+        if files:
+            all_files.extend(files)
+            print(f"Encontrado arquivo para animal {current_animal}: {files[0]}")
+        else:
+            print(f"Nenhum arquivo map_{current_animal}.csv encontrado.")
+
+    if not all_files:
+        print("Nenhum arquivo map encontrado para merge.")
+        return None
+
+    return all_files

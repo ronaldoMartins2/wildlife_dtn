@@ -23,7 +23,8 @@ from Common.utils import (
     remove_nan_data, 
     merge_maps,
     merge_csv,
-    interpolations_methods
+    interpolations_methods,
+    return_maps
 )
 
 # Data Preparation
@@ -110,9 +111,8 @@ def main():
     print("\n--- Interpolation Phase ---")
     
     # Run N-BEATS Pipeline (Train -> Eval -> Interpolate)
-    train_nbeats_global(file_rawdata, file_rawdata_columns)
-    run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=True, run_eval=True, run_predict=True)
-
+    #train_nbeats_global(file_rawdata, file_rawdata_columns)
+    #run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=True, run_eval=True, run_predict=True)
 
     # Run PER-DATASET PIDL Pipeline
     #run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
@@ -120,7 +120,17 @@ def main():
 
     # CLEAN Interpolation Results
     run_cleaning_pipeline(file_rawdata)
-    sys.exit(0)
+
+    all_maps_animals = return_maps(file_rawdata, list_animals)
+    if all_maps_animals:
+        print("\n--- Clusterizando todos os mapas individuais detectados ---")
+        for map_name in all_maps_animals:
+            map_path = os.path.join(results_dir, map_name)
+            animal_id = map_name.replace('map_','').replace('.csv','')
+            run_all_kmeans(map_path, file_rawdata, animal_id)
+            run_birch_all(map_path, file_rawdata, animal_id)
+            run_som_all(map_path, file_rawdata, animal_id)
+
     # Merge Interpolation Results per Animal
     for current_animal in list_animals:
         merge_csvs(current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns)
@@ -132,59 +142,21 @@ def main():
     
     # Create merged map of raw data
     file_merged = merge_maps(file_rawdata, list_animals)
-    
     file_interpolated_nbeats = merge_all_interpolations_nbeat(file_rawdata)
     file_interpolated_pidl = merge_all_interpolations_pidl(file_rawdata)
-
     file_merged_nbeats = None
     file_merged_pidl = None
 
-    file_animal_94 = f'{results_dir}/map_94.csv'
-    file_animal_95 = f'{results_dir}/map_95.csv'
-
-    file_interpolated_nbeats_94_merged = f'{results_dir}/Interpolation/map_94_interpolation_nbeats_merged.csv'
-    file_interpolated_nbeats_95_merged = f'{results_dir}/Interpolation/map_95_interpolation_nbeats_merged.csv'
-
-    # file_interpolated_nbeats_merged = f'{results_dir}/Interpolation/map_interpolation_merged_93_new.csv'
-
-    # if file_interpolated_nbeats_93: 
-    #     print("Running Clustering on 93 Interpolated Data...")
-
-    #     run_all_kmeans(file_interpolated_nbeats_merged,file_rawdata, 'interpolated_93_merged')
-    #     run_birch_all(file_interpolated_nbeats_merged, file_rawdata, 'interpolated_93_merged')
-    #     run_som_all(file_interpolated_nbeats_merged, file_rawdata, 'interpolated_93_merged')
-
-    if file_animal_94:
-        print("Running Clustering on Map 94 Raw Data...")
-
-        run_all_kmeans(file_animal_94,file_rawdata, 'map_94')
-        run_birch_all(file_animal_94, file_rawdata, 'map_94')
-        run_som_all(file_animal_94, file_rawdata, 'map_94')
-
-    if file_animal_95:
-        print("Running Clustering on Map 95 Raw Data...")
-
-        run_all_kmeans(file_animal_95,file_rawdata, 'map_95')
-        run_birch_all(file_animal_95, file_rawdata, 'map_95')
-        run_som_all(file_animal_95, file_rawdata, 'map_95')
-
-    if file_interpolated_nbeats_94_merged:
-        print("Running Clustering on Map 94 Interpolated Data...")
-
-        run_all_kmeans(file_interpolated_nbeats_94_merged,file_rawdata, 'interpolated_merged_94')
-        run_birch_all(file_interpolated_nbeats_94_merged, file_rawdata, 'interpolated_merged_94')
-        run_som_all(file_interpolated_nbeats_94_merged, file_rawdata, 'interpolated_merged_94')
-
-    if file_interpolated_nbeats_95_merged:
-        print("Running Clustering on Map 95 Interpolated Data...")
-
-        run_all_kmeans(file_interpolated_nbeats_95_merged,file_rawdata, 'interpolated_merged_95')
-        run_birch_all(file_interpolated_nbeats_95_merged, file_rawdata, 'interpolated_merged_95')
-        run_som_all(file_interpolated_nbeats_95_merged, file_rawdata, 'interpolated_merged_95')
-
-    sys.exit(0)
-
-    # 5. CLUSTERING: PART A - INTERPOLATED DATA ONLY
+    for current_animal in list_animals:
+        map_file = os.path.join(results_dir, f"map_{current_animal}.csv")
+        print(f"\n--- Rodando clusterização para o mapa bruto do animal {current_animal} ---")
+        if os.path.exists(map_file):
+            run_all_kmeans(map_file, file_rawdata, current_animal)
+            run_birch_all(map_file, file_rawdata, current_animal)
+            run_som_all(map_file, file_rawdata, current_animal)
+        else:
+            print(f"Arquivo de mapa não encontrado, pulando: {map_file}")
+        
     print("\n--- Clustering Part A: Interpolated Data Only ---")
     
     if file_interpolated_nbeats:
@@ -192,18 +164,20 @@ def main():
         file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
         
         """Cluster ONLY the interpolated points"""
-        #run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
-        #run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
-        #run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
+        run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
+        run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
+        run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
+
+    # 5. CLUSTERING: PART A - INTERPOLATED DATA ONLY
     
     if file_interpolated_pidl:
         print(f"Running Clustering on PIDL Interpolated Data: {file_interpolated_pidl}")
         file_merged_pidl = merge_csv(file_merged, file_interpolated_pidl, file_rawdata, tangara, 'pidl')
         
         """Cluster ONLY the interpolated points"""
-        #run_all_kmeans(file_interpolated_pidl, file_rawdata, 'pidl')
-        #run_birch_all(file_interpolated_pidl, file_rawdata, 'pidl')
-        #run_som_all(file_interpolated_pidl, file_rawdata, 'pidl')
+        run_all_kmeans(file_interpolated_pidl, file_rawdata, 'pidl')
+        run_birch_all(file_interpolated_pidl, file_rawdata, 'pidl')
+        run_som_all(file_interpolated_pidl, file_rawdata, 'pidl')
 
     # 6. CLUSTERING: PART B - MERGED DATA (RAW + INTERPOLATED)
     print("\n--- Clustering Part B: Merged Data (Raw + Interpolated) ---")
@@ -212,17 +186,17 @@ def main():
         print("Running Clustering on Merged PIDL Data...")
 
         """Cluster the merged points"""
-        #run_all_kmeans(file_merged_pidl, file_rawdata, 'pidl_merged')
-        #run_birch_all(file_merged_pidl, file_rawdata, 'pidl_merged')
-        #run_som_all(file_merged_pidl, file_rawdata, 'pidl_merged')
+        run_all_kmeans(file_merged_pidl, file_rawdata, 'pidl_merged')
+        run_birch_all(file_merged_pidl, file_rawdata, 'pidl_merged')
+        run_som_all(file_merged_pidl, file_rawdata, 'pidl_merged')
     
     if file_merged_nbeats:
         print("Running Clustering on Merged N-BEATS Data...")
 
         """Cluster the merged points"""
-        #run_all_kmeans(file_merged_nbeats, file_rawdata, 'merged_nbeats')
-        #run_birch_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
-        #run_som_all(file_merged_nbeats, file_rawdata, 'merged_nbeats')
+        run_all_kmeans(file_merged_nbeats, file_rawdata, 'nbeats_merged')   
+        run_birch_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
+        run_som_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
 
     print("\n--- Clustering Part C: Raw Data Only ---")
 
