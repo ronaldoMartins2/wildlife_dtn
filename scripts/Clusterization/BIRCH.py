@@ -23,7 +23,7 @@ def calculate_quality_metrics(y_true, y_pred):
     """
     # Matriz de contingência (linhas = classes reais, colunas = clusters)
     matrix = contingency_matrix(y_true, y_pred)
-    N = np.sum(matrix) # Total de itens [cite: 35]
+    N = np.sum(matrix)
     
     # 1. PURITY [cite: 36]
     purity = np.sum(np.amax(matrix, axis=0)) / N
@@ -79,18 +79,15 @@ def extract_folder_name(file_rawdata):
     file_name = file_name[-1].split('.')[0]
     return file_name
 
-# exemplo de execução
-# python3 11_BIRCH.py 93
-
 def run_all(file_rawdata_name, file_rawdata, output_prefix):
-    # --- Caminho de saída ---
+    #Caminho de saída
     script_dir = os.path.dirname(os.path.abspath(__file__))
     folder_name = extract_folder_name(file_rawdata)
     results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
     cluster_output_dir = os.path.join(results_dir, 'Clusterization')
     create_clusterization_results(cluster_output_dir)
 
-    # --- LEITURA E LIMPEZA DOS DADOS ---
+    #LEITURA E LIMPEZA DOS DADOS
     if not os.path.exists(file_rawdata_name):
         print(f"Error: Input file not found at {file_rawdata_name}")
         return
@@ -150,13 +147,13 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     df_centroids.to_csv(output_centroids_csv, index=False, header=None)
     print(f"Centroids saved to {output_centroids_csv}")
 
-    # --- Novo: salvar mapeamento ponto -> centróide ---
+    #Novo: salvar mapeamento ponto -> centróide
     labels = birch_model.labels_
     df_points = data_cleaned.reset_index(drop=True).copy()
     df_map = pd.DataFrame({
         'id_centroid': (labels + 1),                        # centróides numerados a partir de 1
         'id_animal': df_points.iloc[:, 0].values,           # coluna ID original
-        'timestamp': df_points.iloc[:, 1].values,  # coluna 1 é o timestamp
+        'timestamp': df_points.iloc[:, 1].values,           # coluna 1 é o timestamp
         'latitude_animal': df_points.iloc[:, 3].values,     # latitude
         'longitude_animal': df_points.iloc[:, 2].values     # longitude
     })
@@ -164,7 +161,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     df_map.to_csv(map_file, index=False)
     print(f"Point->centroid mapping saved to {map_file}")
 
-    # --- Metrics ---
+    #Metrics
     metrics = calculate_quality_metrics(df_points.iloc[:, 0].values, labels + 1)
     
     print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
@@ -203,7 +200,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     plt.figure(figsize=(10, 6))
     plt.scatter(data_cleaned.iloc[:, 2], data_cleaned.iloc[:, 3], c=clusters, cmap='viridis', alpha=0.7, label='Data Points')
 
-    # Adiciona centroides ao gráfico (corrigido!)
+    # Adiciona centroides ao gráfico
     plt.scatter(centroids_final[:, 0], centroids_final[:, 1], color='red', marker='x', s=100, label='Centroids')
 
     plt.title(f"{lang['grafico_BIRCH']} - Clusters: {n_clusters} - Centroids:  {len(centroids_final)} - {output_prefix.capitalize()}")
@@ -223,17 +220,16 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     with open(hiper_path, "a") as file:
         file.write(hiper_content[0] + '\n')
 
-    # Adicione isto em run_all() após fit_predict():
     print(f"[BIRCH] n_clusters solicitado: {n_clusters}")
     print(f"[BIRCH] clusters únicos gerados: {len(np.unique(labels))}")
     print(f"[BIRCH] threshold usado: {threshold}")
 
 def run(current_animal, file_rawdata_name):
-    # --- Caminho de entrada ---
+    #Caminho de entrada
     input_results_dir = results_folder(file_rawdata_name)
     input_file_path = os.path.join(input_results_dir, f'map_{current_animal}.csv')
 
-    # --- Caminhos para saida ---
+    #Caminhos para saida
     script_dir = os.path.dirname(os.path.abspath(__file__))
     folder_name = extract_folder_name(file_rawdata_name)
     results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
@@ -252,11 +248,11 @@ def run(current_animal, file_rawdata_name):
 
     df = raw_data[:100].copy()
     
-    # Padroniza os dados
+    #Padroniza os dados
     scaler = StandardScaler()
     coordinates = scaler.fit_transform(df[['Longitude', 'Latitude']])
 
-    # Carrega hiperparâmetros
+    #Carrega hiperparâmetros
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
     threshold = read_field_from_json(hyperparam_path, "threshold")    
@@ -274,7 +270,7 @@ def run(current_animal, file_rawdata_name):
     df_out.to_csv(output_csv_path, index=False, header=None)
     print(f"Clusters saved to {output_csv_path}")
 
-    # --- Novo: salvar mapeamento ponto -> centróide para este mapa ---
+    #Novo: salvar mapeamento ponto -> centróide para este mapa
     df_map = pd.DataFrame({
         'id_centroid': (df['Cluster'].astype(int) + 1).values,
         'id_animal': df['id'].values,
@@ -285,7 +281,7 @@ def run(current_animal, file_rawdata_name):
     df_map.to_csv(map_file, index=False)
     print(f"Point->centroid mapping saved to {map_file}")
     
-    # --- INSERÇÃO DAS MÉTRICAS ---
+    #INSERÇÃO DAS MÉTRICAS
     metrias = calculate_quality_metrics(df_map['id_animal'], df_map['id_centroid'])
     
     print("\n--- Resultados de Qualidade da Clusterização ---")

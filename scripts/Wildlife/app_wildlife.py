@@ -168,6 +168,15 @@ def main():
         run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
         run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
 
+    if file_merged_nbeats:
+        print("Running Clustering on Merged N-BEATS Data...")
+
+        """Cluster the merged points"""
+        run_all_kmeans(file_merged_nbeats, file_rawdata, 'nbeats_merged')   
+        run_birch_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
+        run_som_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
+
+    sys.exit(0)
     # 5. CLUSTERING: PART A - INTERPOLATED DATA ONLY
     
     if file_interpolated_pidl:

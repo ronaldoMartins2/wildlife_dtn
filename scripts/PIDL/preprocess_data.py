@@ -24,9 +24,9 @@ def project_coordinates(df, lat_col, lon_col, utm_zone):
     else:
         raise ValueError(f"Unknown UTM zone: {utm_zone}")
         
-    transformer = pyproj.Transformer.from_crs(crs_wgs84, crs_utm, always_xy=True) # Lon, Lat order
+    transformer = pyproj.Transformer.from_crs(crs_wgs84, crs_utm, always_xy=True) 
     
-    # pyproj expects (x, y) which is (lon, lat) clearly defined by always_xy=True
+    
     xx, yy = transformer.transform(df[lon_col].values, df[lat_col].values)
     
     return xx, yy
@@ -57,8 +57,7 @@ def process_dataset(filepath, dataset_type, output_path):
         utm_zone = '20S'
         gap_threshold = timedelta(hours=24)
         
-        # Parse time - format 3/12/14 17:39
-        # Cleaning potentially messy spaces
+        
         df[time_col] = pd.to_datetime(df[time_col], format='%m/%d/%y %H:%M', errors='coerce')
         # Drop rows where time couldn't be parsed
         df = df.dropna(subset=[time_col])
@@ -83,19 +82,14 @@ def process_dataset(filepath, dataset_type, output_path):
     # Initialize session_id
     session_id = 0
     session_ids = [0] * len(df)
-    
-    # Iterative approach is safer for logic, though slower. 
-    # Vectorized: cumsum of (diff > threshold)
-    
-    # We need to check if diff is NaT (first row)
-    # Convert time_diff to boolean condition
+
     is_new_session = df['time_diff'] > gap_threshold
-    # Fill first NaT with False (start of first session)
+    
     is_new_session = is_new_session.fillna(False)
     
     df['session_id'] = is_new_session.cumsum()
     
-    # Filter short sessions (< 10 points)
+    
     session_counts = df['session_id'].value_counts()
     valid_sessions = session_counts[session_counts >= 10].index
     df_filtered = df[df['session_id'].isin(valid_sessions)].copy()

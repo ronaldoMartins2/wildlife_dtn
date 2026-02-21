@@ -1,0 +1,4 @@
+Purity: 1.0
+Entropy: 0.0
+F-Measure: 0.39473684210526316
+PC: 1.0

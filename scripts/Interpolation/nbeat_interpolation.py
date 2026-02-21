@@ -76,28 +76,12 @@ def generate_bidirectional_forecast(df_gap_context, gap_size_steps, model, scale
     """
     input_width = metadata['input_width']
     
-    # 1. Extract contexts
-    # We assume df_gap_context is RESAMPLED and contains valid data before/after.
-    # We need to calculate deltas.
-    
-    # E and N must be present
     e_vals = df_gap_context['E'].values
     n_vals = df_gap_context['N'].values
     
-    # Identify indices
-    # We have valid data up to index 'start_gap_idx'
-    # Gap is from 'start_gap_idx + 1' to 'end_gap_idx - 1'
-    # Valid data resumes at 'end_gap_idx'
-    
     valid_mask = ~np.isnan(e_vals)
     valid_indices = np.where(valid_mask)[0]
-    
-    # Find the hole
-    # Assuming one single gap in this context
-    # The gap starts after the first block of valid data
-    # and ends before the second block.
-    
-    # Simple check: find where diff of indices > 1
+   
     diffs = np.diff(valid_indices)
     gap_starts = np.where(diffs > 1)[0]
     if len(gap_starts) == 0:
@@ -111,12 +95,7 @@ def generate_bidirectional_forecast(df_gap_context, gap_size_steps, model, scale
     if real_gap_size != gap_size_steps:
         # Mismatch in expected gap size, but we trust the index
         gap_size_steps = real_gap_size
-        
-    # FORWARD Context
-    # We need 'input_width' deltas ending at 'last_valid_before'
-    # Delta[i] = P[i] - P[i-1]
-    # We need P[last_valid_before - input_width] to P[last_valid_before]
-    
+     
     start_context_idx = max(0, last_valid_before - input_width)
     forward_segment = df_gap_context.iloc[start_context_idx : last_valid_before + 1][['E', 'N']].values
     # If segment is shorter than required (input_width+1 points), pad by repeating the first point
@@ -130,20 +109,12 @@ def generate_bidirectional_forecast(df_gap_context, gap_size_steps, model, scale
             pad = np.tile(forward_segment[0], (pad_count, 1))
             forward_segment = np.vstack([pad, forward_segment])
 
-    # Calc deltas (N+1 points -> N deltas)
-    forward_deltas = np.diff(forward_segment, axis=0)
     
-    # BACKWARD Context
-    # We need 'input_width' deltas starting from 'first_valid_after' going validly forward in time?
-    # No, we need to go BACKWARDS from 'first_valid_after'.
-    # So we take points from P[first_valid_after] to P[first_valid_after + input_width]
-    # And we treat the sequence as P[N], P[N+1]...
-    # REVERSE them: P[N+input_width] ... P[N]
-    # Calculate deltas on reversed sequence.
+    forward_deltas = np.diff(forward_segment, axis=0)
     
     end_context_idx = min(len(df_gap_context) - 1, first_valid_after + input_width)
     backward_segment = df_gap_context.iloc[first_valid_after : end_context_idx + 1][['E', 'N']].values
-    # If segment is shorter than required, pad by repeating the last point
+   
     if backward_segment.shape[0] < needed_len:
         if backward_segment.shape[0] == 0:
             backward_segment = np.vstack([np.zeros(2) for _ in range(needed_len)])
@@ -151,20 +122,14 @@ def generate_bidirectional_forecast(df_gap_context, gap_size_steps, model, scale
             pad_count = needed_len - backward_segment.shape[0]
             pad = np.tile(backward_segment[-1], (pad_count, 1))
             backward_segment = np.vstack([backward_segment, pad])
-    # Reverse the points to simulate walking backwards
+   
     backward_segment_rev = backward_segment[::-1]
     backward_deltas = np.diff(backward_segment_rev, axis=0) # (10, 2)
     
-    # 2. Predict
-    # Forward prediction
-    # Use less noise for interpolation to keep it connecting? Or keep it to add texture?
     pred_forward_deltas = generate_forecast_raw(model, scaler, forward_deltas, metadata, steps=gap_size_steps, noise_level=0.1)
     
-    # Backward prediction
     pred_backward_deltas = generate_forecast_raw(model, scaler, backward_deltas, metadata, steps=gap_size_steps, noise_level=0.1)
-    
-    # 3. Reconstruct Paths
-    # Forward Path (from last_valid_before)
+
     start_point = df_gap_context.iloc[last_valid_before][['E', 'N']].values
     path_forward = np.zeros((gap_size_steps, 2))
     curr = start_point
@@ -172,8 +137,7 @@ def generate_bidirectional_forecast(df_gap_context, gap_size_steps, model, scale
         curr = curr + pred_forward_deltas[i]
         path_forward[i] = curr
         
-    # Backward Path (from first_valid_after)
-    # The backward deltas predict steps AWAY from the end point in reverse time.
+
     end_point = df_gap_context.iloc[first_valid_after][['E', 'N']].values
     path_backward = np.zeros((gap_size_steps, 2))
     
@@ -183,13 +147,8 @@ def generate_bidirectional_forecast(df_gap_context, gap_size_steps, model, scale
         curr = curr + pred_backward_deltas[i]
         path_backward_rev.append(curr)
         
-    # Reverse back to normal time order
     path_backward = np.array(path_backward_rev)[::-1]
-    
-    # 4. Merge (Linear Weighted Average)
-    # Weights for Forward: 1 -> 0
-    # Weights for Backward: 0 -> 1
-    
+
     weights = np.linspace(1, 0, gap_size_steps)
     weights = weights[:, None] 
     
@@ -251,7 +210,6 @@ def run(current_animal, legacy_number, file_rawdata_name, file_rawdata_columns):
     df['N'] = n
     
     # 2. Resample on Full Range
-    # Leave gaps as NaNs
     freq_str = metadata['freq_str']
     df_resampled = df.set_index('Timestamp')[['E', 'N']].resample(freq_str).first()
     
@@ -313,18 +271,12 @@ def run(current_animal, legacy_number, file_rawdata_name, file_rawdata_columns):
         post_context = df_resampled.iloc[end_gap + 1 : c_end + 1]['E']
         
         if pre_context.isna().any() or post_context.isna().any():
-             # RELAXED: Fill small gaps in context with linear interpolation
-             # This allows N-BEATS to run even if history is imperfect.
-             # BUT we must NOT fill the gap itself, otherwise generate_bidirectional_forecast sees no gap!
              
              temp_filled = context_subset.interpolate(method='linear', limit_direction='both').ffill().bfill()
              
-             # Re-introduce the target gap (relative to context_subset start)
              rel_start = start_gap - c_start
              rel_end = end_gap - c_start
              
-             # Ensure we don't zero out data if indices are weird, but here they are clean.
-             # df columns are E, N.
              temp_filled.iloc[rel_start : rel_end + 1] = np.nan
              
              context_subset = temp_filled
@@ -342,10 +294,6 @@ def run(current_animal, legacy_number, file_rawdata_name, file_rawdata_columns):
         
     print(f"Filled {gap_count} gaps ({filled_points} points).")
 
-    
-    # Filter for only interpolated points
-    # We masked based on filled_df indices (which matches df_resampled)
-    
     final_e = filled_df.loc[is_interpolated, 'E'].values
     final_n = filled_df.loc[is_interpolated, 'N'].values
     timestamps = filled_df.index[is_interpolated]

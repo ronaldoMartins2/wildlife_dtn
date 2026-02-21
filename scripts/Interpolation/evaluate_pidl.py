@@ -50,32 +50,10 @@ def evaluate_pidl_animal(current_animal, file_rawdata, file_rawdata_columns, mod
         
     # Project Test Data to UTM
     df_test, transformer = project_to_utm(df_test, epsg)
-    # Project Train Data for MASE denominator calculation
+    
     df_train, _ = project_to_utm(df_train, epsg)
-
-    # Prepare Evaluation: Randomly mask points in Test set to simulate gaps
-    # We will use "Imputation" evaluation: Mask X% and predict them.
     mask_ratio = 0.20 # Mask 20% of the points
-    np.random.seed(42) # Reproducibility
-    
-    # We need to process by session if there are large gaps, but for evaluation simplified view:
-    # We'll treat the test set as one session (or split if huge gaps exist)
-    # For simplicity, we just take the valid points, create a masked copy, interpolate, and compare.
-    
-    # Resampling is part of PIDL logic. 
-    # To get grounded truth, we should rely on the timestamps present in Test.
-    # PIDL `interpolate_session` resamples to a fixed freq.
-    # If we pass the original test df, it will resample. 
-    # This aligns predictions to a grid, which might not match exact original timestamps if they were irregular.
-    
-    # Strategy:
-    # 1. Resample Test DF to a fixed grid (Logic from `interpolate_session`).
-    # 2. Assume this resampled grid is the "Ground Truth" (linear interp of original).
-    # 3. Mask random points in this grid.
-    # 4. Predict.
-    # 5. Compare.
-    
-    # Re-implement resampling logic locally to get the "Ground Truth" grid
+    np.random.seed(42) 
     times = df_test['timestamp']
     diffs = times.diff().dt.total_seconds().dropna()
     median_dt = diffs.median()
@@ -84,34 +62,24 @@ def evaluate_pidl_animal(current_animal, file_rawdata, file_rawdata_columns, mod
     else: freq = f"{int(median_dt)}s"
     
     df_session = df_test.set_index('timestamp')
-    # Ground Truth on Grid (Linear Interpolation to fill grid)
+   
     df_res = df_session[['pos_x', 'pos_y']].resample(freq).mean()
-    # Fill small gaps with linear for Ground Truth approximation?
-    # Actually, we should only evaluate on points that were ORIGINALLY present (or close to).
-    # But `interpolate_session` outputs the *whole* grid.
     
-    # Let's perform masking on the `df_res` (Grid).
-    # First, let's keep only grid points that had data (or fill assuming linear is truth for small steps).
-    # Simplest: Linear interpolate `df_res` to get full ground truth trajectories.
     df_gt = df_res.interpolate(method='linear')
     
-    # Generate Mask
+ 
     n_points = len(df_gt)
     n_mask = int(n_points * mask_ratio)
     mask_indices = np.random.choice(n_points, n_mask, replace=False)
     
-    # Create Input DF with missing values at mask_indices
     df_input = df_gt.copy().reset_index()
-    # Set masked points to NaN (Simulate Gaps)
-    # Note: `interpolate_session` expects NaNs in 'pos_x'/'pos_y' to treat them as gaps.
     df_input.loc[mask_indices, 'pos_x'] = np.nan
     df_input.loc[mask_indices, 'pos_y'] = np.nan
     
     # Run PIDL
     df_pred_pidl = interpolate_session(model, df_input, gap_threshold_min=0)
     
-    # Run Naive Baseline (Linear Interpolation) for OWA/Comparison
-    # Since df_input already has NaNs, pandas interpolate('linear') does exactly this.
+   
     df_pred_naive = df_input.set_index('timestamp').interpolate(method='linear').reset_index()
     # Fill remaining NaNs (edges) with ffill/bfill
     df_pred_naive = df_pred_naive.ffill().bfill()
@@ -125,18 +93,9 @@ def evaluate_pidl_animal(current_animal, file_rawdata, file_rawdata_columns, mod
     
     pred_naive_x = df_pred_naive.iloc[mask_indices]['pos_x'].values
     pred_naive_y = df_pred_naive.iloc[mask_indices]['pos_y'].values
+
+    transformer_back = lambda x, y: transformer.transform(x, y, direction='INVERSE') 
     
-    # Transform back to Lat/Lon for physical metrics (Meters/Degrees)
-    # We use the transformer from earlier
-    # transformer definition needed. 
-    # Use existing `project_back` logic or direct calls.
-    # We need to recreate transformer or return it from project_to_utm.
-    # Updating project_to_utm to return transformer.
-    
-    # Use a fresh transformer to be safe
-    transformer_back = lambda x, y: transformer.transform(x, y, direction='INVERSE') # Not supported by pyproj object directly this way usually?
-    # The `project_to_utm` returned a transformer that goes Lat/Lon -> UTM.
-    # Inverse:
     lons_gt, lats_gt = transformer.transform(gt_x, gt_y, direction='INVERSE')
     lons_pred, lats_pred = transformer.transform(pred_pidl_x, pred_pidl_y, direction='INVERSE')
     lons_naive, lats_naive = transformer.transform(pred_naive_x, pred_naive_y, direction='INVERSE')

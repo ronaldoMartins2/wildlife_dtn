@@ -31,24 +31,16 @@ class PhysicsInformedLoss(nn.Module):
         self.lamb = penalty_weight
         
     def forward(self, pred_scaled, target_scaled):
-        # 1. Standard MSE
         mse_loss = self.mse(pred_scaled, target_scaled)
         
-        # 2. Physics Penalty
-        # Unscale to get real meters
-        # pred: (Batch, Horizon, 2)
-        # mean/std: (2,)
         
         pred_real = pred_scaled * self.std + self.mean
         
-        # Calculate distance per step (speed if step is fixed)
-        # dist = sqrt(delta_e^2 + delta_n^2)
-        dist = torch.norm(pred_real, p=2, dim=2) # (Batch, Horizon)
+   
+        dist = torch.norm(pred_real, p=2, dim=2)
         
-        # Penalty: only if dist > limit
         excess = torch.relu(dist - self.limit)
         
-        # Mean excess penalty
         penalty = excess.mean()
         
         return mse_loss + self.lamb * penalty
@@ -67,7 +59,6 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             xb = xb.to(device)
             yb = yb.to(device)
             
-            # Data Augmentation: Jitter
             noise = torch.randn_like(xb) * 0.01
             xb_aug = xb + noise
             
@@ -81,7 +72,6 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             
         train_loss = np.mean(epoch_losses)
         
-        # Validation
         val_loss = train_loss
         if val_loader:
             model.eval()

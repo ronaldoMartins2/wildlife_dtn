@@ -135,7 +135,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix=None):
     df_map.to_csv(map_file, index=False)
     print(f"Point->centroid mapping saved to {map_file}")
 
-    # --- Metrics ---
+    #Metrics
     metrics = calculate_quality_metrics(df_points.iloc[:, 0].values, labels + 1)
     
     print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")

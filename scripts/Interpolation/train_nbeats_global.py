@@ -15,6 +15,7 @@ from Common.utils import get_list_animals, results_folder, read_field_from_json
 from Interpolation.nbeat_model import NBeats
 from Interpolation.nbeat_data_prep import preprocess_nbeats_data
 from Interpolation.nbeat_trainer import train_model, PhysicsInformedLoss
+from sklearn.preprocessing import StandardScaler
 
 def train_nbeats_global(file_rawdata, file_columns, forecast_steps=50):
     print(f"--- Starting Global N-Beats Training for ALL animals in {file_rawdata} ---")
@@ -43,13 +44,6 @@ def train_nbeats_global(file_rawdata, file_columns, forecast_steps=50):
     global_scaler = None
     global_metadata = None
     
-    # We need a unified scaler. 
-    # Option A: Fit scaler on ALL concatenated deltas (Memory intensive?).
-    # Option B: Use incremental fitting (StandardScaler supports partial_fit).
-    # Option C: Fit independent scalers per animal? NO, global model needs global normalization params.
-    # We will go with Option B: Partial Fit.
-    
-    from sklearn.preprocessing import StandardScaler
     global_scaler = StandardScaler()
     
     # Phase 1: Collect Data and Partial Fit Scaler
@@ -67,18 +61,6 @@ def train_nbeats_global(file_rawdata, file_columns, forecast_steps=50):
             
         try:
             df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
-            
-            # Use preprocess to get UN-SCALED windows if possible?
-            # preprocess_nbeats_data applies scaling internally.
-            # We need to modify preprocess or refactor it.
-            # Actually, `preprocess_nbeats_data` in `nbeat_data_prep.py` mixes everything (prep + split + scale).
-            # We strictly need to modify it or handle scaling ourselves.
-            # Let's import the internals or hack it.
-            
-            # Simpler approach for now:
-            # Let `preprocess_nbeats_data` do its thing, BUT we ignore its scaler and inverse transform X/y to get raw deltas.
-            # Then we re-scale globally. 
-            # This is inefficient but safe without changing `nbeat_data_prep.py` heavily.
             
             xt, yt, xv, yv, xtest, ytest, scaler_local, meta = preprocess_nbeats_data(
                  df, file_columns, input_width, forecast_horizon, verbose=False
@@ -111,7 +93,7 @@ def train_nbeats_global(file_rawdata, file_columns, forecast_steps=50):
             
             valid_animals_count += 1
             if not global_metadata:
-                 global_metadata = meta # Copy first valid metadata structure
+                 global_metadata = meta 
                  
         except Exception as e:
             print(f"Skipping {animal_id}: {e}")
@@ -123,7 +105,6 @@ def train_nbeats_global(file_rawdata, file_columns, forecast_steps=50):
 
     print(f"Collected data from {valid_animals_count} animals. Global Scaler fitted.")
     
-    # Phase 2: Transform and Accumulate
     print(">>> Phase 2: Transforming and Stacking Data...")
     
     for animal_id, (xtr, ytr, xvr, yvr) in animal_data_cache.items():

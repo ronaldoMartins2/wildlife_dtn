@@ -84,7 +84,7 @@ def extract_folder_name(file_rawdata):
 # python3 7_SOM_individual.py 94
 
 def run_all(file_rawdata_name, file_rawdata, output_prefix):
-    # --- CAMINHO DE SAÍDA (para salvar os resultados) ---
+    #CAMINHO DE SAÍDA (para salvar os resultados)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     folder_name = extract_folder_name(file_rawdata)
     results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
@@ -115,7 +115,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
 
     coords = data_cleaned.iloc[:, [2, 3]].values
 
-    # --- Novo: converter para float e limpar NaN/inf ---
+    # Converter para float e limpar NaN/inf
     print(f"[SOM] coords shape before cleaning: {coords.shape}")
     print(f"[SOM] coords dtype: {coords.dtype}")
     
@@ -205,7 +205,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     df_centroids_real.to_csv(output_centroids_csv, index=False, header=None)
     print(f"Centroids saved to {output_centroids_csv}")
 
-    # --- Novo: salvar mapeamento ponto -> centróide (id linear do neurônio) ---
+    # Salvar mapeamento ponto -> centróide (id linear do neurônio)
     # calcula id linear do neurônio para cada ponto (0-based -> +1)
     labels = [ (n[0] * som_y + n[1]) + 1 for n in cluster_assignments ]
     df_points = data_cleaned.reset_index(drop=True).copy()
@@ -220,7 +220,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     df_map.to_csv(map_file, index=False)
     print(f"Point->centroid mapping saved to {map_file}")
 
-    # --- Metrics ---
+    # Metrics
     metrics = calculate_quality_metrics(df_points.iloc[:, 0].values, labels)
     
     print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
@@ -268,11 +268,11 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     print(f"Plot saved to {output_png_path}")
 
 def run(current_animal, file_rawdata_name):
-    # --- CAMINHO DE ENTRADA (para ler os dados) ---
+    # CAMINHO DE ENTRADA (para ler os dados)
     input_results_dir = results_folder(file_rawdata_name)
     input_file_path = os.path.join(input_results_dir, f'map_{current_animal}.csv')
 
-    # --- CAMINHO DE SAÍDA (para salvar os resultados) ---
+    # CAMINHO DE SAÍDA (para salvar os resultados)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     folder_name = extract_folder_name(file_rawdata_name)
     results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
@@ -365,7 +365,7 @@ def run(current_animal, file_rawdata_name):
     plt.close() # Fecha a figura
     print(f"Plot saved to {output_png_path}")
 
-    # --- Novo: salvar mapeamento ponto -> centróide para o slice usado ---
+    # salvar mapeamento ponto -> centróide para o slice usado
     winners = [som.winner(coord) for coord in coords]
     labels_slice = [ (w[0] * 8 + w[1]) + 1 for w in winners ]  # aqui usamos 8 pois som foi criado como 8x8 no modo run
     df_slice = data_selected_full.reset_index(drop=True).copy()
@@ -380,7 +380,7 @@ def run(current_animal, file_rawdata_name):
     df_map_slice.to_csv(map_file_slice, index=False)
     print(f"Point->centroid mapping (slice) saved to {map_file_slice}")
 
-    # --- INSERÇÃO DAS MÉTRICAS ---
+    # INSERÇÃO DAS MÉTRICAS
     metrias = calculate_quality_metrics(df_map_slice['id_animal'], df_map_slice['id_centroid'])
     
     print("\n--- Resultados de Qualidade da Clusterização ---")

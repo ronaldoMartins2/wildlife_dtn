@@ -99,25 +99,10 @@ def evaluate_nbeats_model(current_animal, file_rawdata_name, file_rawdata_column
     
     print(f"[EVAL] Delta Metrics - RMSE: {rmse:.4f}, MAE: {mae:.4f}")
     
-    # 2. Trajectory Reconstruction (ADE/FDE)
-    # We need the "Previous" absolute coordinates to reconstruct.
-    # But preprocess_nbeats_data stripped them. 
-    # Limitation: We only have deltas.
-    # Approximation: We can calculate the Euclidean error of the *Deltas* themselves, 
-    # which corresponds to displacement error per step relative to "expected" step.
-    
-    # ADE: Average Displacement Error per step
-    # Euclidean dist between predicted delta vector and true delta vector
     diff = y_pred_deltas - y_truth_deltas # (B, H, 2)
     dist_per_step = np.sqrt(diff[:,:,0]**2 + diff[:,:,1]**2) # (B, H)
     ade = np.mean(dist_per_step)
     
-    # FDE: Final Displacement Error
-    # To do this properly, we should accumulate deltas IF we wanted absolute position error.
-    # However, since we define "Target" as the Delta for that step, the "Cumulative" error
-    # is the vector sum of differences.
-    # Vector Sum of Pred Deltas vs Vector Sum of True Deltas
-    # Sum over Horizon
     sum_pred = np.sum(y_pred_deltas, axis=1) # (B, 2)
     sum_true = np.sum(y_truth_deltas, axis=1) # (B, 2)
     fde_diff = sum_pred - sum_true

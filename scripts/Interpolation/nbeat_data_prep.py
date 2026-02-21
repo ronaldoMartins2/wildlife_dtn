@@ -51,15 +51,11 @@ def preprocess_nbeats_data(df, file_rawdata_columns, input_width=10, forecast_ho
     df['N'] = n
     
     # 3. Resampling
-    # Calculate median time delta to determine natural frequency
     deltas = df['Timestamp'].diff().dropna()
     median_delta = deltas.median()
     
-    # Round to nearest logical frequency (e.g., 10min, 1H, 4H)
-    # Simple heuristic: round to nearest minute
     freq_seconds = median_delta.total_seconds()
-    # Build a pandas-compatible frequency string.
-    # pandas prefers explicit units like 's' (seconds) and 'min' (minutes).
+    
     if freq_seconds < 60:
         secs = int(round(freq_seconds))
         if secs <= 0:
@@ -75,45 +71,19 @@ def preprocess_nbeats_data(df, file_rawdata_columns, input_width=10, forecast_ho
     
     df = df.set_index('Timestamp')
     
-    # Resample and interpolate coordinates linearly
-    # limit_direction='both' ensures leading/trailing NaNs are filled if bins are empty at start/end
     df_resampled = df[['E', 'N']].resample(freq_str).mean() 
     
     # 4. Remove Linear Interpolation Bias
-    # Previous logic: df_resampled = df_resampled.interpolate(method='linear', limit_direction='both', limit=24)
-    # New logic: leave NaNs where data is missing. We will split trajectories at these gaps.
     
     # 5. Feature Engineering (Deltas)
     df_resampled['Delta_E'] = df_resampled['E'].diff()
     df_resampled['Delta_N'] = df_resampled['N'].diff()
     
-    # Identify Gaps
-    # A gap exists if Delta_E or Delta_N is NaN (except the very first point)
-    # The 'diff' operation puts NaN at t=0.
-    # It also puts NaN at t=k if t=k-1 was missing (because Val - NaN = NaN).
-    # This is actually what we want: if there is a gap, the delta logic breaks.
-    
-    # However, to be cleaner, we should probably identify continuous segments.
-    # A continuous segment is a sequence where we have valid (E, N) at every step.
-    
-    # Let's drop rows where E or N is NaN. 
-    # But wait, if we drop rows, we lose the time continuity structure if we just concatenate.
-    # We must treat the data as a list of independent valid segments.
-    
-    # Detect where timestamps are not continuous
-    # Actually, df_resampled is on a fixed frequency index.
-    # rows with NaN in 'E' or 'N' represent missing data.
-    
-    # We will iterate through valid segments.
-    # Create mask of valid data
     valid_mask = df_resampled['E'].notna() & df_resampled['N'].notna()
     
-    # We can assign group IDs to continuous runs of True
-    # diff() on boolean gives True where value changes.
-    # cumsum gives unique ID for each run of falses/trues.
+    
     df_resampled['segment_id'] = (valid_mask != valid_mask.shift()).cumsum()
     
-    # Keep only valid segments
     df_valid = df_resampled[valid_mask].copy()
     
     # Re-calculate Deltas strictly within segments
@@ -135,17 +105,14 @@ def preprocess_nbeats_data(df, file_rawdata_columns, input_width=10, forecast_ho
         if verbose: print("[Prep] Sequence too short after resampling.")
         return None, None, None, None, None, None, None, None
 
-    # Data to window: We train on Deltas.
+   
     # We also keep Mean/Std for denormalization later.
     data_values = df_resampled[['Delta_E', 'Delta_N']].values.astype(np.float32)
     
     # 5. Windowing
-    # Create windows of size (input_width + forecast_horizon)
-    # X: [t-w, ..., t-1], Y: [t, ..., t+h-1]
-    
     total_window_size = input_width + forecast_horizon
-    # sliding_window_view equivalent
-    # shape: (num_windows, total_window_size, num_features)
+   
+   
     num_windows = len(data_values) - total_window_size + 1
     if num_windows <= 0:
         return None, None, None, None, None, None, None, None
@@ -161,7 +128,7 @@ def preprocess_nbeats_data(df, file_rawdata_columns, input_width=10, forecast_ho
     Y_all = windows[:, input_width:, :] # (N, Horizon, F)
     
     # 6. Strict Temporal Split (70 / 15 / 15)
-    # We split the WINDOWS, ensuring order is preserved.
+   
     n_samples = len(X_all)
     i_train = int(n_samples * 0.70)
     i_val = int(n_samples * 0.85) # 70 + 15
@@ -174,8 +141,7 @@ def preprocess_nbeats_data(df, file_rawdata_columns, input_width=10, forecast_ho
         print(f"[Prep] Split Sizes - Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}")
         
     # 7. Normalization (Fit on Train ONLY)
-    # We normalize the Deltas.
-    # Reshape to (Samples * Steps, Features) to fit scaler, then reshape back
+   
     scaler = StandardScaler()
     
     # Train

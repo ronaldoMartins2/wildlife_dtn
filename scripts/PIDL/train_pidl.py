@@ -23,17 +23,13 @@ class TrajectoryDataset(Dataset):
 
     def __getitem__(self, idx):
         coords, dt = self.windows[idx]
-        
-        # Mean Instance Normalization
         mean = np.mean(coords, axis=0)
         std = np.std(coords, axis=0) + 1e-6 
         
         coords_norm = (coords - mean) / std
-        
-        # Log dt
+    
         dt_log = np.log1p(dt)
-        
-        # Create Mask
+    
         seq_len = len(coords)
         mask = np.zeros(seq_len, dtype=np.float32)
         
@@ -49,12 +45,9 @@ class TrajectoryDataset(Dataset):
             start_idx = seq_len // 2 - gap_len // 2
             mask[start_idx : start_idx + gap_len] = 1.0
 
-        # Input Construction
-        # Masked coords are 0
         input_coords = coords_norm.copy()
         input_coords[mask == 1] = 0.0
-        
-        # Features: x, y, dt_log, mask_flag
+    
         x_in = np.column_stack([input_coords, dt_log, mask])
         
         return {
@@ -104,41 +97,24 @@ class BFBiLSTM(nn.Module):
 def physics_loss(pred_norm, target_norm, mask, mean, std, dt_raw, w_mse, w_kin, w_bio, v_max):
     mse_crit = nn.MSELoss(reduction='none')
     
-    # 1. MSE on Gaps (Reconstruction)
-    # Mask indicates GAP.
-    # We want to minimize error specifically where mask == 1 (the missing parts)
-    
     loss_map = mse_crit(pred_norm, target_norm).sum(dim=2) # [B, L]
     
-    # Only average over masked tokens
-    # Add epsilon to mask sum to avoid NaN if mask is empty
     masked_loss = (loss_map * mask).sum() / (mask.sum() + 1e-6)
     
     if w_kin == 0 and w_bio == 0:
         return masked_loss, masked_loss.item(), 0.0
-        
-    # 2. Physics Constraints
-    # Reconstruction in Real Space
-    # Normalize: pred_norm is prediction for EVERYTHING. 
-    # But for physics, we should arguably use Known info where available?
-    # Actually, if the model predicts the whole sequence, we check the physics of the *predicted* sequence on the gaps.
-    # Or strict physics on the whole sequence?
-    # Let's inspect the whole predicted sequence for smoothness.
     
     pred_real = pred_norm * std.unsqueeze(1) + mean.unsqueeze(1)
     
-    # Velocity
     d_pos = pred_real[:, 1:, :] - pred_real[:, :-1, :]
     dist = torch.norm(d_pos, dim=2)
-    dt_seg = dt_raw[:, 1:] + 1e-6 # Avoid div 0
+    dt_seg = dt_raw[:, 1:] + 1e-6
     
     v = dist / dt_seg
     
-    # Kinematic Penalty
     v_excess = torch.relu(v - v_max)
     loss_kin = v_excess.mean()
     
-    # Bio Penalty (Quadratic)
     loss_bio = (v_excess ** 2).mean()
     
     total_loss = w_mse * masked_loss + w_kin * loss_kin + w_bio * loss_bio
@@ -158,14 +134,11 @@ def train(args):
     epochs = args.epochs
         
     full_path = os.path.join(args.data_dir, csv_path)
-    
-    # Generate all windows
+
     print(f"Generating windows from {full_path}...")
     all_windows = create_windows(full_path, window_size=30, stride=5)
     total_windows = len(all_windows)
-    
-    # Shuffle and Split
-    # Deterministic shuffle
+
     indices = np.random.permutation(total_windows)
     
     n_train = int(total_windows * 0.70)
@@ -186,7 +159,7 @@ def train(args):
     # Datasets
     train_ds = TrajectoryDataset(train_windows, mode='train')
     val_ds = TrajectoryDataset(val_windows, mode='val')
-    test_ds = TrajectoryDataset(test_windows, mode='test') # 'test' behaves like 'val' (deterministic mask)
+    test_ds = TrajectoryDataset(test_windows, mode='test')
     
     train_dl = DataLoader(train_ds, batch_size=32, shuffle=True)
     val_dl = DataLoader(val_ds, batch_size=128, shuffle=False)
@@ -209,7 +182,6 @@ def train(args):
         total_mse = 0
         total_kin = 0
         
-        # Curriculum: Ramp up physics weights
         if epoch < 5:
             w_kin = 0.0
             w_bio = 0.0
@@ -255,24 +227,24 @@ def train(args):
         
         with torch.no_grad():
             for batch in val_dl:
-                 x = batch['input'].to(device)
-                 target = batch['target'].to(device)
-                 mask = batch['mask'].to(device)
-                 mean = batch['mean'].to(device)
-                 std = batch['std'].to(device)
+                x = batch['input'].to(device)
+                target = batch['target'].to(device)
+                mask = batch['mask'].to(device)
+                mean = batch['mean'].to(device)
+                std = batch['std'].to(device)
                  
-                 pred = model(x)
+                pred = model(x)
                  
-                 pred_real = pred * std.unsqueeze(1) + mean.unsqueeze(1)
-                 target_real = target * std.unsqueeze(1) + mean.unsqueeze(1)
+                pred_real = pred * std.unsqueeze(1) + mean.unsqueeze(1)
+                target_real = target * std.unsqueeze(1) + mean.unsqueeze(1)
                  
-                 diff = torch.norm(pred_real - target_real, dim=2)
-                 ade_sum = (diff * mask).sum()
-                 mask_sum = mask.sum()
+                diff = torch.norm(pred_real - target_real, dim=2)
+                ade_sum = (diff * mask).sum()
+                mask_sum = mask.sum()
                  
-                 if mask_sum > 0:
-                     total_val_ade += ade_sum.item()
-                     total_val_count += mask_sum.item()
+                if mask_sum > 0:
+                    total_val_ade += ade_sum.item()
+                    total_val_count += mask_sum.item()
         
         val_ade = total_val_ade / total_val_count if total_val_count > 0 else 0
         print(f"  >> Val ADE: {val_ade:.4f}")
@@ -284,7 +256,7 @@ def train(args):
             'val_ade': val_ade
         })
         
-        scheduler.step(val_ade) # Schedule on Val ADE
+        scheduler.step(val_ade) 
 
     # Save Results
     results_file = os.path.join(args.results_dir, f"{dataset_name}_metrics.csv")
@@ -327,7 +299,6 @@ def train(args):
                 total_test_ade += ade_sum.item()
                 total_test_count += mask_sum.item()
             
-            # Velocity sanity check (histogram data)
             d_pos = pred_real[:, 1:, :] - pred_real[:, :-1, :]
             dist = torch.norm(d_pos, dim=2)
             dt_seg = dt_raw[:, 1:] + 1e-6
@@ -340,7 +311,6 @@ def train(args):
         test_ade = total_test_ade / total_test_count if total_test_count > 0 else 0
         print(f"TEST ADE: {test_ade:.4f} meters")
         
-        # Flatten velocities
         v_flat = np.array(all_v)
         
         if len(v_flat) > 0:

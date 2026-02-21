@@ -142,17 +142,6 @@ def load_data_for_training(current_animal, file_rawdata_name, file_rawdata_colum
     results_dir = results_folder(file_rawdata_name)
     file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
 
-    # # Get datetime mask
-    # mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
-    
-    # # Load data
-    # df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
-    # df['Timestamp'] = pd.to_datetime(df['Timestamp'], format=mask)
-    
-    # # Use training set percentage
-    # limit = int(TRAINNING_SET * len(df))
-    # df = df.iloc[:limit]
-
     try:
         # Load data
         df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
