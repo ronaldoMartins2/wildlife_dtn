@@ -17,6 +17,19 @@ from Evaluation.metrics import (
     calculate_mape, calculate_smape, calculate_mase, calculate_owa
 )
 
+
+def haversine(lon1, lat1, lon2, lat2):
+    """Compute great-circle distance (meters) between two lat/lon points."""
+    # convert decimal degrees to radians
+    from math import radians, sin, cos, asin, sqrt
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    r = 6371 * 1000  # Earth radius in meters
+    return c * r
+
 def evaluate_pidl_animal(current_animal, file_rawdata, file_rawdata_columns, model, device, epsg):
     print(f"Evaluating PIDL for {current_animal}...")
     results_dir = results_folder(file_rawdata)
@@ -71,6 +84,7 @@ def evaluate_pidl_animal(current_animal, file_rawdata, file_rawdata_columns, mod
     n_points = len(df_gt)
     n_mask = int(n_points * mask_ratio)
     mask_indices = np.random.choice(n_points, n_mask, replace=False)
+    mask_indices = np.sort(mask_indices)  # ensure temporal order for ADE/FDE
     
     df_input = df_gt.copy().reset_index()
     df_input.loc[mask_indices, 'pos_x'] = np.nan
@@ -99,6 +113,25 @@ def evaluate_pidl_animal(current_animal, file_rawdata, file_rawdata_columns, mod
     lons_gt, lats_gt = transformer.transform(gt_x, gt_y, direction='INVERSE')
     lons_pred, lats_pred = transformer.transform(pred_pidl_x, pred_pidl_y, direction='INVERSE')
     lons_naive, lats_naive = transformer.transform(pred_naive_x, pred_naive_y, direction='INVERSE')
+    
+    # compute nbeats-like trajectory metrics on masked points
+    # distances in meters between truth and pidl prediction
+    errors = np.array([haversine(gt_lon, gt_lat, pred_lon, pred_lat)
+                       for gt_lon, gt_lat, pred_lon, pred_lat in
+                       zip(lons_gt, lats_gt, lons_pred, lats_pred)])
+    ade = float(errors.mean()) if errors.size > 0 else 0.0
+    fde = float(errors[-1]) if errors.size > 0 else 0.0
+
+    # compute delta errors on projected coordinates
+    rmse_deltas = 0.0
+    mae_deltas = 0.0
+    if len(gt_x) > 1:
+        deltas_gt = np.diff(np.vstack([gt_x, gt_y]).T, axis=0)
+        deltas_pred = np.diff(np.vstack([pred_pidl_x, pred_pidl_y]).T, axis=0)
+        diffs = deltas_pred - deltas_gt
+        mse_val = np.mean(np.sum(diffs**2, axis=1))
+        rmse_deltas = float(np.sqrt(mse_val))
+        mae_deltas = float(np.mean(np.sqrt(np.sum(diffs**2, axis=1))))
     
     # Train Data (Converted to Lat/Lon)
     train_x = df_train['pos_x'].values
@@ -139,10 +172,15 @@ def evaluate_pidl_animal(current_animal, file_rawdata, file_rawdata_columns, mod
     
     metrics_lon['OWA'] = calculate_owa(metrics_lon, metrics_lon_naive)
     
+    # also return nbeats-style metrics so they can be saved per-animal
     return {
         'animal': current_animal,
         'metrics_lat': metrics_lat,
-        'metrics_lon': metrics_lon
+        'metrics_lon': metrics_lon,
+        'ade_meters': ade,
+        'fde_meters': fde,
+        'rmse_deltas': rmse_deltas,
+        'mae_deltas': mae_deltas
     }
 
 def run_evaluation_all_pidl(file_rawdata, file_rawdata_columns):
@@ -179,9 +217,26 @@ def run_evaluation_all_pidl(file_rawdata, file_rawdata_columns):
     for animal in list_animals:
         res = evaluate_pidl_animal(animal, file_rawdata, file_rawdata_columns, model, device, epsg)
         if res:
+            # save per-animal json with nbeats-like metrics too
+            metrics_obj = {
+                'rmse_deltas': res.get('rmse_deltas', 0.0),
+                'mae_deltas': res.get('mae_deltas', 0.0),
+                'ade_meters': res.get('ade_meters', 0.0),
+                'fde_meters': res.get('fde_meters', 0.0)
+            }
+            metrics_path = os.path.join(results_dir, 'Interpolation', f'metrics_pidl_{animal}.json')
+            os.makedirs(os.path.dirname(metrics_path), exist_ok=True)
+            with open(metrics_path, 'w') as mf:
+                json.dump(metrics_obj, mf, indent=2)
+
             row = {'animal': res['animal']}
             for k, v in res['metrics_lat'].items(): row[f'lat_{k}'] = v
             for k, v in res['metrics_lon'].items(): row[f'lon_{k}'] = v
+            # include nbeats metrics in summary CSV
+            row['ade_meters'] = res.get('ade_meters', None)
+            row['fde_meters'] = res.get('fde_meters', None)
+            row['rmse_deltas'] = res.get('rmse_deltas', None)
+            row['mae_deltas'] = res.get('mae_deltas', None)
             all_results.append(row)
             
     if all_results:

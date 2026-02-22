@@ -24,7 +24,8 @@ from Common.utils import (
     merge_maps,
     merge_csv,
     interpolations_methods,
-    return_maps
+    return_maps,
+    return_pidl_list
 )
 
 # Data Preparation
@@ -111,25 +112,15 @@ def main():
     print("\n--- Interpolation Phase ---")
     
     # Run N-BEATS Pipeline (Train -> Eval -> Interpolate)
-    #train_nbeats_global(file_rawdata, file_rawdata_columns)
-    #run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=True, run_eval=True, run_predict=True)
+    train_nbeats_global(file_rawdata, file_rawdata_columns)
+    run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=True, run_eval=True, run_predict=True)
 
     # Run PER-DATASET PIDL Pipeline
-    #run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
-    #run_evaluation_all_pidl(file_rawdata, file_rawdata_columns)
+    run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
+    run_evaluation_all_pidl(file_rawdata, file_rawdata_columns)
 
     # CLEAN Interpolation Results
     run_cleaning_pipeline(file_rawdata)
-
-    all_maps_animals = return_maps(file_rawdata, list_animals)
-    if all_maps_animals:
-        print("\n--- Clusterizando todos os mapas individuais detectados ---")
-        for map_name in all_maps_animals:
-            map_path = os.path.join(results_dir, map_name)
-            animal_id = map_name.replace('map_','').replace('.csv','')
-            run_all_kmeans(map_path, file_rawdata, animal_id)
-            run_birch_all(map_path, file_rawdata, animal_id)
-            run_som_all(map_path, file_rawdata, animal_id)
 
     # Merge Interpolation Results per Animal
     for current_animal in list_animals:
@@ -147,16 +138,26 @@ def main():
     file_merged_nbeats = None
     file_merged_pidl = None
 
-    for current_animal in list_animals:
-        map_file = os.path.join(results_dir, f"map_{current_animal}.csv")
-        print(f"\n--- Rodando clusterização para o mapa bruto do animal {current_animal} ---")
-        if os.path.exists(map_file):
-            run_all_kmeans(map_file, file_rawdata, current_animal)
-            run_birch_all(map_file, file_rawdata, current_animal)
-            run_som_all(map_file, file_rawdata, current_animal)
-        else:
-            print(f"Arquivo de mapa não encontrado, pulando: {map_file}")
-        
+    all_maps_animals = return_maps(file_rawdata, list_animals)
+    if all_maps_animals:
+        print("\n--- Clusterizando todos os mapas individuais detectados ---")
+        for map_name in all_maps_animals:
+            map_path = os.path.join(results_dir, map_name)
+            animal_id = map_name.replace('map_','').replace('.csv','')
+            run_all_kmeans(map_path, file_rawdata, animal_id)
+            run_birch_all(map_path, file_rawdata, animal_id)
+            run_som_all(map_path, file_rawdata, animal_id)
+    
+    all_maps_pidl = return_pidl_list(file_rawdata, list_animals)
+    if all_maps_pidl:
+        print("\n--- Clusterizando todos os mapas Bi-LSTM detectados ---")
+        for map_name in all_maps_pidl:
+            map_path = os.path.join(results_dir, "Interpolation", map_name)
+            animal_id = map_name.replace('map_pidl_','').replace('.csv','')
+            run_all_kmeans(map_path, file_rawdata, f'{animal_id}_pidl')
+            run_birch_all(map_path, file_rawdata, f'{animal_id}_pidl')
+            run_som_all(map_path, file_rawdata, f'{animal_id}_pidl')
+    
     print("\n--- Clustering Part A: Interpolated Data Only ---")
     
     if file_interpolated_nbeats:
@@ -176,7 +177,6 @@ def main():
         run_birch_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
         run_som_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
 
-    sys.exit(0)
     # 5. CLUSTERING: PART A - INTERPOLATED DATA ONLY
     
     if file_interpolated_pidl:

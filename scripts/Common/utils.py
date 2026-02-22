@@ -547,3 +547,24 @@ def return_maps(file_rawdata, list_animals):
         return None
 
     return all_files
+
+def return_pidl_list(file_rawdata, list_animals):
+    results_dir = results_folder(file_rawdata)
+    interpotalion_dir = os.path.join(results_dir, "Interpolation")
+    animal_name = os.path.basename(file_rawdata).split('.')[0]
+    
+    # Coletar todos os arquivos map_{animal}_interpolation_pidl.csv de todos os animais
+    all_files = []
+    for current_animal in list_animals:
+        files = [f for f in os.listdir(interpotalion_dir) if f == f"map_{current_animal}_interpolation_pidl.csv"]
+        if files:
+            all_files.extend(files)
+            print(f"Encontrado arquivo PIDL para animal {current_animal}: {files[0]}")
+        else:
+            print(f"Nenhum arquivo map_{current_animal}_interpolation_pidl.csv encontrado.")
+
+    if not all_files:
+        print("Nenhum arquivo PIDL encontrado para merge.")
+        return None
+
+    return all_files
