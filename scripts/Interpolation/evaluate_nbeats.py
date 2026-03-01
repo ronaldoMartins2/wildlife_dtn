@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import math
 import joblib
@@ -6,12 +7,23 @@ import pandas as pd
 import numpy as np
 from pyproj import Transformer
 
+# ensure project packages are importable when running from workspace root
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import torch
 from Interpolation.nbeat_model import NBeats
 from Common.utils import read_field_from_json
 from Evaluation.metrics import (
     calculate_mae, calculate_mse, calculate_rmse, 
     calculate_mape, calculate_smape, calculate_mase, calculate_owa
+)
+from Evaluation.biological_metrics import (
+    calculate_infeasible_steps_ratio,
+    calculate_turning_angles_kl_divergence,
+    calculate_dtw_distance,
+    calculate_sinuosity,
+    calculate_frechet_distance,
+    compute_all_biological_metrics
 )
 
 
@@ -226,16 +238,50 @@ def evaluate(file_map_path, file_rawdata_name, file_rawdata_columns, model_dir=N
         start_row = df_v.iloc[-1] if len(df_v)>0 else df_t.iloc[-1]
         preds_full = predict_n_steps_from_obs(start_row, n_test, model, scaler_X, scaler_y, transformer_to_utm, transformer_to_wgs, median_time_diff, device=device)
         dists_full = []
+        pred_lons_full = []
+        pred_lats_full = []
+        true_lons_full = []
+        true_lats_full = []
+        times_full = []
+        
         for i, p in enumerate(preds_full):
             actual = df_te.iloc[i]
             d = haversine(p['Longitude'], p['Latitude'], float(actual['Longitude']), float(actual['Latitude']))
             dists_full.append(d)
+            pred_lons_full.append(p['Longitude'])
+            pred_lats_full.append(p['Latitude'])
+            true_lons_full.append(float(actual['Longitude']))
+            true_lats_full.append(float(actual['Latitude']))
+            times_full.append(float(df_te.iloc[i]['TimeDiff']))
+        
         dists_full = np.array(dists_full)
         results['ADE_m'] = float(np.mean(dists_full))
         results['FDE_m'] = float(dists_full[-1])
+        
+        # Calculate biological metrics
+        try:
+            bio_metrics = compute_all_biological_metrics(
+                true_lons_full, true_lats_full, times_full,
+                pred_lons_full, pred_lats_full, times_full,
+                species='jaguar'
+            )
+            results['biological_metrics'] = {
+                'infeasible_steps_ratio': bio_metrics.get('infeasible_steps_ratio'),
+                'turning_angles_kl_divergence': bio_metrics.get('turning_angles_kl_divergence'),
+                'dtw_distance_normalized': bio_metrics.get('dtw_distance_normalized'),
+                'sinuosity_true': bio_metrics.get('sinuosity_true'),
+                'sinuosity_pred': bio_metrics.get('sinuosity_pred'),
+                'sinuosity_ratio': bio_metrics.get('sinuosity_ratio'),
+                'area_difference_ratio': bio_metrics.get('area_difference_ratio'),
+                'frechet_distance_meters': bio_metrics.get('frechet_distance_meters'),
+            }
+        except Exception as e:
+            print(f"Warning: Could not compute biological metrics: {e}")
+            results['biological_metrics'] = None
     else:
         results['ADE_m'] = None
         results['FDE_m'] = None
+        results['biological_metrics'] = None
 
     # compute bootstrap CIs for horizons
     def bootstrap_ci(arr, n_boot=1000, ci=95):
@@ -272,8 +318,19 @@ def evaluate(file_map_path, file_rawdata_name, file_rawdata_columns, model_dir=N
 
     # save results JSON and CSV per-horizon
     out_path = os.path.join(models_dir, f'nbeats_eval_{filename}.json')
+    # convert any numpy types before serializing
+    def _sanitize(obj):
+        if isinstance(obj, np.generic):
+            return obj.item()
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, dict):
+            return {k: _sanitize(v) for k,v in obj.items()}
+        if isinstance(obj, list):
+            return [_sanitize(v) for v in obj]
+        return obj
     with open(out_path, 'w') as fh:
-        json.dump(results, fh, indent=2)
+        json.dump(_sanitize(results), fh, indent=2)
 
     # CSV summary per horizon
     rows = []
@@ -300,6 +357,18 @@ def evaluate(file_map_path, file_rawdata_name, file_rawdata_columns, model_dir=N
     df_out = pd.DataFrame(rows)
     csv_out = os.path.join(models_dir, f'nbeats_eval_summary_{filename}.csv')
     df_out.to_csv(csv_out, index=False)
+    
+    # Save consolidated metrics (ADE/FDE + biological metrics) to separate JSON
+    if results.get('biological_metrics'):
+        consolidated_metrics = {
+            'filename': filename,
+            'ade_meters': results.get('ADE_m'),
+            'fde_meters': results.get('FDE_m'),
+            'biological_metrics': results.get('biological_metrics')
+        }
+        consolidated_path = os.path.join(models_dir, f'nbeats_biological_metrics_{filename}.json')
+        with open(consolidated_path, 'w') as fh:
+            json.dump(consolidated_metrics, fh, indent=2)
 
     return results
 

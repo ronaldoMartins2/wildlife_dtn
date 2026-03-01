@@ -114,10 +114,10 @@ def main():
     # Run N-BEATS Pipeline (Train -> Eval -> Interpolate)
     train_nbeats_global(file_rawdata, file_rawdata_columns)
     run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=True, run_eval=True, run_predict=True)
-
+    sys.exit(0)
     # Run PER-DATASET PIDL Pipeline
-    run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
-    run_evaluation_all_pidl(file_rawdata, file_rawdata_columns)
+    #run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
+    #run_evaluation_all_pidl(file_rawdata, file_rawdata_columns)
 
     # CLEAN Interpolation Results
     run_cleaning_pipeline(file_rawdata)
@@ -158,6 +158,8 @@ def main():
             run_birch_all(map_path, file_rawdata, f'{animal_id}_pidl')
             run_som_all(map_path, file_rawdata, f'{animal_id}_pidl')
     
+    sys.exit(0)
+
     print("\n--- Clustering Part A: Interpolated Data Only ---")
     
     if file_interpolated_nbeats:
@@ -267,6 +269,11 @@ if __name__ == "__main__":
 # inside wildlife_dtn folder
 # python3 scripts/Wildlife/app_wildlife.py rawdata/jaguar_mamiraua.csv rawdata/jaguar_columns.json
 # python3 scripts/Wildlife/app_wildlife.py rawdata/tangara_mata_atlantica.csv rawdata/tangara_columns.json
+
+######## Rodando as metricas da Bi-LSTM PIDL #####
+python3 scripts/Interpolation/evaluate_pidl.py \
+    rawdata/jaguar_mamiraua.csv \
+    rawdata/jaguar_columns.json
 
 # SELECT * FROM jaguar_contacts;
 

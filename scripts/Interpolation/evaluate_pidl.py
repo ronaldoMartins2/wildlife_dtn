@@ -16,6 +16,46 @@ from Evaluation.metrics import (
     calculate_mae, calculate_mse, calculate_rmse, 
     calculate_mape, calculate_smape, calculate_mase, calculate_owa
 )
+from Evaluation.biological_metrics import (
+    calculate_infeasible_steps_ratio,
+    calculate_turning_angles_kl_divergence,
+    calculate_dtw_distance,
+    calculate_sinuosity,
+    calculate_frechet_distance,
+    compute_all_biological_metrics
+)
+
+
+def sanitize_for_json(obj):
+    """Recursively convert numpy / pandas objects to JSON-serializable Python types."""
+    # dict
+    if isinstance(obj, dict):
+        return {str(k): sanitize_for_json(v) for k, v in obj.items()}
+    # list / tuple
+    if isinstance(obj, (list, tuple)):
+        return [sanitize_for_json(v) for v in obj]
+    # numpy scalar
+    if isinstance(obj, np.generic):
+        return obj.item()
+    # numpy array
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    # pandas types
+    try:
+        import pandas as _pd
+        if isinstance(obj, (_pd.Timestamp, _pd.Timedelta)):
+            return str(obj)
+        if isinstance(obj, _pd.Series):
+            return sanitize_for_json(obj.tolist())
+        if isinstance(obj, _pd.DataFrame):
+            return sanitize_for_json(obj.to_dict(orient='list'))
+    except Exception:
+        pass
+    # basic types
+    if isinstance(obj, (str, int, float, bool)) or obj is None:
+        return obj
+    # fallback to string
+    return str(obj)
 
 
 def haversine(lon1, lat1, lon2, lat2):
@@ -172,16 +212,35 @@ def evaluate_pidl_animal(current_animal, file_rawdata, file_rawdata_columns, mod
     
     metrics_lon['OWA'] = calculate_owa(metrics_lon, metrics_lon_naive)
     
+    # Calculate biological metrics
+    # Extract timestamps for masked points (keep as pandas DatetimeIndex)
+    times_masked = df_gt.index[mask_indices]
+    # Use pandas Timedelta arithmetic to get seconds relative to first masked timestamp
+    times_masked_seconds = (times_masked - times_masked[0]).total_seconds().astype(float)
+    
+    bio_metrics = None
+    try:
+        bio_metrics = compute_all_biological_metrics(
+            lons_gt, lats_gt, times_masked_seconds,
+            lons_pred, lats_pred, times_masked_seconds,
+            species='jaguar'
+        )
+    except Exception as e:
+        print(f"Warning: Could not compute biological metrics for {current_animal}: {e}")
+    
     # also return nbeats-style metrics so they can be saved per-animal
-    return {
+    result = {
         'animal': current_animal,
         'metrics_lat': metrics_lat,
         'metrics_lon': metrics_lon,
         'ade_meters': ade,
         'fde_meters': fde,
         'rmse_deltas': rmse_deltas,
-        'mae_deltas': mae_deltas
+        'mae_deltas': mae_deltas,
+        'biological_metrics': bio_metrics if bio_metrics else {}
     }
+    
+    return result
 
 def run_evaluation_all_pidl(file_rawdata, file_rawdata_columns):
     print("Starting PIDL Evaluation Pipeline...")
@@ -222,18 +281,34 @@ def run_evaluation_all_pidl(file_rawdata, file_rawdata_columns):
                 'rmse_deltas': res.get('rmse_deltas', 0.0),
                 'mae_deltas': res.get('mae_deltas', 0.0),
                 'ade_meters': res.get('ade_meters', 0.0),
-                'fde_meters': res.get('fde_meters', 0.0)
+                'fde_meters': res.get('fde_meters', 0.0),
+                'biological_metrics': res.get('biological_metrics', {})
             }
             metrics_path = os.path.join(results_dir, 'Interpolation', f'metrics_pidl_{animal}.json')
             os.makedirs(os.path.dirname(metrics_path), exist_ok=True)
             with open(metrics_path, 'w') as mf:
-                json.dump(metrics_obj, mf, indent=2)
+                json.dump(sanitize_for_json(metrics_obj), mf, indent=2)
 
             row = {'animal': res['animal']}
             for k, v in res['metrics_lat'].items(): row[f'lat_{k}'] = v
             for k, v in res['metrics_lon'].items(): row[f'lon_{k}'] = v
             # include nbeats metrics in summary CSV
             row['ade_meters'] = res.get('ade_meters', None)
+            row['fde_meters'] = res.get('fde_meters', None)
+            row['rmse_deltas'] = res.get('rmse_deltas', None)
+            row['mae_deltas'] = res.get('mae_deltas', None)
+            
+            # include biological metrics
+            bio_metrics = res.get('biological_metrics', {})
+            if bio_metrics:
+                row['infeasible_steps_ratio'] = bio_metrics.get('infeasible_steps_ratio')
+                row['turning_angles_kl_divergence'] = bio_metrics.get('turning_angles_kl_divergence')
+                row['dtw_distance_normalized'] = bio_metrics.get('dtw_distance_normalized')
+                row['sinuosity_true'] = bio_metrics.get('sinuosity_true')
+                row['sinuosity_pred'] = bio_metrics.get('sinuosity_pred')
+                row['sinuosity_ratio'] = bio_metrics.get('sinuosity_ratio')
+                row['area_difference_ratio'] = bio_metrics.get('area_difference_ratio')
+                row['frechet_distance_meters'] = bio_metrics.get('frechet_distance_meters')
             row['fde_meters'] = res.get('fde_meters', None)
             row['rmse_deltas'] = res.get('rmse_deltas', None)
             row['mae_deltas'] = res.get('mae_deltas', None)
