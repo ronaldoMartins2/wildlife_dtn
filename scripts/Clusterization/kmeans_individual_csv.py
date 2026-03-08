@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import os
 import json
 from sklearn.metrics.cluster import contingency_matrix
+from sklearn.metrics import silhouette_score, davies_bouldin_score
 from Common.utils import (
     create_clusterization_results,
     results_folder,
@@ -136,13 +137,29 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix=None):
     print(f"Point->centroid mapping saved to {map_file}")
 
     #Metrics
-    metrics = calculate_quality_metrics(df_points.iloc[:, 0].values, labels + 1)
+    # metrics_antigas = calculate_quality_metrics(df_points.iloc[:, 0].values, labels + 1)
     
+    # print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
+    # print(f"Purity:      {metrics_antigas['Purity']:.4f}")
+    # print(f"Entropy:     {metrics_antigas['Entropy']:.4f}")
+    # print(f"F-Measure:   {metrics_antigas['F-Measure']:.4f}")
+    # print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
+
+    if len(np.unique(labels)) > 1:
+        silhouette = silhouette_score(coords, labels)
+        dbi = davies_bouldin_score(coords, labels)
+    else:
+        silhouette = -1.0
+        dbi = -1.0
+
+    metrics = {
+        "Silhouette Score": silhouette,
+        "Davies-Bouldin Index": dbi
+    }
+
     print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
-    print(f"Purity:      {metrics['Purity']:.4f}")
-    print(f"Entropy:     {metrics['Entropy']:.4f}")
-    print(f"F-Measure:   {metrics['F-Measure']:.4f}")
-    print(f"Partition Coeff (PC): {metrics['PC']:.4f}")
+    print(f"Silhouette Score: {silhouette:.4f}")
+    print(f"Davies-Bouldin Index: {dbi:.4f}")
     
     metrics['Algorithm'] = 'KMeans'
     metrics_file = os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv')
@@ -271,13 +288,29 @@ def run(current_animal, file_rawdata_name):
     print(f"Point->centroid mapping saved to {map_file}")
 
     # --- INSERÇÃO DAS MÉTRICAS ---
-    metrias = calculate_quality_metrics(df_map['id_animal'], df_map['id_centroid'])
+    # metrias_antigas = calculate_quality_metrics(df_map['id_animal'], df_map['id_centroid'])
     
+    # print("\n--- Resultados de Qualidade da Clusterização ---")
+    # print(f"Purity:      {metrias_antigas['Purity']:.4f}")
+    # print(f"Entropy:     {metrias_antigas['Entropy']:.4f}")
+    # print(f"F-Measure:   {metrias_antigas['F-Measure']:.4f}")
+    # print(f"Partition Coeff (PC): {metrias_antigas['PC']:.4f}")
+
+    if len(np.unique(labels)) > 1:
+        silhouette = silhouette_score(coords, labels)
+        dbi = davies_bouldin_score(coords, labels)
+    else:
+        silhouette = -1.0
+        dbi = -1.0
+
+    metrias = {
+        "Silhouette Score": silhouette,
+        "Davies-Bouldin Index": dbi
+    }
+
     print("\n--- Resultados de Qualidade da Clusterização ---")
-    print(f"Purity:      {metrias['Purity']:.4f}")
-    print(f"Entropy:     {metrias['Entropy']:.4f}")
-    print(f"F-Measure:   {metrias['F-Measure']:.4f}")
-    print(f"Partition Coeff (PC): {metrias['PC']:.4f}")
+    print(f"Silhouette Score: {silhouette:.4f}")
+    print(f"Davies-Bouldin Index: {dbi:.4f}")
     
     # Opcional: Salvar em arquivo
     results_path = os.path.join(cluster_output_dir, f'metrics_{current_animal}.txt')

@@ -220,14 +220,26 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     df_map.to_csv(map_file, index=False)
     print(f"Point->centroid mapping saved to {map_file}")
 
-    # Metrics
-    metrics = calculate_quality_metrics(df_points.iloc[:, 0].values, labels)
+    # Metrics (Antigas comentadas)
+    # metrics_antigas = calculate_quality_metrics(df_points.iloc[:, 0].values, labels)
     
+    # print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
+    # print(f"Purity:      {metrics_antigas['Purity']:.4f}")
+    # print(f"Entropy:     {metrics_antigas['Entropy']:.4f}")
+    # print(f"F-Measure:   {metrics_antigas['F-Measure']:.4f}")
+    # print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
+
+    erro_quantizacao = som.quantization_error(coords)
+    erro_topologico = som.topographic_error(coords)
+
+    metrics = {
+        "Quantization Error": erro_quantizacao,
+        "Topographic Error": erro_topologico
+    }
+
     print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
-    print(f"Purity:      {metrics['Purity']:.4f}")
-    print(f"Entropy:     {metrics['Entropy']:.4f}")
-    print(f"F-Measure:   {metrics['F-Measure']:.4f}")
-    print(f"Partition Coeff (PC): {metrics['PC']:.4f}")
+    print(f"Erro de Quantização: {erro_quantizacao:.4f}")
+    print(f"Erro Topológico: {erro_topologico:.4f}")
     
     metrics['Algorithm'] = 'SOM'
     metrics_file = os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv')
@@ -380,14 +392,26 @@ def run(current_animal, file_rawdata_name):
     df_map_slice.to_csv(map_file_slice, index=False)
     print(f"Point->centroid mapping (slice) saved to {map_file_slice}")
 
-    # INSERÇÃO DAS MÉTRICAS
-    metrias = calculate_quality_metrics(df_map_slice['id_animal'], df_map_slice['id_centroid'])
+    # INSERÇÃO DAS MÉTRICAS (Antigas comentadas)
+    # metrias_antigas = calculate_quality_metrics(df_map_slice['id_animal'], df_map_slice['id_centroid'])
     
+    # print("\n--- Resultados de Qualidade da Clusterização ---")
+    # print(f"Purity:      {metrias_antigas['Purity']:.4f}")
+    # print(f"Entropy:     {metrias_antigas['Entropy']:.4f}")
+    # print(f"F-Measure:   {metrias_antigas['F-Measure']:.4f}")
+    # print(f"Partition Coeff (PC): {metrias_antigas['PC']:.4f}")
+
+    erro_quantizacao = som.quantization_error(coords)
+    erro_topologico = som.topographic_error(coords)
+
+    metrias = {
+        "Quantization Error": erro_quantizacao,
+        "Topographic Error": erro_topologico
+    }
+
     print("\n--- Resultados de Qualidade da Clusterização ---")
-    print(f"Purity:      {metrias['Purity']:.4f}")
-    print(f"Entropy:     {metrias['Entropy']:.4f}")
-    print(f"F-Measure:   {metrias['F-Measure']:.4f}")
-    print(f"Partition Coeff (PC): {metrias['PC']:.4f}")
+    print(f"Erro de Quantização: {erro_quantizacao:.4f}")
+    print(f"Erro Topológico: {erro_topologico:.4f}")
     
     # Opcional: Salvar em arquivo
     results_path = os.path.join(cluster_output_dir, f'metrics_{current_animal}.txt')
