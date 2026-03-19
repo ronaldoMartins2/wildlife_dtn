@@ -45,17 +45,17 @@ animal = "jaguar_mamiraua"
 
 # Ajuste conforme seus arquivos
 CONFIG = [
-    {"method": "K-Means",   "k": 8,  "path": rf"scripts\Results\{animal}\points_kmeans_mapping_8_centroids_rawdata_retorno_400m_tc120min_vizinhanca.csv"},
-    {"method": "K-Means",   "k": 16, "path": rf"scripts\Results\{animal}\points_kmeans_mapping_16_centroids_rawdata_retorno_400m_tc120min_vizinhanca.csv"},
-    {"method": "K-Means",   "k": 32, "path": rf"scripts\Results\{animal}\points_kmeans_mapping_32_centroids_rawdata_retorno_400m_tc120min_vizinhanca.csv"},
+    {"method": "K-Means",   "k": 8,  "path": rf"scripts\Results\{animal}\points_kmeans_mapping_8_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "K-Means",   "k": 16, "path": rf"scripts\Results\{animal}\points_kmeans_mapping_16_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "K-Means",   "k": 32, "path": rf"scripts\Results\{animal}\points_kmeans_mapping_32_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
 
-    {"method": "SOM",       "k": 8,  "path": rf"scripts\Results\{animal}\points_som_mapping_8_centroids_rawdata_retorno_400m_tc120min_vizinhanca.csv"},
-    {"method": "SOM",       "k": 16, "path": rf"scripts\Results\{animal}\points_som_mapping_16_centroids_rawdata_retorno_400m_tc120min_vizinhanca.csv"},
-    {"method": "SOM",       "k": 32, "path": rf"scripts\Results\{animal}\points_som_mapping_32_centroids_rawdata_retorno_400m_tc120min_vizinhanca.csv"},
+    {"method": "SOM",       "k": 8,  "path": rf"scripts\Results\{animal}\points_som_mapping_8_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "SOM",       "k": 16, "path": rf"scripts\Results\{animal}\points_som_mapping_16_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "SOM",       "k": 32, "path": rf"scripts\Results\{animal}\points_som_mapping_32_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
 
-    {"method": "BIRCH",     "k": 8,  "path": rf"scripts\Results\{animal}\points_birch_mapping_8_centroids_rawdata_retorno_400m_tc120min_vizinhanca.csv"},
-    {"method": "BIRCH",     "k": 16, "path": rf"scripts\Results\{animal}\points_birch_mapping_16_centroids_rawdata_retorno_400m_tc120min_vizinhanca.csv"},
-    {"method": "BIRCH",     "k": 32, "path": rf"scripts\Results\{animal}\points_birch_mapping_32_centroids_rawdata_retorno_400m_tc120min_vizinhanca.csv"},
+    {"method": "BIRCH",     "k": 8,  "path": rf"scripts\Results\{animal}\points_birch_mapping_8_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "BIRCH",     "k": 16, "path": rf"scripts\Results\{animal}\points_birch_mapping_16_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "BIRCH",     "k": 32, "path": rf"scripts\Results\{animal}\points_birch_mapping_32_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
 ]
 
 OUT_DIR = Path(rf"scripts\Results\{animal}\figuras_tempo_retorno")

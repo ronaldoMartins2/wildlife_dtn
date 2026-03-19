@@ -104,9 +104,9 @@ def run(animal_id_str, file_rawdata_name):
                 df_res['to'] = df_res['cluster_id'].astype(int) + CENTROID_START_OFFSET
                 df_res['state'] = 'up'
 
-                # 5. Lógica de Eventos DOWN - 13.8h - 49680s (raw_data)
+                # 5. Lógica de Eventos DOWN - 10.33h - 49680s (raw_data)
                 df_down = df_res.copy()
-                df_down['id'] = df_down['id'] + 49680
+                df_down['id'] = df_down['id'] + 37188
                 df_down['state'] = 'down'
 
                 final_df = pd.concat([df_res, df_down], ignore_index=True)

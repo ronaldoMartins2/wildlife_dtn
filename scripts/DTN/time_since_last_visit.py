@@ -20,7 +20,7 @@ Agora o script:
 
 Exemplo de uso:
 
-    python scripts\DTN\time_since_last_visit.py --base_dir scripts\Results\jaguar_mamiraua --methods birch kmeans som --ks 8 16 32 --raio_m 400 --tc_min 120
+    python scripts\DTN\time_since_last_visit.py --base_dir scripts\Results\jaguar_mamiraua --methods birch kmeans som --ks 8 16 32 --raio_m 250 --tc_min 120
 """
 
 # ----------------------------------------------------------------------
@@ -347,8 +347,8 @@ def main():
     parser.add_argument(
         "--raio_m",
         type=float,
-        default=400.0,
-        help="Raio de vizinhança em metros (default: 400).",
+        default=250.0,
+        help="Raio de vizinhança em metros (default: 250).",
     )
     parser.add_argument(
         "--tc_min",

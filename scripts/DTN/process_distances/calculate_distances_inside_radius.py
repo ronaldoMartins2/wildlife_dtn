@@ -5,7 +5,7 @@ import glob
 # --- CONFIGURAÇÕES ---
 # Defina aqui a pasta onde estão os arquivos *_distances.csv gerados pelo script anterior
 INPUT_FOLDER = 'scripts\\Results\\jaguar_mamiraua\\distances_to_own_centroid'
-DISTANCE_THRESHOLD_METERS = 400
+DISTANCE_THRESHOLD_METERS = 250
 OUTPUT_FILE = f'scripts\\Results\\jaguar_mamiraua\\distances_to_own_centroid\\distances_inside_{DISTANCE_THRESHOLD_METERS}_meters.csv'
 
 def extract_file_info(filename):

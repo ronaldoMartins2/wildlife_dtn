@@ -1,0 +1,79 @@
+================================================================
+TUTORIAL: MANAGING POSTGRESQL WITH DOCKER AND CREATING TABLES
+================================================================
+
+This guide covers the basic lifecycle of a PostgreSQL database 
+running in Docker, from initialization to creating the 
+'jaguar_contacts' table.
+
+----------------------------------------------------------------
+1. MANAGING THE ENVIRONMENT (DOCKER)
+----------------------------------------------------------------
+
+Before interacting with the database, ensure the container is running.
+
+# Start the Database
+# Starts the service in the background ("detached" mode).
+$ docker-compose up -d
+
+# View Logs
+# Checks if the database started correctly. Press Ctrl+C to exit.
+$ docker-compose logs -f postgres
+
+
+----------------------------------------------------------------
+2. ACCESSING THE DATABASE
+----------------------------------------------------------------
+
+With the container running, connect to the interactive PostgreSQL terminal.
+
+# Connection Command
+# postgres_db: Container name
+# -U myuser: Database user
+# -d myappdb: Database name
+$ docker exec -it postgres_db psql -U myuser -d myappdb
+
+
+----------------------------------------------------------------
+3. STRUCTURING DATA (SQL)
+----------------------------------------------------------------
+
+Once inside the terminal (myappdb=#), run the commands below.
+
+# -- Create jaguar_contacts table
+CREATE TABLE IF NOT EXISTS jaguar_contacts (
+   id SERIAL PRIMARY KEY,
+   conn VARCHAR(255) NOT NULL,
+   for_contact VARCHAR(255),
+   to_contact VARCHAR(255),
+   state VARCHAR(50),
+   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+# -- Verify Creation
+# Lists relations to confirm the table exists.
+\dt
+
+# Expected output:
+#              List of relations
+#  Schema |      Name       | Type  | Owner
+# --------+-----------------+-------+--------
+#  public | jaguar_contacts | table | myuser
+
+# -- Query Data
+# Check table content (initially empty).
+SELECT * FROM jaguar_contacts;
+
+
+----------------------------------------------------------------
+4. STOPPING AND CLEANING UP
+----------------------------------------------------------------
+
+# Stop the Database (Keeps Data)
+# Stops the containers but preserves the volumes.
+$ docker-compose down
+
+# Stop and Remove Everything (Deletes Data)
+# WARNING: This permanently deletes all database data.
+$ docker-compose down -v

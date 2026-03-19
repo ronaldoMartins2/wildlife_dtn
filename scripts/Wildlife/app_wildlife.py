@@ -25,10 +25,15 @@ import time
 
 # Quarto passo
 # inside wildlife_dtn folder
-# python3 scripts/Wildlife/app_wildlife.py rawdata/jaguar_mamiraua.csv rawdata/jaguar_columns.json
-# python3 scripts/Wildlife/app_wildlife.py rawdata/tangara_mata_atlantica.csv rawdata/tangara_columns.json
+# python scripts/Wildlife/app_wildlife.py rawdata/jaguar_mamiraua.csv rawdata/jaguar_columns.json
+# python scripts/Wildlife/app_wildlife.py rawdata/tangara_mata_atlantica.csv rawdata/tangara_columns.json
+
+# python scripts\DTN\distancias_uakari.py scripts\Results\jaguar_mamiraua\map_jaguar_mamiraua_all_animals.csv
 
 # SELECT * FROM jaguar_contacts;
+
+# Salvar a tabela em formato Latex para Journal
+# Olhar o item 4.1 do artigo
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 
@@ -117,9 +122,9 @@ from Clusterization.plot_dispersion_geral import (
     run_all_dispersion as run_all_dispersion
 )
 
-from DTN.mobility_contacts import (
-    run as run_contacts
-)
+# from DTN.mobility_contacts import (
+#     run as run_contacts
+# )
 
 from DTN.cluster_contacts_fixed_points import (
     run as run_cluster_contacts
@@ -132,6 +137,27 @@ from DTN.find_contacts_between_nodes import (
 from DTN.add_down_event import (
     run as run_add_down_event
 )
+from DTN.export_final_contacts import (
+    run as run_export_final_trace
+)
+
+from DTN.find_contacs_animal_to_centroids import (
+    run as run_contacts_animal_centroids
+)
+
+from DTN.add_uakari_lodge_contact import (
+    run as run_contacts_animal_uakari
+)
+
+from DTN.export_all_final_contacts import (
+    run as run_export_all_final_trace
+)
+
+from DTN.setup_database import (
+    recreate_table as run_recreate_table
+)
+
+import DTN.generate_all_distances_data_n_plots as run_generate_distances_n_data_n_plots
 
 # ========== data preparation ==========
 
@@ -160,7 +186,7 @@ print(f'{list_animals}')
 for current_animal in list_animals:
     run_preparation( current_animal, file_rawdata, file_rawdata_columns )
     run_average_by_individual( current_animal, file_rawdata, file_rawdata_columns )
-    run_media_tempos_hist( current_animal, file_rawdata)
+    # run_media_tempos_hist( current_animal, file_rawdata)
 
 time.sleep(2)
 # sys.exit()
@@ -200,24 +226,24 @@ tangara = tangara.split('/')[-1]
 #sys.exit()
 ####################################################################################################################
 
-for current_animal in list_animals:
-    #TODO review number_of_predictions 
-    number_of_predictions = 5
-    len_animal = get_len_animal( current_animal, file_rawdata )
+# for current_animal in list_animals:
+#     #TODO review number_of_predictions 
+#     number_of_predictions = 5
+#     len_animal = get_len_animal( current_animal, file_rawdata )
    
-    print(f'len_animal {len_animal} current_animal {current_animal} file_rawdata {file_rawdata}')
+#     print(f'len_animal {len_animal} current_animal {current_animal} file_rawdata {file_rawdata}')
 
-    run_interpolation_nbeat(current_animal, number_of_predictions, file_rawdata, file_rawdata_columns)
+#     run_interpolation_nbeat(current_animal, number_of_predictions, file_rawdata, file_rawdata_columns)
 
-    start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
+#     start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
 
-    run_interpolation_nhits(current_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
+#     run_interpolation_nhits(current_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
 #exit ()
 #sys.exit()
 
-for current_animal in list_animals:
-    merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )
-    merge_csvs( current_animal, 'N_HITS', file_rawdata, file_rawdata_columns )
+# for current_animal in list_animals:
+#     merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )
+#     merge_csvs( current_animal, 'N_HITS', file_rawdata, file_rawdata_columns )
 
 #exit()
 
@@ -238,30 +264,30 @@ for current_animal in list_animals:
 #Criando csv das coordenadas interpoladas
 
 merge_maps(file_rawdata, list_animals)
-merge_all_interpolations_nbeat(file_rawdata)
-merge_all_interpolations_nhits(file_rawdata)
+# merge_all_interpolations_nbeat(file_rawdata)
+# merge_all_interpolations_nhits(file_rawdata)
 
-file_interpolated_nbeats = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nbeats_all.csv' )
-file_interpolated_nhits = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nhits_all.csv' )
+# file_interpolated_nbeats = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nbeats_all.csv' )
+# file_interpolated_nhits = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nhits_all.csv' )
 file_marged = os.path.join(results_folder(file_rawdata), f'map_{tangara}_all_animals.csv')
 
-run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
-run_all_kmeans(file_interpolated_nhits, file_rawdata, 'nhits')
-run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
-run_birch_all(file_interpolated_nhits, file_rawdata, 'nhits')
-run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
-run_som_all(file_interpolated_nhits, file_rawdata, 'nhits')
+# run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
+# run_all_kmeans(file_interpolated_nhits, file_rawdata, 'nhits')
+# run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
+# run_birch_all(file_interpolated_nhits, file_rawdata, 'nhits')
+# run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
+# run_som_all(file_interpolated_nhits, file_rawdata, 'nhits')
 
 #Por enquanto desabilitado
 #run_mean_shift_all(file_interpolated_nbeats, 'nbeats')
 #run_mean_shift_all(file_interpolated_nhits, 'nhits')
 
 #Roda dispersao geral para o dataset atual
-run_all_dispersion(file_rawdata)
+# run_all_dispersion(file_rawdata)
 #sys.exit()
 
-for current_animal in list_animals:
-    run_plot_kmeans_som_birch_mean_shift(current_animal)
+# for current_animal in list_animals:
+#     run_plot_kmeans_som_birch_mean_shift(current_animal)
 
 #sys.exit()
 
@@ -271,13 +297,13 @@ for current_animal in list_animals:
 #for current_animal in list_animals:
 #        run_plot_kmeans_som_birch_mean_shift(current_animal)
 
-run_cluster_contacts(current_animal, file_rawdata)
+# run_cluster_contacts(current_animal, file_rawdata)
 
 #for current_animal in list_animals:
 #    run_cluster_contacts(current_animal, file_rawdata, tangara)
 
-#run_cluster_contacts(current_animal, file_rawdata)
-sys.exit()
+# run_cluster_contacts(current_animal, file_rawdata)
+# sys.exit()
 
 '''
 ############## #DTN Contacts ##################################
@@ -287,9 +313,45 @@ sys.exit()
 #Combinação sem repetições
 pairs = create_combinations(list_animals)
 
-for pair in pairs:
-    run_contacts(pair[0], pair[1], file_rawdata)
+# Chamar todos os scripts de criação de dados de distancias e plots
+import subprocess
+subprocess.run([r"venv\Scripts\python.exe", r"scripts\DTN\generate_all_distances_data_n_plots.py"])
+
+# Limpar o database para gerar novamente os contatos
+run_recreate_table()
 
 for pair in pairs:
     run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
     run_add_down_event(f'{pair[0]}_{pair[1]}', file_rawdata)
+
+# run_find_contacts_between_nodes(93, 97, file_rawdata)
+# run_add_down_event('contact_93_97', file_rawdata)
+
+# Fora do loop dos pares de animais
+print("Gerando arquivo final consolidado...")
+run_export_final_trace(file_rawdata)
+
+# No app_wildlife.py, após processar os mapas individuais
+list_animals = ['93', '94', '95', '96', '97', '98', '99', '100']
+
+# Criar contatos entre onças e centroids
+for animal_id in list_animals:
+    # Agora passamos o ID numérico (ex: '93') e não o nome do arquivo bruto
+    run_contacts_animal_centroids(animal_id, file_rawdata)
+
+# Criar contatos entre onças e o Uakari Lodge
+for animal_id in list_animals:
+    run_contacts_animal_uakari(animal_id, file_rawdata)
+
+raw_name = "jaguar_mamiraua"
+    
+# Listas para o loop de experimentos
+centroids_list = [8, 16, 32]
+algorithms_list = ["kmeans", "birch", "som"] # Seus 3 algoritmos
+interpolations_list = ["rawdata"] # Neste primeiro momento apenas o rawdata
+
+# Gerar arquivos para cada combinação
+for n in centroids_list:
+    for alg in algorithms_list:
+        for interp in interpolations_list:
+            run_export_all_final_trace(raw_name, n_centroids=n, algorithm=alg, interpolation=interp)

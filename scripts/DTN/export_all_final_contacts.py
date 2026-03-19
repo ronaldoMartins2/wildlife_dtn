@@ -51,6 +51,11 @@ def run(file_rawdata_name, n_centroids, algorithm, interpolation):
             elif f"centroids_{n_centroids}_{algorithm}_{interpolation}" in basename:
                 files_to_import.append(f)
 
+            # Regra C: Contatos com Uakari Lodge
+            # (ex: down_contact_93_centroids_8_birch_uakari_lodge.csv)
+            elif f"uakari_lodge.csv" in basename:
+                files_to_import.append(f)
+
         if not files_to_import:
             print(f"AVISO: Nenhum arquivo encontrado para a config {n_centroids}-{algorithm}-{interpolation}")
             return

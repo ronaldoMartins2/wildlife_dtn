@@ -12,7 +12,7 @@ CLUSTERING_TYPES = ['som', 'birch', 'kmeans']
 PROCESSING_MODES = ['nbeats', 'nhits', 'rawdata']
 
 def run(current_animal, file_rawdata_name):
-    limit_distance_m = 400
+    limit_distance_m = 250
     
     # Extração do nome do animal e definição de caminhos
     animal_name = os.path.splitext(os.path.basename(file_rawdata_name))[0]
