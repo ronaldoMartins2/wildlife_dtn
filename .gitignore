@@ -17,6 +17,10 @@ env/
 *.sublime-project
 *.sublime-workspace
 
+# Ignorar ficheiros de modelos
+*.pkl
+*.pth
+
 # Ignorar caches e repositórios
 .DS_Store
 Thumbs.db
@@ -31,6 +35,7 @@ build/
 
 # Ignorar ficheiros de dados grandes
 scripts/Results/
+scripts/Interpolation/models/
 
 # Arquivos de backup e cópias temporárias
 *_copy.py

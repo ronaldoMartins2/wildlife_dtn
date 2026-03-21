@@ -39,18 +39,23 @@ def run(current_animal, file_rawdata_name):
 
     # 3. Iteração por tipo de algoritmo e modo de processamento
     for clustering_type in CLUSTERING_TYPES:
-        for mode in PROCESSING_MODES:
+        for interpolation_type in INTERPOLATION_TYPES:
             
-            cluster_file_name = f'centroids_{clustering_type}_{mode}.csv'
-            cluster_file_path = os.path.join(cluster_dir, cluster_file_name)
+            #csv_path = os.path.join(results_dir, f'map_interpolation_merged_{tangara}_{interpolation_type}.csv')
 
-            # Condição caso as interpolações ainda não existam
-            if not os.path.exists(cluster_file_path):
-                if mode != 'rawdata':
-                    print(f"[i] Pulando {mode}: resultados de interpolação não encontrados.")
-                else:
-                    print(f"[-] Atenção: Arquivo base {cluster_file_name} não encontrado.")
-                continue
+            #if os.path.exists(csv_path):
+            #        df = pd.read_csv( csv_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
+            #else:
+            #    print(f"Arquivo não encontrado: {csv_path}")
+            #    return
+
+            print(f"Caminho do CSV={csv_path}")
+            arquivo_clusters = os.path.join(results_dir, 'Clusterization', f'centroids_{clustering_type}_{interpolation_type}.csv')
+            if os.path.exists(arquivo_clusters):
+                df_clusters = pd.read_csv(arquivo_clusters, header=None)
+            else:
+                print(f"Arquivo não encontrado: {arquivo_clusters}")
+                return
 
             print(f"[+] Calculando contatos: {clustering_type} | Modo: {mode}")
             
@@ -93,16 +98,70 @@ def run(current_animal, file_rawdata_name):
                 dtn_dir = os.path.join(results_dir, 'DTN')
                 os.makedirs(dtn_dir, exist_ok=True)
 
-                # Nome do arquivo de saída com a distância como inteiro
-                output_file_name = f"contacts_{animal_name}_{clustering_type}_{mode}_{limit_distance_m}m.csv"
-                output_path = os.path.join(dtn_dir, output_file_name)
-                
-                output_df.to_csv(output_path, index=False)
-                print(f"    -> Sucesso: {len(contacts_list)} contatos salvos em {output_file_name}")
-            else:
-                print(f"    -> Info: Nenhum contato encontrado para {clustering_type} + {mode}.")
+            nome_saida = f"contatos_{os.path.splitext(os.path.basename(csv_path))[0]}_" \
+                        f"{os.path.splitext(os.path.basename(arquivo_clusters))[0]}_{distancia_limite_m}.csv"
+            
+            # Salvar na pasta DTN
+            output_path = os.path.join(dtn_dir, nome_saida)
+            df_contatos.to_csv(output_path, index=False)
 
-if __name__ == "__main__":
-    # Exemplo de uso:
-    # run("jaguar_01", "path/to/jaguar_01.csv")
-    pass
+            print(f"Arquivo gerado: {output_path}")
+
+def uniplemented(current_animal, file_rawdata_name, output_prefix):
+
+    # --- Parâmetros ---
+    results_dir = results_folder( file_rawdata_name )
+
+    data_prep_dir = os.path.join(results_dir, '..', 'Data_preparation')
+    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+    distancia_limite_m = read_field_from_json(hyperparam_path, "distancia_limite_contatos")
+    print(f"Distância limite de contatos: {distancia_limite_m} metros")
+
+    # --- Arquivos de entrada ---
+    #arquivo_onca = sys.argv[1]
+    #arquivo_clusters = sys.argv[2]
+
+    csv_path = os.path.join(results_dir, f'map_{current_animal}.csv')
+    df = pd.read_csv( csv_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
+    arquivo_clusters = os.path.join(results_dir, 'Clusterization', f'clusters_som_{output_prefix}.csv')
+
+    # --- Leitura e padronização ---
+    #df_onca = pd.read_csv(arquivo_onca, header=None)
+    df_onca = df
+
+    df_clusters = pd.read_csv(arquivo_clusters, header=None)
+
+    #df_onca.columns = ['id', 'timestamp', 'longitude', 'latitude']
+    df_clusters.columns = ['cluster_id','longitude', 'latitude']
+
+    # --- Processar contatos ---
+    contatos = []
+
+    for _, ponto_onca in df_onca.iterrows():
+        coord_onca = (ponto_onca['latitude'], ponto_onca['longitude'])
+        for _, cluster in df_clusters.iterrows():
+            coord_cluster = (cluster['latitude'], cluster['longitude'])
+            try:
+                distancia = geodesic(coord_onca, coord_cluster).meters
+                if distancia <= distancia_limite_m:
+                    contatos.append({
+                        'timestamp': ponto_onca['timestamp'],
+                        'lat_onca': coord_onca[0],
+                        'lon_onca': coord_onca[1],
+                        'lat_cluster': coord_cluster[0],
+                        'lon_cluster': coord_cluster[1],
+                        'cluster_id': cluster['cluster_id'],
+                        'distancia_m': round(distancia, 2)
+                    })
+            except ValueError:
+                continue
+
+    # --- Salvar resultado ---
+    df_contatos = pd.DataFrame(contatos)
+
+    nome_saida = f"contatos_{os.path.splitext(os.path.basename(csv_path))[0]}_" \
+                f"{os.path.splitext(os.path.basename(arquivo_clusters))[0]}_{distancia_limite_m}.csv"
+    df_contatos.to_csv(nome_saida, index=False)
+
+    print(f"Arquivo gerado: {nome_saida}")
+

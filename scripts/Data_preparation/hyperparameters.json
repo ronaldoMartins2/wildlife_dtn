@@ -1,34 +1,46 @@
 {
     "language": "PT_BR",
 
-<<<<<<< HEAD
-=======
     "distancia_limite_contatos": 400,
 
->>>>>>> 8d2c5826fdb60c68bdfd5214c1fc06d839a1ab87
     "CONTACT_DISTANCE": 5000,
 
-    "output_dim_nbeat": 1,
+    "output_dim_nbeat": 3,
+    "input_width_nbeat": 20,
     "hidden_dim_nbeat": 64,
-    "num_blocks_nbeat": 3,
+    "num_blocks_nbeat": 6,
+    "lr_nbeats": 0.0001,
+    "batch_size_nbeat": 32,
+    "beta1_nbeats": 0.9,
+    "beta2_nbeats": 0.999,
+    "weight_decay_nbeat": 1e-4,
+    "dropout_rate_nbeat": 0.1,
+    "use_batch_norm_nbeat": true,
+    "patience_nbeats": 10,
+    "epochs_nbeats": 120,
+    "scheduler_min_lr_nbeats": 1e-6,
+    "scheduler_factor_nbeats": 0.5,
+    "scheduler_patience_nbeats": 5,
 
     "input_dim_nhits": 3,
-    "hidden_dim_nhits": 64,
-<<<<<<< HEAD
-    "num_blocks_nhits": 5,
-    "num_hierarchies_nhits": 4,
-    "epochs_nhits": 300,
-=======
-    "num_blocks_nhits": 4,
-    "num_hierarchies_nhits": 4,
-    "epochs_nhits": 200,
->>>>>>> 8d2c5826fdb60c68bdfd5214c1fc06d839a1ab87
-    "lr_nhits": 0.001,
-    "patience_nhits": 20,
-    "sequence_length_nhits": 20,
+    "hidden_dim_nhits": 32,
+    "num_blocks_nhits": 3,
+    "num_hierarchies_nhits": 2,
+    "epochs_nhits": 120,
+    "lr_nhits": 0.0001,
+    "patience_nhits": 8,
+    "sequence_length_nhits": 10,
     "test_split_nhits": 0.2,
-    "batch_size_nhits": 32,
+    "batch_size_nhits": 64,
     "prediction_horizon_nhits": 1,
+    "beta1_nhits": 0.9,
+    "beta2_nhits": 0.999,
+    "weight_decay_nhits": 1e-4,
+    "dropout_rate_nhits": 0.25,
+    "use_batch_norm_nhits": true,
+    "scheduler_patience_nhits": 5,
+    "scheduler_factor_nhits": 0.5,
+    "scheduler_min_lr_nhits": 1e-6,
 
     "sigma_SOM": 0.5,
     "learning_rate_SOM": 0.5,
@@ -47,6 +59,5 @@
     "bandwidth": 0.03,
 
     "BIRCH_NCLUSTERS": 8,
-
-    "threshold": 0.5
+    "threshold": 0.05
 }

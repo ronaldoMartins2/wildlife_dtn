@@ -1,7 +1,11 @@
-pandas
-torch
+joblib 
+geopy 
+minisom 
+torch 
+pandas 
+pyproj
 scikit-learn
 matplotlib
-minisom
-geopy
-psycopg2
+psycopg2-binary
+scipy
+dtaidistance

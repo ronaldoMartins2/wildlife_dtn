@@ -82,15 +82,24 @@ def run( current_animal, file_rawdata_name, file_rawdata_columns ):
                 list_animals[ id_raw_data ] = 'id'
 
                 if id_raw_data == current_animal :
-
-                    writer.writerow({
-                        'id': id_raw_data,
-                        'time': row[ get_id_from_json(file_rawdata_columns, DataField.DATETIME) ],
-                        'long': row[ get_id_from_json(file_rawdata_columns, DataField.LONGITUDE) ],
-                        'lat': row[ get_id_from_json(file_rawdata_columns, DataField.LATITUDE) ]
-                    })
-                    count_animal += 1
-
+                    try:
+                        lon = float(row[ get_id_from_json(file_rawdata_columns, DataField.LONGITUDE) ])
+                        lat = float(row[ get_id_from_json(file_rawdata_columns, DataField.LATITUDE) ])
+                        
+                        if -90 <= lat <= 90 and -180 <= lon <= 180:
+                            writer.writerow({
+                                'id': id_raw_data,
+                                'time': row[ get_id_from_json(file_rawdata_columns, DataField.DATETIME) ],
+                                'long': lon,
+                                'lat': lat
+                            })
+                            count_animal += 1
+                        else:
+                            print(f"Coordenadas inválidas para a linha {line_count} do animal {id_raw_data}: lat={lat}, lon={lon}")
+                            
+                    except (ValueError, TypeError):
+                        print(f"Valor não numérico encontrado na linha {line_count} para o animal {id_raw_data}")
+                        
                 line_count += 1
         
         print ( f' Processed {line_count} lines. ' )

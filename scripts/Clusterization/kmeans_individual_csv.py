@@ -5,18 +5,78 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import os
 import json
+from sklearn.metrics.cluster import contingency_matrix
+from sklearn.metrics import silhouette_score, davies_bouldin_score
 from Common.utils import (
     create_clusterization_results,
     results_folder,
     read_field_from_json
 )
 
+def calculate_quality_metrics(y_true, y_pred):
+    """
+    Calcula as 4 métricas do PDF: Purity, Entropy, F-Measure e Partition Coefficient (PC).
+    y_true: IDs reais (ex: ID do animal)
+    y_pred: IDs dos clusters gerados pelo algoritmo
+    """
+    # Matriz de contingência (linhas = classes reais, colunas = clusters)
+    matrix = contingency_matrix(y_true, y_pred)
+    N = np.sum(matrix) # Total de itens [cite: 35]
+    
+    # 1. PURITY [cite: 36]
+    purity = np.sum(np.amax(matrix, axis=0)) / N
+    
+    # 2. ENTROPIA (Global) [cite: 54]
+    total_entropy = 0
+    cluster_sums = np.sum(matrix, axis=0)
+    for j in range(matrix.shape[1]):
+        nj = cluster_sums[j]
+        if nj > 0:
+            p_ij = matrix[:, j] / nj
+            p_ij_nonzero = p_ij[p_ij > 0]
+            cluster_entropy = -np.sum(p_ij_nonzero * np.log2(p_ij_nonzero))
+            total_entropy += (nj / N) * cluster_entropy
+            
+    # 3. F-MEASURED [cite: 50]
+    # Precisão = n_ij / col_sum; Revocação = n_ij / row_sum
+    # Avoid division by zero
+    col_sums = matrix.sum(axis=0)
+    row_sums = matrix.sum(axis=1)
+    
+    precision = np.divide(matrix, col_sums, out=np.zeros_like(matrix, dtype=float), where=col_sums!=0)
+    recall = np.divide(matrix, row_sums[:, None], out=np.zeros_like(matrix, dtype=float), where=row_sums[:, None]!=0)
+    
+    f_matrix = np.divide(2 * precision * recall, precision + recall, 
+                         out=np.zeros_like(matrix, dtype=float), where=(precision + recall)!=0)
+    # Média ponderada do melhor F-measure por categoria [cite: 40, 45]
+    f_measured = np.sum(np.amax(f_matrix, axis=1) * row_sums) / N
+    
+    # 4. PARTITION COEFFICIENT (PC) [cite: 57]
+    # Para cada cluster j, calcula a soma dos quadrados das proporções de cada animal
+    pc_clusters = []
+    for j in range(matrix.shape[1]):
+        nj = cluster_sums[j]
+        if nj > 0:
+            # Fração de cada animal no cluster j: |Cp ∩ Cp+| / |Cp|
+            proportions = matrix[:, j] / nj
+            pc_j = np.sum(proportions**2) # Segundo a descrição do PDF de ser entre 1/k+ e 1 
+            pc_clusters.append(pc_j)
+    
+    avg_pc = np.mean(pc_clusters) if pc_clusters else 0
+    
+    return {
+        "Purity": purity,
+        "Entropy": total_entropy,
+        "F-Measure": f_measured,
+        "PC": avg_pc
+    }
+
 def extract_folder_name(file_rawdata):
     """Extrai o nome da pasta do file_rawdata_name"""
     file_name = file_rawdata.split('/')
     file_name = file_name[-1].split('.')[0]
     return file_name
-def run_all(file_rawdata_name, file_rawdata, output_prefix):
+def run_all(file_rawdata_name, file_rawdata, output_prefix=None):
     
     # Define o caminho para SALVAR os resultados usando o nome extraído de file_rawdata (dataset original)
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -61,6 +121,65 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     df_centroids['Index'] = df_centroids['Index'] + 1  # começa por 1
     df_centroids.to_csv(output_file_csv, index=False, header=None)
     print(f"Cluster centroids saved to {output_file_csv}")
+
+    # --- Novo: salvar mapeamento ponto -> centróide ---
+    labels = kmeans.predict(coords)
+    df_points = data_cleaned.reset_index(drop=True).copy()
+    df_map = pd.DataFrame({
+        'id_centroid': (labels + 1),                        # centróides numerados a partir de 1
+        'id_animal': df_points.iloc[:, 0].values,           # coluna ID original
+        'timestamp': df_points.iloc[:, 1].values,           # coluna 1 é o timestamp
+        'latitude_animal': df_points.iloc[:, 3].values,     # latitude
+        'longitude_animal': df_points.iloc[:, 2].values     # longitude
+    })
+    map_file = os.path.join(cluster_output_dir, f'points_kmeans_mapping_{output_prefix}.csv')
+    df_map.to_csv(map_file, index=False)
+    print(f"Point->centroid mapping saved to {map_file}")
+
+    #Metrics
+    # metrics_antigas = calculate_quality_metrics(df_points.iloc[:, 0].values, labels + 1)
+    
+    # print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
+    # print(f"Purity:      {metrics_antigas['Purity']:.4f}")
+    # print(f"Entropy:     {metrics_antigas['Entropy']:.4f}")
+    # print(f"F-Measure:   {metrics_antigas['F-Measure']:.4f}")
+    # print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
+
+    if len(np.unique(labels)) > 1:
+        silhouette = silhouette_score(coords, labels)
+        dbi = davies_bouldin_score(coords, labels)
+    else:
+        silhouette = -1.0
+        dbi = -1.0
+
+    metrics = {
+        "Silhouette Score": silhouette,
+        "Davies-Bouldin Index": dbi
+    }
+
+    print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
+    print(f"Silhouette Score: {silhouette:.4f}")
+    print(f"Davies-Bouldin Index: {dbi:.4f}")
+    
+    metrics['Algorithm'] = 'KMeans'
+    metrics_file = os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv')
+    
+    if os.path.exists(metrics_file):
+        existing_df = pd.read_csv(metrics_file)
+        new_df = pd.DataFrame([metrics])
+        final_df = pd.concat([existing_df, new_df], ignore_index=True)
+    else:
+        final_df = pd.DataFrame([metrics])
+        
+    final_df.to_csv(metrics_file, index=False)
+    print(f"Metrics saved to {metrics_file}")
+    
+    # Opcional: Salvar em arquivo txt também
+    results_path_txt = os.path.join(cluster_output_dir, f'metrics_{output_prefix}.txt')
+    with open(results_path_txt, "w") as f:
+        for k, v in metrics.items():
+            if k != 'Algorithm':
+                f.write(f"{k}: {v}\n")
 
     # Gráfico
     language = read_field_from_json(hyperparam_path, "language")
@@ -154,6 +273,50 @@ def run(current_animal, file_rawdata_name):
     df_centroids['Index'] = df_centroids['Index'] + 1  # começa por 1
     df_centroids.to_csv(output_file_csv, index=False, header=None)
     print(f"Cluster centroids saved to {output_file_csv}")
+
+    # --- Novo: salvar mapeamento ponto -> centróide ---
+    labels = kmeans.predict(coords)
+    df_points = data_cleaned.reset_index(drop=True).copy()
+    df_map = pd.DataFrame({
+        'id_centroid': (labels + 1),
+        'id_animal': df_points.iloc[:, 0].values,
+        'latitude_animal': df_points.iloc[:, 3].values,
+        'longitude_animal': df_points.iloc[:, 2].values
+    })
+    map_file = os.path.join(cluster_output_dir, f'points_kmeans_mapping_{current_animal}.csv')
+    df_map.to_csv(map_file, index=False)
+    print(f"Point->centroid mapping saved to {map_file}")
+
+    # --- INSERÇÃO DAS MÉTRICAS ---
+    # metrias_antigas = calculate_quality_metrics(df_map['id_animal'], df_map['id_centroid'])
+    
+    # print("\n--- Resultados de Qualidade da Clusterização ---")
+    # print(f"Purity:      {metrias_antigas['Purity']:.4f}")
+    # print(f"Entropy:     {metrias_antigas['Entropy']:.4f}")
+    # print(f"F-Measure:   {metrias_antigas['F-Measure']:.4f}")
+    # print(f"Partition Coeff (PC): {metrias_antigas['PC']:.4f}")
+
+    if len(np.unique(labels)) > 1:
+        silhouette = silhouette_score(coords, labels)
+        dbi = davies_bouldin_score(coords, labels)
+    else:
+        silhouette = -1.0
+        dbi = -1.0
+
+    metrias = {
+        "Silhouette Score": silhouette,
+        "Davies-Bouldin Index": dbi
+    }
+
+    print("\n--- Resultados de Qualidade da Clusterização ---")
+    print(f"Silhouette Score: {silhouette:.4f}")
+    print(f"Davies-Bouldin Index: {dbi:.4f}")
+    
+    # Opcional: Salvar em arquivo
+    results_path = os.path.join(cluster_output_dir, f'metrics_{current_animal}.txt')
+    with open(results_path, "w") as f:
+        for k, v in metrias.items():
+            f.write(f"{k}: {v}\n")
 
     # --- GERAÇÃO DO GRÁFICO ---
     # Carrega textos do gráfico (título, eixos) de acordo com o idioma definido

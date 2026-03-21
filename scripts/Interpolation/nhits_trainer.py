@@ -142,17 +142,6 @@ def load_data_for_training(current_animal, file_rawdata_name, file_rawdata_colum
     results_dir = results_folder(file_rawdata_name)
     file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
 
-    # # Get datetime mask
-    # mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
-    
-    # # Load data
-    # df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
-    # df['Timestamp'] = pd.to_datetime(df['Timestamp'], format=mask)
-    
-    # # Use training set percentage
-    # limit = int(TRAINNING_SET * len(df))
-    # df = df.iloc[:limit]
-
     try:
         # Load data
         df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
@@ -388,15 +377,27 @@ class NHiTSTrainer:
         
         return total_loss / len(val_loader)
     
-    def train(self, train_loader, val_loader, file_rawdata_name, epochs=100, lr=0.001, patience=10):
+    def train(self, train_loader, val_loader, file_rawdata_name, epochs=200, lr=0.001, patience=20):
         """Full training loop with comprehensive metrics tracking"""
         criterion = nn.MSELoss()
-        optimizer = optim.Adam(self.model.parameters(), lr=lr)
+
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
+        hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+
+        lr_ratting = read_field_from_json(hyperparam_path, 'lr_nhits')
+        beta1 = read_field_from_json(hyperparam_path, 'beta1_nhits')
+        beta2 = read_field_from_json(hyperparam_path, 'beta2_nhits')
+        betas = (beta1, beta2)
+        weight_decay = read_field_from_json(hyperparam_path, 'weight_decay_nhits')
+        
+        optimizer = optim.Adam(self.model.parameters(), lr=lr_ratting, betas=betas, weight_decay=weight_decay)
         
         best_val_loss = float('inf')
         patience_counter = 0
         
         print("Starting training...")
+        print(f"Values beta1={beta1} beta2={beta2} weight_decay={weight_decay} patience={patience}")
         log_file_path = "training_log_nhits.txt"
 
         for epoch in range(epochs):
@@ -670,4 +671,16 @@ if __name__ == "__main__":
     file_rawdata_name = sys.argv[2]
     file_rawdata_columns = sys.argv[3]
 
-    main_training(current_animal, file_rawdata_name, file_rawdata_columns)
+    combined_df = []
+
+    df = load_data_for_training(current_animal, file_rawdata_name, file_rawdata_columns)
+    combined_df.append(df)
+
+    # Concatenar lista de DataFrames em um único DataFrame
+    combined_df = pd.concat(combined_df, ignore_index=True)
+
+    df_train, df_eval = get_train_eval(combined_df)
+
+    main_training(df_train, df_eval, file_rawdata_name, file_rawdata_columns)
+    #main_training(current_animal, file_rawdata_name, file_rawdata_columns)
+

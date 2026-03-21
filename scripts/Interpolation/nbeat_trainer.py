@@ -1,391 +1,234 @@
 # nbeat_trainer.py
 import os
+import json
 import torch
 import torch.nn as nn
 import pandas as pd
-
-from Common.utils import results_folder, read_field_from_json, TRAINNING_SET, remove_nan_data
-from Data_preparation.clear_outtliers import run as run_clear_outliers
-from Data_preparation.raw_data_integration import get_id_from_json
-from Data_preparation.data_field import DataField
-from Interpolation.nbeat_model import NBeats
-
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 import numpy as np
+import joblib
+import random
+from torch.utils.data import TensorDataset, DataLoader
+from torch.nn.utils import clip_grad_norm_
 
-def evaluate_nbeats_model(model, df, file_rawdata_columns):
-    # Recreate features and targets from the full DataFrame
-    mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
-    df['Timestamp'] = pd.to_datetime(df['Timestamp'], format=mask)
-    df['Time Difference (hours)'] = df['Timestamp'].diff().dt.total_seconds() / 3600
-    df['Prev Time Difference (hours)'] = df['Time Difference (hours)'].shift(1)
-    df = df.dropna(subset=['Time Difference (hours)', 'Prev Time Difference (hours)'])
+from Common.utils import results_folder, read_field_from_json
+from Interpolation.nbeat_model import NBeats
+from Interpolation.nbeat_data_prep import preprocess_nbeats_data
 
-    features = ['Prev Time Difference (hours)', 'Longitude', 'Latitude']
-    target = 'Time Difference (hours)'
-
-    X = df[features].values
-    y = df[target].values
-
-    # Debugging: Check the shapes of X and y
-    print(f"X shape: {X.shape}")
-    print(f"y shape: {y.shape}")
-
-    if len(X) == 0:
-        print("❌ Not enough data to evaluate test set.")
-        return
-
-    X_tensor = torch.tensor(X, dtype=torch.float32)
-
-    model.eval()
-    with torch.no_grad():
-        predictions = model(X_tensor)
-
-        # Debugging: Check the shape of predictions
-        print(f"Predictions shape before processing: {predictions.shape}")
+class PhysicsInformedLoss(nn.Module):
+    def __init__(self, mean, std, speed_limit_meters=1666.0, penalty_weight=0.1, device='cpu'):
+        """
+        speed_limit_meters: Max plausible speed per step in meters. 
+                            6 km/h = 6000 m/h. 
+                            If freq is 1H, limit is 6000.
+                            If freq is 10 min, limit is 1000.
+        penalty_weight: Weight of the physics penalty.
+        """
+        super().__init__()
+        self.mse = nn.MSELoss()
+        self.mean = torch.tensor(mean, dtype=torch.float32).to(device)
+        self.std = torch.tensor(std, dtype=torch.float32).to(device)
+        self.limit = speed_limit_meters
+        self.lamb = penalty_weight
         
-        # Handle different prediction shapes
-        if predictions.dim() == 2:
-            if predictions.shape[1] == 1:
-                # Shape is (batch_size, 1) - squeeze to (batch_size,)
-                predictions = predictions.squeeze(1)
-            else:
-                print(f"❌ Unexpected prediction shape: {predictions.shape}. Expected (batch_size, 1) or (batch_size,)")
-                return
-        elif predictions.dim() == 1:
-            # Shape is already (batch_size,) - good to go
-            pass
-        else:
-            print(f"❌ Unexpected prediction dimensions: {predictions.dim()}")
-            return
+    def forward(self, pred_scaled, target_scaled):
+        mse_loss = self.mse(pred_scaled, target_scaled)
         
-        # Convert to numpy for sklearn metrics
-        predictions = predictions.cpu().numpy()
         
-        # Debugging the final shape
-        print(f"Final predictions shape: {predictions.shape}")
-        print(f"Target y shape: {y.shape}")
+        pred_real = pred_scaled * self.std + self.mean
+        
+   
+        dist = torch.norm(pred_real, p=2, dim=2)
+        
+        excess = torch.relu(dist - self.limit)
+        
+        penalty = excess.mean()
+        
+        return mse_loss + self.lamb * penalty
 
-        # Ensure the shapes match
-        if predictions.shape != y.shape:
-            print(f"❌ Shape mismatch: predictions.shape = {predictions.shape}, y.shape = {y.shape}")
-            return
+def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, device, epochs, patience, save_path_model, save_path_scaler, scaler, metadata):
+    best_val = float('inf')
+    best_epoch = 0
+    history = {'train_loss': [], 'val_loss': []}
 
-    # Calculate metrics
-    mae = mean_absolute_error(y, predictions)
-    rmse = np.sqrt(mean_squared_error(y, predictions))
+    print(f"[NBEATS] Training... | Ep: {epochs}")
+
+    for epoch in range(1, epochs+1):
+        model.train()
+        epoch_losses = []
+        for xb, yb in train_loader:
+            xb = xb.to(device)
+            yb = yb.to(device)
+            
+            noise = torch.randn_like(xb) * 0.01
+            xb_aug = xb + noise
+            
+            optimizer.zero_grad()
+            out = model(xb_aug)
+            loss = criterion(out, yb)
+            loss.backward()
+            clip_grad_norm_(model.parameters(), max_norm=1.0)
+            optimizer.step()
+            epoch_losses.append(loss.item())
+            
+        train_loss = np.mean(epoch_losses)
+        
+        val_loss = train_loss
+        if val_loader:
+            model.eval()
+            val_losses = []
+            with torch.no_grad():
+                for xb, yb in val_loader:
+                    xb = xb.to(device)
+                    yb = yb.to(device)
+                    out = model(xb)
+                    loss = criterion(out, yb)
+                    val_losses.append(loss.item())
+            val_loss = np.mean(val_losses)
+        
+        history['train_loss'].append(train_loss)
+        history['val_loss'].append(val_loss)
+        
+        scheduler.step(val_loss)
+        
+        if val_loss < best_val:
+            best_val = val_loss
+            best_epoch = epoch
+            # Save Model
+            os.makedirs(os.path.dirname(save_path_model), exist_ok=True)
+            torch.save(
+                {
+                    'model_state_dict': model.state_dict(),
+                    'metadata': metadata
+                },
+                save_path_model
+            )
+            # Save Scaler
+            joblib.dump(scaler, save_path_scaler)
+        
+        if epoch % 10 == 0:
+            print(f"Ep {epoch} | Train: {train_loss:.5f} | Val: {val_loss:.5f}")
+            
+        if epoch - best_epoch > patience:
+            print(f"Early stopping at {epoch}")
+            break
+
+    return history, best_val, best_epoch
+
+def train_nbeats_model_single(current_animal, file_rawdata_name, file_rawdata_columns):
+    print(f"[NBEATS] Starting pipeline for animal {current_animal}...")
     
-    # Handle MAPE calculation with zero-division protection
-    mask = y != 0
-    if np.any(mask):
-        mape = np.mean(np.abs((y[mask] - predictions[mask]) / y[mask])) * 100
-    else:
-        mape = float('inf')  # or np.nan
-
-    print(f"📊 N-BEATS Test Evaluation:")
-    print(f"MAE: {mae:.4f} | RMSE: {rmse:.4f} | MAPE: {mape:.2f}%")
-
-    return mae, rmse, mape
-
-def prepare_training_data(  #current_animal, 
-                            df,
-                            file_rawdata_name,
-                            file_rawdata_columns):
-
-    if df.empty:
-        return None, None
-    
-    df = remove_nan_data(df)
-    
-    # if 'jaguar' in file_rawdata_name:
-    #     df = remove_nan_data(df)
-    #     df = run_clear_outliers(df, current_animal, file_rawdata_name, dataset_name="Jaguar")
-    # else:
-    #     df = remove_nan_data(df)
-    #     df = run_clear_outliers(df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"])
-
-    print("Inside nbeat_trainer")
-
-    mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
-    df['Timestamp'] = pd.to_datetime(df['Timestamp'], format=mask)
-    df['Time Difference (hours)'] = df['Timestamp'].diff().dt.total_seconds() / 3600
-    df['Prev Time Difference (hours)'] = df['Time Difference (hours)'].shift(1)
-
-    df = df.dropna(subset=['Time Difference (hours)', 'Prev Time Difference (hours)'])
-
-    features = ['Prev Time Difference (hours)', 'Longitude', 'Latitude']
-    target = 'Time Difference (hours)'
-
-    X = df[features].values
-    y = df[target].values
-
-    return torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)
-
-def train_nbeats_model_list(
-                        animal_list,
-                        file_rawdata_name, 
-                        file_rawdata_columns,
-                        ):
-    results_dir = results_folder(file_rawdata_name)
-    
-    combined_df_list = []
-
-    for current_animal in animal_list:
-        file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
-        df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
-        combined_df_list.append(df)
-
-    combined_df = pd.concat(combined_df_list, ignore_index=True)
-    
-    df_train, df_eval = get_train_eval( combined_df )
-
-    train_nbeats_model( df_train,
-                        df_eval,
-                        file_rawdata_name, 
-                        file_rawdata_columns)
-
-def get_train_eval( df_full ):
-    # Sort by timestamp to maintain time series order
-    df_full = df_full.sort_values(by='Timestamp').reset_index(drop=True)
-
-    # Split index
-    split_index = int(TRAINNING_SET * len(df_full))
-
-    # 80% for training, 20% for evaluation
-    df_train = df_full.iloc[:split_index].copy()
-    df_eval  = df_full.iloc[split_index:].copy()
-
-    return df_train, df_eval
-
-def train_nbeats_model_single(
-                            current_animal,
-                            file_rawdata_name, 
-                            file_rawdata_columns, 
-                            ):
-
+    # 1. Load Data
     results_dir = results_folder(file_rawdata_name)
     file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
-
-    df_full = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
-
-    df_train, df_eval = get_train_eval( df_full )
-
-    train_nbeats_model( df_train,
-                        df_eval,
-                        file_rawdata_name, 
-                        file_rawdata_columns)
-
-def calculate_metrics(y_true, y_pred):
-    """Calculate MAE, RMSE, and MAPE metrics"""
-    mae = mean_absolute_error(y_true, y_pred)
-    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
-    
-    # Handle MAPE calculation with zero-division protection
-    mask = y_true != 0
-    if np.any(mask):
-        mape = np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100
-    else:
-        mape = float('inf')
-    
-    return mae, rmse, mape
-
-def train_nbeats_model( df_train,
-                        df_eval,
-                        file_rawdata_name, 
-                        file_rawdata_columns, 
-                        epochs=100, 
-                        lr=0.001):
-
-    X_tensor, y_tensor = prepare_training_data(df_train, file_rawdata_name, file_rawdata_columns)
-
-    if X_tensor is None or y_tensor is None:
-        print("Training data is empty. Skipping training.")
+    if not os.path.exists(file_path):
+        print(f"File {file_path} not found.")
         return
 
+    try:
+        df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
+    except Exception as e:
+        print(f"Error loading {file_path}: {e}")
+        return
+
+    # 2. Hyperparameters
     script_dir = os.path.dirname(os.path.abspath(__file__))
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
 
-    input_dim = X_tensor.shape[1]
-    output_dim = 1  # Force to 1 for single value prediction
-    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nbeat")
-    num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nbeat")
-
-    print(f"Model architecture: input_dim={input_dim}, output_dim={output_dim}, hidden_dim={hidden_dim}, num_blocks={num_blocks}")
-
-    model = NBeats(input_dim, output_dim, hidden_dim, num_blocks)
-    criterion = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-
-    # Reshape target to match model output
-    y_tensor = y_tensor.view(-1, 1)  # Shape: (batch_size, 1)
-
-    filename = file_rawdata_name.split('/')[-1].split('.')[0]
-    log_file_path = "training_log_nbeat.txt"
-
-    final_loss = 0
-    best_train_mae = float('inf')
-    train_mae_history = []
-    train_rmse_history = []
-    train_mape_history = []
-
-    # Training loop with periodic evaluation
-    for epoch in range(epochs):
-        model.train()
-        optimizer.zero_grad()
-        forecast = model(X_tensor)
-        
-        # Ensure shapes match for loss calculation
-        if forecast.dim() == 1:
-            forecast = forecast.view(-1, 1)
-        
-        loss = criterion(forecast, y_tensor)
-        loss.backward()
-        optimizer.step()
-        
-        final_loss = loss.item()
-        
-        # Calculate training metrics every 20 epochs
-        if epoch % 20 == 0 or epoch == epochs - 1:
-            model.eval()
-            with torch.no_grad():
-                train_predictions = model(X_tensor)
-                if train_predictions.dim() == 2 and train_predictions.shape[1] == 1:
-                    train_predictions = train_predictions.squeeze(1)
-                
-                # Convert to numpy
-                train_pred_np = train_predictions.cpu().numpy()
-                train_true_np = y_tensor.squeeze().cpu().numpy()
-                
-                # Calculate metrics
-                train_mae, train_rmse, train_mape = calculate_metrics(train_true_np, train_pred_np)
-                
-                train_mae_history.append(train_mae)
-                train_rmse_history.append(train_rmse)
-                train_mape_history.append(train_mape)
-                
-                if train_mae < best_train_mae:
-                    best_train_mae = train_mae
-                
-                log_msg = f"[{filename}] Epoch {epoch:3d} | Loss: {loss.item():.4f} | Train MAE: {train_mae:.4f} | Train RMSE: {train_rmse:.4f} | Train MAPE: {train_mape:.2f}%"
-                print(log_msg)
-                
-                # Write log to file
-                with open(log_file_path, "a") as f:
-                    f.write(log_msg + "\n")
-            
-            model.train()  # Switch back to training mode
-
-    # Final training metrics
-    model.eval()
-    with torch.no_grad():
-        final_train_predictions = model(X_tensor)
-        if final_train_predictions.dim() == 2 and final_train_predictions.shape[1] == 1:
-            final_train_predictions = final_train_predictions.squeeze(1)
-        
-        final_train_pred_np = final_train_predictions.cpu().numpy()
-        final_train_true_np = y_tensor.squeeze().cpu().numpy()
-        
-        final_train_mae, final_train_rmse, final_train_mape = calculate_metrics(final_train_true_np, final_train_pred_np)
-
-    # Save model
-    results_dir = results_folder(file_rawdata_name)
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_prep_dir = os.path.join(script_dir, '..', 'Interpolation/models')
-    model_path = os.path.join(data_prep_dir, f'nbeats_model_general_{filename}.pth')
-    torch.save({'model_state_dict': model.state_dict()}, model_path)
-    print(f"Model saved to {model_path}")
-
-    ############ Evaluation on Test Set ############
-    model_eval = NBeats(input_dim, output_dim, hidden_dim, num_blocks)
-    checkpoint = torch.load(model_path)
-    model_eval.load_state_dict(checkpoint['model_state_dict'])
-
-    eval_result = evaluate_nbeats_model(model_eval, df_eval, file_rawdata_columns)
-
-    if eval_result is None:
-        print("❌ Evaluation failed. Skipping logging of metrics.")
+    epochs = read_field_from_json(hyperparam_path, 'epochs_nbeats') or 100
+    lr = read_field_from_json(hyperparam_path, 'lr_nbeats') or 0.0003
+    batch_size = read_field_from_json(hyperparam_path, 'batch_size_nbeat') or 32
+    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nbeat") or 64
+    num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nbeat") or 2
+    
+    input_width = read_field_from_json(hyperparam_path, 'input_width_nbeat') or 10
+    forecast_horizon = 5 
+    
+    # 3. Data Prep
+    X_train, y_train, X_val, y_val, X_test, y_test, scaler, metadata = preprocess_nbeats_data(
+        df, file_rawdata_columns, input_width=input_width, forecast_horizon=forecast_horizon
+    )
+    
+    if X_train is None:
+        print("Data Prep failed (too short or empty).")
         return
+        
+    metadata['hidden_dim'] = int(hidden_dim)
+    metadata['num_blocks'] = int(num_blocks)
 
-    eval_mae, eval_rmse, eval_mape = eval_result
+    # 4. Tensors
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"[NBEATS] Device: {device}")
 
-    ############ Performance Comparison ############
-    print("\n" + "="*60)
-    print("📊 PERFORMANCE COMPARISON")
-    print("="*60)
-    print(f"Training Set Performance:")
-    print(f"  Final MAE:  {final_train_mae:.4f}")
-    print(f"  Final RMSE: {final_train_rmse:.4f}")
-    print(f"  Final MAPE: {final_train_mape:.2f}%")
-    print(f"  Best MAE:   {best_train_mae:.4f}")
-    print()
-    print(f"Evaluation Set Performance:")
-    print(f"  MAE:  {eval_mae:.4f}")
-    print(f"  RMSE: {eval_rmse:.4f}")
-    print(f"  MAPE: {eval_mape:.2f}%")
-    print()
-    print(f"Performance Analysis:")
-    mae_diff = eval_mae - final_train_mae
-    rmse_diff = eval_rmse - final_train_rmse
-    mape_diff = eval_mape - final_train_mape
+    X_train_t = torch.tensor(X_train, dtype=torch.float32)
+    y_train_t = torch.tensor(y_train, dtype=torch.float32)
+    train_loader = DataLoader(TensorDataset(X_train_t, y_train_t), batch_size=batch_size, shuffle=True)
     
-    print(f"  MAE Difference (Eval - Train):  {mae_diff:+.4f} ({mae_diff/final_train_mae*100:+.1f}%)")
-    print(f"  RMSE Difference (Eval - Train): {rmse_diff:+.4f} ({rmse_diff/final_train_rmse*100:+.1f}%)")
-    print(f"  MAPE Difference (Eval - Train): {mape_diff:+.2f}% ({mape_diff/final_train_mape*100:+.1f}%)")
-    
-    if mae_diff > final_train_mae * 0.2:  # 20% worse
-        print("  ⚠️  Possible overfitting detected (evaluation MAE significantly higher)")
-    elif mae_diff < final_train_mae * 0.1:  # Less than 10% worse
-        print("  ✅ Good generalization (similar performance on train/eval)")
-    else:
-        print("  ℹ️  Normal generalization gap")
-    
-    print("="*60)
+    val_loader = None
+    if X_val is not None:
+        X_val_t = torch.tensor(X_val, dtype=torch.float32)
+        y_val_t = torch.tensor(y_val, dtype=torch.float32)
+        val_loader = DataLoader(TensorDataset(X_val_t, y_val_t), batch_size=batch_size, shuffle=False)
 
-    ############ Save Results ############
-    hiper_content = []
-    hiper_content.append(f"Hyper nbeat input_dim {input_dim}")
-    hiper_content.append(f"Hyper nbeat output_dim {output_dim}")
-    hiper_content.append(f"Hyper nbeat hidden_dim {hidden_dim}")
-    hiper_content.append(f"Hyper nbeat num_blocks {num_blocks}")
-    hiper_content.append(f"Hyper nbeat loss {final_loss}")
-    hiper_content.append(f"Hyper nbeat epochs {epochs}")
-    hiper_content.append("")
-    hiper_content.append("# Training Performance")
-    hiper_content.append(f"Train nbeat MAE {final_train_mae:.4f}")
-    hiper_content.append(f"Train nbeat RMSE {final_train_rmse:.4f}")
-    hiper_content.append(f"Train nbeat MAPE {final_train_mape:.2f}%")
-    hiper_content.append(f"Train nbeat Best MAE {best_train_mae:.4f}")
-    hiper_content.append("")
-    hiper_content.append("# Evaluation Performance")
-    hiper_content.append(f"Eval nbeat MAE {eval_mae:.4f}")
-    hiper_content.append(f"Eval nbeat RMSE {eval_rmse:.4f}")
-    hiper_content.append(f"Eval nbeat MAPE {eval_mape:.2f}%")
-    hiper_content.append("")
-    hiper_content.append("# Performance Gap NBeat")
-    hiper_content.append(f"MAE Gap {mae_diff:+.4f} ({mae_diff/final_train_mae*100:+.1f}%)")
-    hiper_content.append(f"RMSE Gap {rmse_diff:+.4f} ({rmse_diff/final_train_rmse*100:+.1f}%)")
-    hiper_content.append(f"MAPE Gap {mape_diff:+.2f}% ({mape_diff/final_train_mape*100:+.1f}%)")
-
-    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
-    with open(hiper_path, "a") as file:
-        for line in hiper_content:
-            file.write(line + '\n')
+    # 5. Model Setup
+    input_features = 2 
     
-    return {
-        'train_metrics': (final_train_mae, final_train_rmse, final_train_mape),
-        'eval_metrics': (eval_mae, eval_rmse, eval_mape),
-        'best_train_mae': best_train_mae,
-        'performance_gap': (mae_diff, rmse_diff, mape_diff)
-    }
+    model = NBeats(
+        input_steps=input_width,
+        output_steps=forecast_horizon,
+        input_features=input_features,
+        hidden_dim=hidden_dim,
+        num_blocks=num_blocks
+    ).to(device)
+    
+    # Loss Configuration
+    scaler_mean = scaler.mean_
+    scaler_std = scaler.scale_
+    
+    animal_name = file_rawdata_name.split('_')[0]
+    median_seconds = metadata['median_delta_seconds']
+    
+    # Heuristic Speed Limits
+    max_speed_mps = 1.67 
+    if "jaguar" in animal_name:
+        max_speed_mps = 0.07 
+    elif "tangara" in animal_name:
+        max_speed_mps = 8 
+    
+    step_limit_meters = max_speed_mps * median_seconds
+    print(f"[Loss] Speed limit set to {step_limit_meters:.2f} meters per step ({median_seconds}s).")
+
+    criterion = PhysicsInformedLoss(
+        mean=scaler_mean, 
+        std=scaler_std, 
+        speed_limit_meters=step_limit_meters,
+        penalty_weight=0.1,
+        device=device
+    )
+    
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999), weight_decay=1e-5)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, factor=0.5, patience=20, min_lr=1e-6
+    )
+
+    # Paths
+    models_dir = os.path.join(script_dir, 'models')
+    save_path_model = os.path.join(models_dir, f'nbeats_model_{current_animal}.pth')
+    save_path_scaler = os.path.join(models_dir, f'scaler_{current_animal}.pkl')
+    
+    # 6. Run Training
+    history, best_val, best_epoch = train_model(
+        model, train_loader, val_loader, criterion, optimizer, scheduler, device, 
+        epochs, 20, save_path_model, save_path_scaler, scaler, metadata
+    )
+
+    # Save History
+    with open(os.path.join(models_dir, f'nbeats_history_{current_animal}.json'), 'w') as f:
+        json.dump(history, f, indent=2)
+
+    print(f"✅ Finished {current_animal}. Best Val: {best_val:.5f} @ Ep {best_epoch}")
 
 if __name__ == "__main__":
     import sys
-    current_animal = sys.argv[1]
-    file_rawdata_name = sys.argv[2]
-    
-    # You need to load this from somewhere; this is placeholder
-    from Common.utils import load_columns_config
-    file_rawdata_columns = load_columns_config(file_rawdata_name)  # implement if missing
-
-    train_nbeats_model(current_animal, file_rawdata_name, file_rawdata_columns)
+    if len(sys.argv) >= 4:
+        train_nbeats_model_single(sys.argv[1], sys.argv[2], sys.argv[3])

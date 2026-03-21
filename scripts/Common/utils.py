@@ -6,7 +6,7 @@ import pandas as pd
 from Data_preparation.data_field import DataField
 from Data_preparation.raw_data_integration import get_id_from_json
 
-interpolations_methods = ['N_BEATS', 'N_HITS']
+interpolations_methods = ['N_BEATS', 'N_HITS', 'PIDL']
 
 #Modifiquei a ordem das funções somente. Coloquei as funções que nao dependem da variavel global sobre elas.
 
@@ -189,7 +189,7 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
     """
 
     results_dir = results_folder(file_rawdata_name)
-    raw_path = os.path.join(results_dir, f'map_{current_animal}_outliers_less_test_only.csv')
+    raw_path = os.path.join(results_dir, f'map_{current_animal}.csv')
 
     df_raw = _read_and_clean(raw_path)
 
@@ -197,6 +197,8 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
         interp_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')
     elif method == 'N_HITS':
         interp_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits.csv')
+    elif method == 'PIDL':
+        interp_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_pidl.csv')
     else:
         print(f"Unknown method '{method}'.")
         return None
@@ -225,6 +227,8 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
 
     if method == 'N_BEATS':
         out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats_merged.csv')
+    elif method == 'PIDL':
+        out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_pidl_merged.csv')
     else:
         out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits_merged.csv')
 
@@ -235,6 +239,36 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
 
     # Save without NaN
     result[columns_to_save].to_csv(out_path, index=False, header=False)
+
+def read_field_from_json(json_file, field_name):
+    """
+    Reads a specific field from a JSON file.
+
+    Args:
+    - json_file (str): Path to the JSON file.
+    - field_name (str): The name of the field whose value you want to retrieve.
+
+    Returns:
+    - The value of the field from the JSON file.
+    - If the field doesn't exist, returns None.
+    """
+    try:
+        # Open and load the JSON file
+        with open(json_file, 'r') as file:
+            data = json.load(file)
+        
+        # Check if the field exists in the loaded data
+        if field_name in data:
+            return data[field_name]
+        else:
+            print(f"Field '{field_name}' not found in the JSON file.")
+            return None
+    except FileNotFoundError:
+        print(f"File '{json_file}' not found.")
+        return None
+    except json.JSONDecodeError:
+        print(f"Error decoding the JSON file '{json_file}'.")
+        return None
 
 def get_list_animals(file_name, file_rawdata_columns):
     """
@@ -320,43 +354,114 @@ def append_variables_to_file(up, down, filename="variables.txt"):
 
 def merge_all_interpolations_nbeat(file_rawdata):
     """
-    Junta todos os arquivos map_{animal}_interpolation_nbeats_merged.csv em um único arquivo.
+    Junta todos os arquivos map_{animal}_interpolation_nbeats.csv em um único arquivo.
     """
     results_dir = results_folder(file_rawdata)
+    if not os.path.exists(results_dir):
+        print(f"Diretório de resultados não encontrado: {results_dir}")
+        return
+
     interpolation_dir = os.path.join(results_dir, "Interpolation")
-    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nbeats_merged.csv")]
+    if not os.path.exists(interpolation_dir):
+        print(f"Diretório de interpolação não encontrado: {interpolation_dir}")
+        return
+
+    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nbeats.csv")]
 
     if not files:
         print("Nenhum arquivo nbeats encontrado para merge.")
         return
 
-    dfs = [pd.read_csv(os.path.join(interpolation_dir, f), header=None) for f in files]
-    df_merged = pd.concat(dfs, ignore_index=True)
-    animal_name = os.path.basename(file_rawdata).split('.')[0]
-    output_path = os.path.join(interpolation_dir, f"map_{animal_name}_interpolation_nbeats_all.csv")
-    df_merged.to_csv(output_path, index=False, header=False)
+    try:
+        dfs = [pd.read_csv(os.path.join(interpolation_dir, f), header=None) for f in files]
+        if not dfs:
+            print("Nenhum dado válido encontrado nos arquivos.")
+            return
 
-    print(f"Arquivo gerado: {output_path}")
+        df_merged = pd.concat(dfs, ignore_index=True)
+        animal_name = os.path.basename(file_rawdata).split('.')[0]
+        output_path = os.path.join(interpolation_dir, f"map_{animal_name}_interpolation_nbeats_all.csv")
+        df_merged.to_csv(output_path, index=False, header=False)
+
+        print(f"Arquivo gerado: {output_path}")
+        return output_path
+    except Exception as e:
+        print(f"Erro ao realizar merge nbeats: {e}")
+        return
 
 def merge_all_interpolations_nhits(file_rawdata):
     """
-    Junta todos os arquivos map_{animal}_interpolation_nhits_merged.csv em um único arquivo.
+    Junta todos os arquivos map_{animal}_interpolation_nhits.csv em um único arquivo.
     """
     results_dir = results_folder(file_rawdata)
+    if not os.path.exists(results_dir):
+        print(f"Diretório de resultados não encontrado: {results_dir}")
+        return
+
     interpolation_dir = os.path.join(results_dir, "Interpolation")
-    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nhits_merged.csv")]
+    if not os.path.exists(interpolation_dir):
+        print(f"Diretório de interpolação não encontrado: {interpolation_dir}")
+        return
+
+    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nhits.csv")]
 
     if not files:
         print("Nenhum arquivo nhits encontrado para merge.")
         return
     
-    dfs = [pd.read_csv(os.path.join(interpolation_dir, f), header=None) for f in files]
-    df_merged = pd.concat(dfs, ignore_index=True)
-    animal_name = os.path.basename(file_rawdata).split('.')[0]
-    output_path = os.path.join(interpolation_dir, f"map_{animal_name}_interpolation_nhits_all.csv")
-    df_merged.to_csv(output_path, index=False, header=False)
+    try:
+        dfs = [pd.read_csv(os.path.join(interpolation_dir, f), header=None) for f in files]
+        if not dfs:
+            print("Nenhum dado válido encontrado nos arquivos.")
+            return
+
+        df_merged = pd.concat(dfs, ignore_index=True)
+        animal_name = os.path.basename(file_rawdata).split('.')[0]
+        output_path = os.path.join(interpolation_dir, f"map_{animal_name}_interpolation_nhits_all.csv")
+        df_merged.to_csv(output_path, index=False, header=False)
+        
+        print(f"Arquivo gerado: {output_path}")
+        return output_path
+    except Exception as e:
+        print(f"Erro ao realizar merge nhits: {e}")
+        return
+
+def merge_all_interpolations_pidl(file_rawdata):
+    """
+    Junta todos os arquivos map_{animal}_interpolation_pidl.csv em um único arquivo.
+    """
+    results_dir = results_folder(file_rawdata)
+    if not os.path.exists(results_dir):
+        print(f"Diretório de resultados não encontrado: {results_dir}")
+        return
+
+    interpolation_dir = os.path.join(results_dir, "Interpolation")
+    if not os.path.exists(interpolation_dir):
+        print(f"Diretório de interpolação não encontrado: {interpolation_dir}")
+        return
+
+    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_pidl.csv")]
+
+    if not files:
+        print("Nenhum arquivo pidl encontrado para merge.")
+        return
     
-    print(f"Arquivo gerado: {output_path}")
+    try:
+        dfs = [pd.read_csv(os.path.join(interpolation_dir, f), header=None) for f in files]
+        if not dfs:
+            print("Nenhum dado válido encontrado nos arquivos.")
+            return
+
+        df_merged = pd.concat(dfs, ignore_index=True)
+        animal_name = os.path.basename(file_rawdata).split('.')[0]
+        output_path = os.path.join(interpolation_dir, f"map_{animal_name}_interpolation_pidl_all.csv")
+        df_merged.to_csv(output_path, index=False, header=False)
+        
+        print(f"Arquivo gerado: {output_path}")
+        return output_path
+    except Exception as e:
+        print(f"Erro ao realizar merge pidl: {e}")
+        return
 
 def merge_maps(file_rawdata, list_animals):
     results_dir = results_folder(file_rawdata)
@@ -379,8 +484,87 @@ def merge_maps(file_rawdata, list_animals):
     # Ler e mesclar TODOS os arquivos em um único DataFrame
     dfs = [pd.read_csv(os.path.join(results_dir, f), header=None) for f in all_files]
     df_merged = pd.concat(dfs, ignore_index=True)
-    df_merged.dropna(subset=[2, 3])
+    df_merged.dropna(subset=[2, 3], inplace=True)
     output_path = os.path.join(results_dir, f"map_{animal_name}_all_animals.csv")
     df_merged.to_csv(output_path, index=False, header=False)
 
     print(f"Arquivo único gerado com todos os animais: {output_path}")
+    return output_path
+ 
+def merge_csv(file_csv1, file_csv2, file_rawdata, animal_name, method):
+    """
+    Merge two CSV files by simple concatenation (no de-duplication).
+
+    Args:
+        file_csv1 (str): Base CSV path. The merged content is saved here.
+        file_csv2 (str): Second CSV path to append.
+        animal_name (str): Unused here; kept for interface compatibility.
+    """
+    # Read both CSVs as raw (no header) and concatenate
+    if not os.path.exists(file_csv1):
+        print(f"Base CSV not found: {file_csv1}")
+        return
+
+    if not os.path.exists(file_csv2):
+        print(f"Second CSV not found: {file_csv2}")
+        return
+
+    try:
+        df1 = pd.read_csv(file_csv1, header=None)
+    except pd.errors.EmptyDataError:
+        df1 = pd.DataFrame()
+
+    try:
+        df2 = pd.read_csv(file_csv2, header=None)
+    except pd.errors.EmptyDataError:
+        df2 = pd.DataFrame()
+
+    results_dir = results_folder(file_rawdata)
+    output_path = os.path.join(results_dir, f"map_interpolation_merged_{animal_name}_{method}.csv")
+    merged = pd.concat([df1, df2], ignore_index=True)
+    merged.to_csv(path_or_buf=output_path, index=False, header=False)
+
+    print(f"Arquivo de geral de animais(Interpolação e Maps) salvo em {output_path}")
+    
+    return output_path
+
+def return_maps(file_rawdata, list_animals):
+    results_dir = results_folder(file_rawdata)
+    animal_name = os.path.basename(file_rawdata).split('.')[0]
+    
+    # Coletar todos os arquivos map_{animal}.csv de todos os animais
+    all_files = []
+    for current_animal in list_animals:
+        files = [f for f in os.listdir(results_dir) if f == f"map_{current_animal}.csv"]
+        if files:
+            all_files.extend(files)
+            print(f"Encontrado arquivo para animal {current_animal}: {files[0]}")
+        else:
+            print(f"Nenhum arquivo map_{current_animal}.csv encontrado.")
+
+    if not all_files:
+        print("Nenhum arquivo map encontrado para merge.")
+        return None
+
+    return all_files
+
+def return_pidl_list(file_rawdata, list_animals):
+    results_dir = results_folder(file_rawdata)
+    interpotalion_dir = os.path.join(results_dir, "Interpolation")
+    animal_name = os.path.basename(file_rawdata).split('.')[0]
+    
+    # Coletar todos os arquivos map_{animal}_interpolation_pidl.csv de todos os animais
+    all_files = []
+    for current_animal in list_animals:
+        files = [f for f in os.listdir(interpotalion_dir) if f == f"map_{current_animal}_interpolation_pidl.csv"]
+        if files:
+            all_files.extend(files)
+            print(f"Encontrado arquivo PIDL para animal {current_animal}: {files[0]}")
+        else:
+            print(f"Nenhum arquivo map_{current_animal}_interpolation_pidl.csv encontrado.")
+
+    if not all_files:
+        print("Nenhum arquivo PIDL encontrado para merge.")
+        return None
+
+    return all_files
