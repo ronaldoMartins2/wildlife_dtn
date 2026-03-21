@@ -28,6 +28,10 @@ Antes de executar o pipeline, é necessário configurar o ambiente Python.
     pip3 install -r scripts/requirements.txt
     ```
 
+## 1.2 Time Shifting para Dados Brutos das onças
+Foi necessário fazer esse time shifting para que todos os animais estivessem no mesmo período e pudesse haver contatos.
+
+
 ## 2. Execução do Pipeline
 
 O pipeline é iniciado executando o `app_wildlife.py` com dois argumentos: o caminho para o arquivo de dados brutos (CSV) e o caminho para o arquivo JSON que descreve as colunas do CSV.
