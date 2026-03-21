@@ -14,7 +14,6 @@ from Common.utils import (
 
 def calculate_quality_metrics(y_true, y_pred):
     """
-    Calcula as 4 métricas do PDF: Purity, Entropy, F-Measure e Partition Coefficient (PC).
     y_true: IDs reais (ex: ID do animal)
     y_pred: IDs dos clusters gerados pelo algoritmo
     """
@@ -221,23 +220,25 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     print(f"Point->centroid mapping saved to {map_file}")
 
     # Metrics (Antigas comentadas)
-    # metrics_antigas = calculate_quality_metrics(df_points.iloc[:, 0].values, labels)
-    
-    # print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
-    # print(f"Purity:      {metrics_antigas['Purity']:.4f}")
-    # print(f"Entropy:     {metrics_antigas['Entropy']:.4f}")
-    # print(f"F-Measure:   {metrics_antigas['F-Measure']:.4f}")
-    # print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
+    metrics_antigas = calculate_quality_metrics(df_points.iloc[:, 0].values, labels)
 
     erro_quantizacao = som.quantization_error(coords)
     erro_topologico = som.topographic_error(coords)
 
     metrics = {
+        "Purity": metrics_antigas['Purity'],
+        "Entropy": metrics_antigas['Entropy'],
+        "F-Measure": metrics_antigas['F-Measure'],
+        "Partition Coefficient (PC)": metrics_antigas['PC'],
         "Quantization Error": erro_quantizacao,
         "Topographic Error": erro_topologico
     }
 
     print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
+    print(f"Purity:      {metrics_antigas['Purity']:.4f}")
+    print(f"Entropy:     {metrics_antigas['Entropy']:.4f}")
+    print(f"F-Measure:   {metrics_antigas['F-Measure']:.4f}")
+    print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
     print(f"Erro de Quantização: {erro_quantizacao:.4f}")
     print(f"Erro Topológico: {erro_topologico:.4f}")
     
@@ -393,23 +394,25 @@ def run(current_animal, file_rawdata_name):
     print(f"Point->centroid mapping (slice) saved to {map_file_slice}")
 
     # INSERÇÃO DAS MÉTRICAS (Antigas comentadas)
-    # metrias_antigas = calculate_quality_metrics(df_map_slice['id_animal'], df_map_slice['id_centroid'])
-    
-    # print("\n--- Resultados de Qualidade da Clusterização ---")
-    # print(f"Purity:      {metrias_antigas['Purity']:.4f}")
-    # print(f"Entropy:     {metrias_antigas['Entropy']:.4f}")
-    # print(f"F-Measure:   {metrias_antigas['F-Measure']:.4f}")
-    # print(f"Partition Coeff (PC): {metrias_antigas['PC']:.4f}")
+    metrics_antigas = calculate_quality_metrics(df_map_slice['id_animal'], df_map_slice['id_centroid'])
 
     erro_quantizacao = som.quantization_error(coords)
     erro_topologico = som.topographic_error(coords)
 
     metrias = {
+        "Purity": metrics_antigas['Purity'],
+        "Entropy": metrics_antigas['Entropy'],
+        "F-Measure": metrics_antigas['F-Measure'],
+        "Partition Coefficient (PC)": metrics_antigas['PC'],
         "Quantization Error": erro_quantizacao,
         "Topographic Error": erro_topologico
     }
 
     print("\n--- Resultados de Qualidade da Clusterização ---")
+    print(f"Purity:      {metrics_antigas['Purity']:.4f}")
+    print(f"Entropy:     {metrics_antigas['Entropy']:.4f}")
+    print(f"F-Measure:   {metrics_antigas['F-Measure']:.4f}")
+    print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
     print(f"Erro de Quantização: {erro_quantizacao:.4f}")
     print(f"Erro Topológico: {erro_topologico:.4f}")
     

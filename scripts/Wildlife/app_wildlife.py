@@ -157,8 +157,6 @@ def main():
             run_all_kmeans(map_path, file_rawdata, f'{animal_id}_pidl')
             run_birch_all(map_path, file_rawdata, f'{animal_id}_pidl')
             run_som_all(map_path, file_rawdata, f'{animal_id}_pidl')
-    
-    sys.exit(0)
 
     print("\n--- Clustering Part A: Interpolated Data Only ---")
     

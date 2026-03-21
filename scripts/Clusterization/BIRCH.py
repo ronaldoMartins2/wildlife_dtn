@@ -18,7 +18,6 @@ from Common.utils import (
 
 def calculate_quality_metrics(y_true, y_pred):
     """
-    Calcula as 4 métricas do PDF: Purity, Entropy, F-Measure e Partition Coefficient (PC).
     y_true: IDs reais (ex: ID do animal)
     y_pred: IDs dos clusters gerados pelo algoritmo
     """
@@ -163,13 +162,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     print(f"Point->centroid mapping saved to {map_file}")
 
     #Metrics
-    # metrics_antigas = calculate_quality_metrics(df_points.iloc[:, 0].values, labels + 1)
-    
-    # print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
-    # print(f"Purity:      {metrics_antigas['Purity']:.4f}")
-    # print(f"Entropy:     {metrics_antigas['Entropy']:.4f}")
-    # print(f"F-Measure:   {metrics_antigas['F-Measure']:.4f}")
-    # print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
+    metrics_antigas = calculate_quality_metrics(df_points.iloc[:, 0].values, labels + 1)
 
     if len(np.unique(labels)) > 1:
         silhouette = silhouette_score(coordinates, labels)
@@ -179,11 +172,19 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
         dbi = -1.0
 
     metrics = {
+        "Purity": metrics_antigas['Purity'],
+        "Entropy": metrics_antigas['Entropy'],
+        "F-Measure": metrics_antigas['F-Measure'],
+        "Partition Coefficient (PC)": metrics_antigas['PC'],
         "Silhouette Score": silhouette,
         "Davies-Bouldin Index": dbi
     }
 
     print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
+    print(f"Purity:      {metrics_antigas['Purity']:.4f}")
+    print(f"Entropy:     {metrics_antigas['Entropy']:.4f}")
+    print(f"F-Measure:   {metrics_antigas['F-Measure']:.4f}")
+    print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
     print(f"Silhouette Score: {silhouette:.4f}")
     print(f"Davies-Bouldin Index: {dbi:.4f}")
     
@@ -299,13 +300,7 @@ def run(current_animal, file_rawdata_name):
     print(f"Point->centroid mapping saved to {map_file}")
     
     #INSERÇÃO DAS MÉTRICAS
-    # metrias_antigas = calculate_quality_metrics(df_map['id_animal'], df_map['id_centroid'])
-    
-    # print("\n--- Resultados de Qualidade da Clusterização ---")
-    # print(f"Purity:      {metrias_antigas['Purity']:.4f}")
-    # print(f"Entropy:     {metrias_antigas['Entropy']:.4f}")
-    # print(f"F-Measure:   {metrias_antigas['F-Measure']:.4f}")
-    # print(f"Partition Coeff (PC): {metrias_antigas['PC']:.4f}")
+    metrics_antigas = calculate_quality_metrics(df_map['id_animal'], df_map['id_centroid'])
 
     labels_birch = df['Cluster'].values
     if len(np.unique(labels_birch)) > 1:
@@ -316,11 +311,19 @@ def run(current_animal, file_rawdata_name):
         dbi = -1.0
 
     metrias = {
+        "Purity": metrics_antigas['Purity'],
+        "Entropy": metrics_antigas['Entropy'],
+        "F-Measure": metrics_antigas['F-Measure'],
+        "Partition Coefficient (PC)": metrics_antigas['PC'],
         "Silhouette Score": silhouette,
         "Davies-Bouldin Index": dbi
     }
 
     print("\n--- Resultados de Qualidade da Clusterização ---")
+    print(f"Purity:      {metrics_antigas['Purity']:.4f}")
+    print(f"Entropy:     {metrics_antigas['Entropy']:.4f}")
+    print(f"F-Measure:   {metrics_antigas['F-Measure']:.4f}")
+    print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
     print(f"Silhouette Score: {silhouette:.4f}")
     print(f"Davies-Bouldin Index: {dbi:.4f}")
     
