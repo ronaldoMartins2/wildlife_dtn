@@ -19,7 +19,7 @@
 
 
 #-- Create jaguar_contacts table
-#CREATE TABLE IF NOT EXISTS jaguar_contacts (
+# CREATE TABLE IF NOT EXISTS jaguar_contacts (
 #    id SERIAL PRIMARY KEY,
 #    conn VARCHAR(255) NOT NULL,
 #    for_contact VARCHAR(255),
@@ -27,10 +27,21 @@
 #    state VARCHAR(50),
 #    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 #    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-#);
+# );
 
-# \dt
-# SELECT * FROM jaguar_contacts;
+# >> \dt ###########################################
+# myappdb=# \dt
+#              List of relations
+#  Schema |      Name       | Type  | Owner
+# --------+-----------------+-------+--------
+#  public | jaguar_contacts | table | myuser
+# (1 row)
+
+# >> SELECT * FROM jaguar_contacts; ###############
+# myappdb=# SELECT * FROM jaguar_contacts;
+#  id | conn | for_contact | to_contact | state | created_at | updated_at
+# ----+------+-------------+------------+-------+------------+------------
+# (0 rows)
 
 version: '3.8'
 

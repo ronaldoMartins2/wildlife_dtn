@@ -1,88 +1,86 @@
-#
-# Default settings for the simulation
-#
-
-## Scenario settings
-Scenario.name = default_scenario
+## Parâmetros Gerais
+Scenario.name = Monitoramento_Amazonia_Jaguars_v2
 Scenario.simulateConnections = true
-Scenario.updateInterval = 0.1
-Scenario.endTime = 43200
-# Number of host groups (1 group for 8 nodes)
-Scenario.nrofHostGroups = 1
+Scenario.updateInterval = 1
+# Scenario.updateInterval = 10 (os contatos se dão aproximadamente em horas)
+# Tempo total de 14/03/2014 a 23/01/2016 (aprox. 680 dias)
+Scenario.endTime = 58752000
 
-## Interface-specific settings
-btInterface.type = SimpleBroadcastInterface
-btInterface.transmitSpeed = 250k
-btInterface.transmitRange = 10
+# 30 seeds de simulação (seeds 1-30)
 
-highspeedInterface.type = SimpleBroadcastInterface
-highspeedInterface.transmitSpeed = 10M
-highspeedInterface.transmitRange = 1000
-
-## Group-specific settings
-Group.movementModel = ShortestPathMapBasedMovement
-Group.router = EpidemicRouter
-Group.bufferSize = 5M
-Group.waitTime = 0, 120
-Group.nrofInterfaces = 1
-Group.interface1 = btInterface
-Group.speed = 0.5, 1.5
-Group.msgTtl = 300
-Group.nrofHosts = 8  # Total of 8 nodes
-
-## Group1 settings (8 nodes in this group)
-Group1.groupID = p
-Group1.nrofHosts = 8
-Group1.movementModel = ShortestPathMapBasedMovement
-Group1.router = EpidemicRouter
-Group1.bufferSize = 5M
-Group1.waitTime = 0, 120
-Group1.interface1 = btInterface
-
-## Contact Data Settings
-ContactData.filePath = contacts_DTN.txt
-
-## Message creation parameters
-Events.nrof = 1
-Events1.class = MessageEventGenerator
-Events1.interval = 25,35
-Events1.size = 500k,1M
-# Adjust host range (0 to 7 for 8 nodes)
-Events1.hosts = 0,7
-Events1.prefix = M
-
-## Movement model settings
+## CONFIGURAÇÃO OBRIGATÓRIA: Tamanho do Mundo
+# Define a área de 10km x 10km mencionada no projeto [cite: 239]
+MovementModel.worldSize = 10000, 10000
 MovementModel.rngSeed = 1
-MovementModel.worldSize = 4500, 3400
-MovementModel.warmup = 1000
+# MovementEngine.type = GSIMMovementEngine
 
-## Map-based movement settings
-MapBasedMovement.nrofMapFiles = 4
-MapBasedMovement.mapFile1 = data/roads.wkt
-MapBasedMovement.mapFile2 = data/main_roads.wkt
-MapBasedMovement.mapFile3 = data/pedestrian_paths.wkt
-MapBasedMovement.mapFile4 = data/shops.wkt
+# Define que, por padrão, cada grupo tem 1 interface de comunicação
+Group.nrofInterfaces = 1
 
-## Reports
+## Configuração de Interface LoRa
+# A velocidade de 293 Bps
+loRaInterface.type = SimpleBroadcastInterface
+# Transmit speed baseado em Barbosa (2025)
+loRaInterface.transmitSpeed = 293
+loRaInterface.transmitRange = 250
+
+## Definição dos Grupos de Nós (Conforme sua nova renomeação)
+Scenario.nrofHostGroups = 3
+
+# Grupo 1: Sensores Móveis (Jaguars)
+Group1.groupID = J
+Group1.nrofHosts = 8
+Group1.movementModel = StationaryMovement
+Group1.nodeLocation = 1,1
+Group1.interface1 = loRaInterface
+
+# Grupo 2: Sensores Fixos (Centroides BIRCH/K-Means/SOM)
+Group2.groupID = C
+Group2.nrofHosts = 32
+Group2.movementModel = StationaryMovement
+Group2.nodeLocation = 5000,5000
+Group2.interface1 = loRaInterface
+
+# Grupo 3: Estação Base (Gateway/Uakari)
+Group3.groupID = U
+Group3.nrofHosts = 1
+Group3.movementModel = StationaryMovement
+Group3.nodeLocation = 9000,9000
+Group3.interface1 = loRaInterface
+
+## Eventos Externos (Contatos e Mensagens)
+Events.nrof = 2
+
+# Evento 1: Seu arquivo de contatos atualizado
+Events1.type = ExternalEventsQueue
+# Substitua pelo nome do arquivo que você estiver testando no momento
+Events1.filePath = data/jaguar_mamiraua_contacts_32_centroids_birch_rawdata.txt
+
+# Evento 2: Geração de Mensagens (Criação a cada 5 min)
+Events2.type = MessageEventGenerator
+Events2.interval = 300
+# Tamanhos de pacote para testar: 64, 128 ou 256 Bytes
+Events2.size = 64
+# Origem: Todos os nós (0 a 39) podem gerar dados ambientais
+Events2.hosts = 0, 39
+Events2.prefix = M
+# Destino: Sempre o Gateway (Nó 40)
+Events2.toHosts = 40
+
+## Configuração de Roteamento (Principais do seu projeto)
+# Opções: MaxPropRouter, ProphetRouter ou SprayAndWaitRouter
+Group.router = MaxPropRouter 
+# Group.bufferSize = 5M
+# Buffer size baseado em Ayele
+Group.bufferSize = 24k
+Group.msgTtl = 43200 
+
+## Relatórios de Avaliação
 Report.nrofReports = 2
-Report.warmup = 0
-Report.reportDir = reports/
-Report.report1 = MessageStatsReport
-Report.report2 = ContactTimesReport
+Report.reportDir = reports/jaguar_mamiraua_contacts_32_centroids_birch_rawdata
+Report.report1 = MessageReport
+Report.report2 = MessageStatsReport
 
-## Router settings
-ProphetRouter.secondsInTimeUnit = 30
-SprayAndWaitRouter.nrofCopies = 6
-SprayAndWaitRouter.binaryMode = true
 
-## Optimization settings
-Optimization.cellSizeMult = 5
-Optimization.randomizeUpdateOrder = true
-
-## GUI settings
-GUI.UnderlayImage.fileName = data/helsinki_underlay.png
-GUI.UnderlayImage.offset = 64, 20
-GUI.UnderlayImage.scale = 4.75
-GUI.UnderlayImage.rotate = -0.015
-GUI.EventLogPanel.nrofEvents = 100
-#GUI.EventLogPanel.REfilter = .*p[1-9]<->p[1-9]$
+# 18 caracterizações de cenários
+# 3 - tam payload; 3 - protocolos de roteamento; 2 - cenários (com e sem centroids)
