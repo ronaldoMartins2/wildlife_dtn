@@ -12,15 +12,15 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 
 # Common Utils
 from Common.utils import (
-    read_field_from_json,
+    # read_field_from_json,
     get_list_animals,
     merge_csvs,
     create_combinations,
     results_folder,
     merge_all_interpolations_nbeat,
-    merge_all_interpolations_nhits,
+    # merge_all_interpolations_nhits,
     merge_all_interpolations_pidl,
-    remove_nan_data, 
+    # remove_nan_data, 
     merge_maps,
     merge_csv,
     interpolations_methods,
@@ -62,10 +62,16 @@ from Clusterization.plot_dispersion import run as run_dispersion_plot
 from Clusterization.plot_dispersion_geral import run_all_dispersion as run_all_dispersion
 
 # DTN (Mobility / Contacts)
-from DTN.mobility_contacts import run as run_contacts
+# from DTN.mobility_contacts import run as run_contacts
 from DTN.cluster_contacts_fixed_points import run as run_cluster_contacts
 from DTN.find_contacts_between_nodes import run as run_find_contacts_between_nodes
 from DTN.add_down_event import run as run_add_down_event
+from DTN.export_final_contacts import run as run_export_final_trace
+from DTN.find_contacs_animal_to_centroids import run as run_contacts_animal_centroids
+from DTN.add_uakari_lodge_contact import run as run_contacts_animal_uakari
+from DTN.export_all_final_contacts import run as run_export_all_final_trace
+from DTN.setup_database import recreate_table as run_recreate_table
+import DTN.generate_all_distances_data_n_plots as run_generate_distances_n_data_n_plots
 
 
 # ============================================================================
@@ -158,7 +164,7 @@ def main():
             run_birch_all(map_path, file_rawdata, f'{animal_id}_pidl')
             run_som_all(map_path, file_rawdata, f'{animal_id}_pidl')
     
-    sys.exit(0)
+    # sys.exit(0)
 
     print("\n--- Clustering Part A: Interpolated Data Only ---")
     
@@ -220,7 +226,7 @@ def main():
         run_som_all(file_merged, file_rawdata, 'raw_data')
         
     print("=== PIPELINE FINISHED SUCCESSFULLY ===")
-    sys.exit(0)
+    # sys.exit(0)
 
     for current_animal in list_animals:
         run_plot_kmeans_som_birch_mean_shift(current_animal)
@@ -242,17 +248,53 @@ def main():
     #sys.exit()
 
     ############## #DTN Contacts ##################################
-    #criar os conjunto dois a dois sem repetição
+        #criar os conjunto dois a dois sem repetição
 
-    #Combinação sem repetições
-    pairs = create_combinations(list_animals)
+        #Combinação sem repetições
+        pairs = create_combinations(list_animals)
 
-    for pair in pairs:
-        run_contacts(pair[0], pair[1], file_rawdata)
+        # Chamar todos os scripts de criação de dados de distancias e plots
+        import subprocess
+        subprocess.run([r"venv\Scripts\python.exe", r"scripts\DTN\generate_all_distances_data_n_plots.py"])
 
-    for pair in pairs:
-        run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
-        run_add_down_event(f'{pair[0]}_{pair[1]}', file_rawdata)
+        # Limpar o database para gerar novamente os contatos
+        run_recreate_table()
+
+        for pair in pairs:
+            run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
+            run_add_down_event(f'{pair[0]}_{pair[1]}', file_rawdata)
+
+        # run_find_contacts_between_nodes(93, 97, file_rawdata)
+        # run_add_down_event('contact_93_97', file_rawdata)
+
+        # Fora do loop dos pares de animais
+        print("Gerando arquivo final consolidado...")
+        run_export_final_trace(file_rawdata)
+
+        # No app_wildlife.py, após processar os mapas individuais
+        list_animals = ['93', '94', '95', '96', '97', '98', '99', '100']
+
+        # Criar contatos entre onças e centroids
+        for animal_id in list_animals:
+            # Agora passamos o ID numérico (ex: '93') e não o nome do arquivo bruto
+            run_contacts_animal_centroids(animal_id, file_rawdata)
+
+        # Criar contatos entre onças e o Uakari Lodge
+        for animal_id in list_animals:
+            run_contacts_animal_uakari(animal_id, file_rawdata)
+
+        raw_name = "jaguar_mamiraua"
+            
+        # Listas para o loop de experimentos
+        centroids_list = [8, 16, 32]
+        algorithms_list = ["kmeans", "birch", "som"] # Seus 3 algoritmos
+        interpolations_list = ["rawdata"] # Neste primeiro momento apenas o rawdata
+
+        # Gerar arquivos para cada combinação
+        for n in centroids_list:
+            for alg in algorithms_list:
+                for interp in interpolations_list:
+                    run_export_all_final_trace(raw_name, n_centroids=n, algorithm=alg, interpolation=interp)
    
 
 if __name__ == "__main__":
@@ -330,7 +372,7 @@ pairs = create_combinations(list_animals)
 
 # Chamar todos os scripts de criação de dados de distancias e plots
 import subprocess
-subprocess.run([r"venv\Scripts\python.exe", r"scripts\DTN\generate_all_distances_data_n_plots.py"])
+subprocess.run([r"venv\\Scripts\\python.exe", r"scripts\\DTN\\generate_all_distances_data_n_plots.py"])
 
 # Limpar o database para gerar novamente os contatos
 run_recreate_table()

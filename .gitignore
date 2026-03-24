@@ -42,3 +42,22 @@ scripts/Interpolation/models/
 
 # Metadados do Windows
 *:Zone.Identifier
+
+# Compiled files
+*.class
+
+# Simulation report files
+the_one/reports/
+the_one/data/
+
+# Javadocs
+the_one/*.html
+the_one/doc/stylesheet.css
+the_one/doc/resources/*.gif
+the_one/doc/package-list
+
+# Eclipse IDE files
+the_one/.classpath
+the_one/.project
+the_one/target/
+the_one/.settings/org.eclipse.*
