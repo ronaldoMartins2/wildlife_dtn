@@ -6,6 +6,7 @@ import json
 from minisom import MiniSom  # Import MiniSom for SOM
 import os
 from sklearn.metrics.cluster import contingency_matrix
+from sklearn.metrics import silhouette_score, davies_bouldin_score
 from Common.utils import (
     create_clusterization_results,
     results_folder,
@@ -225,13 +226,24 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     erro_quantizacao = som.quantization_error(coords)
     erro_topologico = som.topographic_error(coords)
 
+    # Novas métricas: Silhouette Score e Davies-Bouldin Index
+    unique_labels = np.unique(labels)
+    if len(unique_labels) > 1:
+        silhouette = silhouette_score(coords, labels)
+        dbi = davies_bouldin_score(coords, labels)
+    else:
+        silhouette = None
+        dbi = None
+
     metrics = {
         "Purity": metrics_antigas['Purity'],
         "Entropy": metrics_antigas['Entropy'],
         "F-Measure": metrics_antigas['F-Measure'],
         "Partition Coefficient (PC)": metrics_antigas['PC'],
         "Quantization Error": erro_quantizacao,
-        "Topographic Error": erro_topologico
+        "Topographic Error": erro_topologico,
+        "Silhouette Score": silhouette,
+        "Davies-Bouldin Index": dbi
     }
 
     print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
@@ -241,6 +253,12 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
     print(f"Erro de Quantização: {erro_quantizacao:.4f}")
     print(f"Erro Topológico: {erro_topologico:.4f}")
+    if silhouette is not None:
+        print(f"Silhouette Score: {silhouette:.4f}")
+        print(f"Davies-Bouldin Index: {dbi:.4f}")
+    else:
+        print("Silhouette Score: N/A (menos de 2 clusters)")
+        print("Davies-Bouldin Index: N/A (menos de 2 clusters)")
     
     metrics['Algorithm'] = 'SOM'
     metrics_file = os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv')
@@ -399,13 +417,24 @@ def run(current_animal, file_rawdata_name):
     erro_quantizacao = som.quantization_error(coords)
     erro_topologico = som.topographic_error(coords)
 
-    metrias = {
+    # Novas métricas: Silhouette Score e Davies-Bouldin Index
+    unique_labels_slice = np.unique(df_map_slice['id_centroid'])
+    if len(unique_labels_slice) > 1:
+        silhouette_slice = silhouette_score(coords, df_map_slice['id_centroid'])
+        dbi_slice = davies_bouldin_score(coords, df_map_slice['id_centroid'])
+    else:
+        silhouette_slice = None
+        dbi_slice = None
+
+    metrics = {
         "Purity": metrics_antigas['Purity'],
         "Entropy": metrics_antigas['Entropy'],
         "F-Measure": metrics_antigas['F-Measure'],
         "Partition Coefficient (PC)": metrics_antigas['PC'],
         "Quantization Error": erro_quantizacao,
-        "Topographic Error": erro_topologico
+        "Topographic Error": erro_topologico,
+        "Silhouette Score": silhouette_slice,
+        "Davies-Bouldin Index": dbi_slice
     }
 
     print("\n--- Resultados de Qualidade da Clusterização ---")
@@ -415,11 +444,17 @@ def run(current_animal, file_rawdata_name):
     print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
     print(f"Erro de Quantização: {erro_quantizacao:.4f}")
     print(f"Erro Topológico: {erro_topologico:.4f}")
+    if silhouette_slice is not None:
+        print(f"Silhouette Score: {silhouette_slice:.4f}")
+        print(f"Davies-Bouldin Index: {dbi_slice:.4f}")
+    else:
+        print("Silhouette Score: N/A (menos de 2 clusters)")
+        print("Davies-Bouldin Index: N/A (menos de 2 clusters)")
     
     # Opcional: Salvar em arquivo
     results_path = os.path.join(cluster_output_dir, f'metrics_{current_animal}.txt')
     with open(results_path, "w") as f:
-        for k, v in metrias.items():
+        for k, v in metrics.items():
             f.write(f"{k}: {v}\n")
 
 def run_mock():
