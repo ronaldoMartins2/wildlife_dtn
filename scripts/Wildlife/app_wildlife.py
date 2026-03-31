@@ -71,7 +71,7 @@ from DTN.find_contacs_animal_to_centroids import run as run_contacts_animal_cent
 from DTN.add_uakari_lodge_contact import run as run_contacts_animal_uakari
 from DTN.export_all_final_contacts import run as run_export_all_final_trace
 from DTN.setup_database import recreate_table as run_recreate_table
-import DTN.generate_all_distances_data_n_plots as run_generate_distances_n_data_n_plots
+from DTN.generate_all_distances_data_n_plots import execute_distances_scripts
 
 
 # ============================================================================
@@ -254,8 +254,9 @@ def main():
         pairs = create_combinations(list_animals)
 
         # Chamar todos os scripts de criação de dados de distancias e plots
-        import subprocess
-        subprocess.run([r"venv\Scripts\python.exe", r"scripts\DTN\generate_all_distances_data_n_plots.py"])
+        # import subprocess
+        # subprocess.run([r"venv\Scripts\python.exe", r"scripts\DTN\generate_all_distances_data_n_plots.py"])^
+        execute_distances_scripts(dataset="jaguar_mamiraua")
 
         # Limpar o database para gerar novamente os contatos
         run_recreate_table()
@@ -289,6 +290,7 @@ def main():
         centroids_list = [8, 16, 32]
         algorithms_list = ["kmeans", "birch", "som"] # Seus 3 algoritmos
         interpolations_list = ["rawdata"] # Neste primeiro momento apenas o rawdata
+        # interpolations_list = ["raw_data", "pidl_merged", "nbeats_merged"]
 
         # Gerar arquivos para cada combinação
         for n in centroids_list:
