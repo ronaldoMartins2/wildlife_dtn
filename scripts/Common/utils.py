@@ -366,7 +366,11 @@ def merge_all_interpolations_nbeat(file_rawdata):
         print(f"Diretório de interpolação não encontrado: {interpolation_dir}")
         return
 
-    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nbeats.csv")]
+    excluded_animals = {"95", "100"}
+    #excluded_animals = {"93", "94", "96", "97", "98", "99",}
+    files = [f for f in os.listdir(interpolation_dir)
+             if f.endswith("_interpolation_nbeats.csv")
+             and os.path.basename(f).split("_")[1] not in excluded_animals]
 
     if not files:
         print("Nenhum arquivo nbeats encontrado para merge.")
@@ -440,7 +444,10 @@ def merge_all_interpolations_pidl(file_rawdata):
         print(f"Diretório de interpolação não encontrado: {interpolation_dir}")
         return
 
-    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_pidl.csv")]
+    excluded_animals = {"95", "100"}
+    files = [f for f in os.listdir(interpolation_dir)
+             if f.endswith("_interpolation_pidl.csv")
+             and os.path.basename(f).split("_")[1] not in excluded_animals]
 
     if not files:
         print("Nenhum arquivo pidl encontrado para merge.")

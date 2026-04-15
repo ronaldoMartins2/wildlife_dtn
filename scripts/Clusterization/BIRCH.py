@@ -8,7 +8,7 @@ import json
 import sys
 
 from sklearn.metrics.cluster import contingency_matrix
-from sklearn.metrics import silhouette_score, davies_bouldin_score
+from sklearn.metrics import silhouette_score, davies_bouldin_score, pairwise_distances_argmin_min
 
 from Common.utils import (
     create_clusterization_results,
@@ -72,6 +72,11 @@ def calculate_quality_metrics(y_true, y_pred):
         "F-Measure": f_measured,
         "PC": avg_pc
     }
+
+def calculate_quantization_error(points, centers):
+    _, distances = pairwise_distances_argmin_min(points, centers)
+    return float(np.mean(distances)) if len(distances) > 0 else 0.0
+
 
 def extract_folder_name(file_rawdata):
     """Extrai o nome da pasta do file_rawdata_name"""
@@ -138,6 +143,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
         centroid = cluster_points.mean(axis=0)
         centroids_final.append(centroid)
     centroids_final = np.array(centroids_final)
+    quantization_error = calculate_quantization_error(coords_original, centroids_final)
  
     # Salva apenas os centroides finais
     output_centroids_csv = os.path.join(cluster_output_dir, f'centroids_birch_{output_prefix}.csv')
@@ -177,7 +183,8 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
         "F-Measure": metrics_antigas['F-Measure'],
         "Partition Coefficient (PC)": metrics_antigas['PC'],
         "Silhouette Score": silhouette,
-        "Davies-Bouldin Index": dbi
+        "Davies-Bouldin Index": dbi,
+        "Quantization Error": quantization_error
     }
 
     print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
@@ -187,6 +194,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
     print(f"Silhouette Score: {silhouette:.4f}")
     print(f"Davies-Bouldin Index: {dbi:.4f}")
+    print(f"Quantization Error: {quantization_error:.4f}")
     
     metrics['Algorithm'] = 'BIRCH'
     metrics_file = os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv')
@@ -302,6 +310,14 @@ def run(current_animal, file_rawdata_name):
     #INSERÇÃO DAS MÉTRICAS
     metrics_antigas = calculate_quality_metrics(df_map['id_animal'], df_map['id_centroid'])
 
+    coords_original = df[['Longitude', 'Latitude']].values
+    centroides_birch = []
+    for i in np.unique(df['Cluster']):
+        cluster_points = coords_original[df['Cluster'] == i]
+        centroides_birch.append(cluster_points.mean(axis=0))
+    centroides_birch = np.array(centroides_birch)
+    quantization_error = calculate_quantization_error(coords_original, centroides_birch)
+
     labels_birch = df['Cluster'].values
     if len(np.unique(labels_birch)) > 1:
         silhouette = silhouette_score(coordinates, labels_birch)
@@ -316,7 +332,8 @@ def run(current_animal, file_rawdata_name):
         "F-Measure": metrics_antigas['F-Measure'],
         "Partition Coefficient (PC)": metrics_antigas['PC'],
         "Silhouette Score": silhouette,
-        "Davies-Bouldin Index": dbi
+        "Davies-Bouldin Index": dbi,
+        "Quantization Error": quantization_error
     }
 
     print("\n--- Resultados de Qualidade da Clusterização ---")
@@ -326,6 +343,7 @@ def run(current_animal, file_rawdata_name):
     print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
     print(f"Silhouette Score: {silhouette:.4f}")
     print(f"Davies-Bouldin Index: {dbi:.4f}")
+    print(f"Quantization Error: {quantization_error:.4f}")
     
     # Opcional: Salvar em arquivo
     results_path = os.path.join(cluster_output_dir, f'metrics_{current_animal}.txt')

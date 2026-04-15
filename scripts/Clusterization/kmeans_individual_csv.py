@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 import json
 from sklearn.metrics.cluster import contingency_matrix
-from sklearn.metrics import silhouette_score, davies_bouldin_score
+from sklearn.metrics import silhouette_score, davies_bouldin_score, pairwise_distances_argmin_min
 from Common.utils import (
     create_clusterization_results,
     results_folder,
@@ -70,6 +70,11 @@ def calculate_quality_metrics(y_true, y_pred):
         "PC": avg_pc
     }
 
+def calculate_quantization_error(points, centers):
+    _, distances = pairwise_distances_argmin_min(points, centers)
+    return float(np.mean(distances)) if len(distances) > 0 else 0.0
+
+
 def extract_folder_name(file_rawdata):
     """Extrai o nome da pasta do file_rawdata_name"""
     file_name = file_rawdata.split('/')
@@ -113,6 +118,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix=None):
     kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=n_init)
     kmeans.fit(coords)
     centroids = kmeans.cluster_centers_
+    quantization_error = calculate_quantization_error(coords, centroids)
 
     # Salva centroides
     output_file_csv = os.path.join(cluster_output_dir, f'centroids_kmeans_{output_prefix}.csv')
@@ -151,7 +157,8 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix=None):
         "F-Measure": metrics_antigas['F-Measure'],
         "Partition Coefficient (PC)": metrics_antigas['PC'],
         "Silhouette Score": silhouette,
-        "Davies-Bouldin Index": dbi
+        "Davies-Bouldin Index": dbi,
+        "Quantization Error": quantization_error
     }
 
     print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
@@ -161,6 +168,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix=None):
     print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
     print(f"Silhouette Score: {silhouette:.4f}")
     print(f"Davies-Bouldin Index: {dbi:.4f}")
+    print(f"Quantization Error: {quantization_error:.4f}")
     
     metrics['Algorithm'] = 'KMeans'
     metrics_file = os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv')
@@ -255,6 +263,7 @@ def run(current_animal, file_rawdata_name):
     kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=n_init)
     kmeans.fit(coords)
     centroids = kmeans.cluster_centers_
+    quantization_error = calculate_quantization_error(coords, centroids)
 
     # --- SALVAMENTO DOS RESULTADOS ---
     # Salva os hiperparâmetros usados no arquivo de log
@@ -304,7 +313,8 @@ def run(current_animal, file_rawdata_name):
         "F-Measure": metrics_antigas['F-Measure'],
         "Partition Coefficient (PC)": metrics_antigas['PC'],
         "Silhouette Score": silhouette,
-        "Davies-Bouldin Index": dbi
+        "Davies-Bouldin Index": dbi,
+        "Quantization Error": quantization_error
     }
 
     print("\n--- Resultados de Qualidade da Clusterização ---")
@@ -314,6 +324,7 @@ def run(current_animal, file_rawdata_name):
     print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
     print(f"Silhouette Score: {silhouette:.4f}")
     print(f"Davies-Bouldin Index: {dbi:.4f}")
+    print(f"Quantization Error: {quantization_error:.4f}")
     
     # Opcional: Salvar em arquivo
     results_path = os.path.join(cluster_output_dir, f'metrics_{current_animal}.txt')
