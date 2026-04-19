@@ -3,6 +3,7 @@ import csv
 import os
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from Data_preparation.data_field import DataField
 from Data_preparation.raw_data_integration import get_id_from_json
 
@@ -315,6 +316,76 @@ def create_clusterization_results(folder_name):
     else:
         print(f"Folder '{folder_path}' already exists")
         return False
+
+
+def plot_cluster_quality_metrics(output_dir, output_prefix='quality_metrics_comparison'):
+    """
+    Create a grouped bar chart comparing Silhouette Score, Davies-Bouldin Index,
+    and Quantization Error across all metric CSV files in the output directory.
+    """
+    if not os.path.exists(output_dir):
+        print(f"Output directory {output_dir} does not exist.")
+        return
+
+    metrics_files = [f for f in os.listdir(output_dir)
+                     if f.startswith('Metricas_de_qualidade_') and f.endswith('.csv')]
+    if not metrics_files:
+        print(f"No quality metrics CSV files found in {output_dir} to plot.")
+        return
+
+    records = []
+    for metrics_file in sorted(metrics_files):
+        path = os.path.join(output_dir, metrics_file)
+        try:
+            df = pd.read_csv(path)
+        except Exception as exc:
+            print(f"Unable to read metrics file {path}: {exc}")
+            continue
+
+        if df.empty:
+            continue
+
+        file_algorithm = os.path.splitext(metrics_file)[0].replace('Metricas_de_qualidade_', '')
+        if 'Algorithm' in df.columns:
+            for _, row in df.iterrows():
+                algorithm = str(row['Algorithm']) if not pd.isna(row['Algorithm']) else file_algorithm
+                record = {'Algorithm': algorithm}
+                for metric_name in ['Silhouette Score', 'Davies-Bouldin Index', 'Quantization Error']:
+                    record[metric_name] = float(row[metric_name]) if metric_name in row and not pd.isna(row[metric_name]) else np.nan
+                records.append(record)
+        else:
+            row = df.iloc[-1]
+            algorithm = file_algorithm
+            record = {'Algorithm': algorithm}
+            for metric_name in ['Silhouette Score', 'Davies-Bouldin Index', 'Quantization Error']:
+                record[metric_name] = float(row[metric_name]) if metric_name in row and not pd.isna(row[metric_name]) else np.nan
+            records.append(record)
+
+    if not records:
+        print(f"No valid metric records found in files under {output_dir}.")
+        return
+
+    compare_df = pd.DataFrame(records).set_index('Algorithm')
+    compare_df = compare_df[['Silhouette Score', 'Davies-Bouldin Index', 'Quantization Error']]
+    compare_df = compare_df.groupby(compare_df.index).last()
+
+    if compare_df.empty:
+        print(f"No valid metric values found in metric records under {output_dir}.")
+        return
+
+    plt.figure(figsize=(10, 6))
+    compare_df.plot(kind='bar', rot=0)
+    plt.title('Comparação de Métricas de Qualidade de Clusterização')
+    plt.xlabel('Algoritmo')
+    plt.ylabel('Valor')
+    plt.grid(axis='y', linestyle='--', alpha=0.5)
+    plt.tight_layout()
+
+    output_file = os.path.join(output_dir, f'{output_prefix}.png')
+    plt.savefig(output_file)
+    plt.close()
+    print(f"Metrics comparison chart saved to {output_file}")
+
 
 def create_combinations(elements):
     """

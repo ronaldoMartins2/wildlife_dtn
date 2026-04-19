@@ -10,7 +10,8 @@ from sklearn.metrics import silhouette_score, davies_bouldin_score, pairwise_dis
 from Common.utils import (
     create_clusterization_results,
     results_folder,
-    read_field_from_json
+    read_field_from_json,
+    plot_cluster_quality_metrics
 )
 
 def calculate_quality_metrics(y_true, y_pred):
@@ -182,6 +183,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix=None):
         
     final_df.to_csv(metrics_file, index=False)
     print(f"Metrics saved to {metrics_file}")
+    plot_cluster_quality_metrics(cluster_output_dir, output_prefix=f'quality_metrics_comparison_{output_prefix}')
     
     # Opcional: Salvar em arquivo txt também
     results_path_txt = os.path.join(cluster_output_dir, f'metrics_{output_prefix}.txt')
@@ -326,6 +328,17 @@ def run(current_animal, file_rawdata_name):
     print(f"Davies-Bouldin Index: {dbi:.4f}")
     print(f"Quantization Error: {quantization_error:.4f}")
     
+    metrias['Algorithm'] = 'KMeans'
+    metrics_csv_path = os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{current_animal}.csv')
+    if os.path.exists(metrics_csv_path):
+        existing_df = pd.read_csv(metrics_csv_path)
+        final_df = pd.concat([existing_df, pd.DataFrame([metrias])], ignore_index=True)
+    else:
+        final_df = pd.DataFrame([metrias])
+    final_df.to_csv(metrics_csv_path, index=False)
+    print(f"Metrics saved to {metrics_csv_path}")
+    plot_cluster_quality_metrics(cluster_output_dir, output_prefix=f'quality_metrics_comparison_{current_animal}')
+
     # Opcional: Salvar em arquivo
     results_path = os.path.join(cluster_output_dir, f'metrics_{current_animal}.txt')
     with open(results_path, "w") as f:
