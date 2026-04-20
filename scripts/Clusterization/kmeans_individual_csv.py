@@ -10,8 +10,7 @@ from sklearn.metrics import silhouette_score, davies_bouldin_score, pairwise_dis
 from Common.utils import (
     create_clusterization_results,
     results_folder,
-    read_field_from_json,
-    plot_cluster_quality_metrics
+    read_field_from_json
 )
 
 def calculate_quality_metrics(y_true, y_pred):
@@ -74,6 +73,30 @@ def calculate_quality_metrics(y_true, y_pred):
 def calculate_quantization_error(points, centers):
     _, distances = pairwise_distances_argmin_min(points, centers)
     return float(np.mean(distances)) if len(distances) > 0 else 0.0
+
+
+def plot_quality_metrics_local(silhouette, dbi, quantization_error, output_dir, prefix, algorithm='kmeans'):
+    """Plot silhouette score, davies-bouldin index e quantization error"""
+    metrics = ['Silhouette Score', 'Davies-Bouldin Index', 'Quantization Error']
+    values = [silhouette, dbi, quantization_error]
+    
+    plt.figure(figsize=(10, 6))
+    bars = plt.bar(metrics, values, color=['#1f77b4', '#ff7f0e', '#2ca02c'], alpha=0.7)
+    
+    # Adiciona valores nas barras
+    for bar, value in zip(bars, values):
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2., height,
+                f'{value:.4f}', ha='center', va='bottom', fontsize=10)
+    
+    plt.title(f'Clustering Quality Metrics - {prefix.replace("_", " ").title()} - {algorithm.upper()}')
+    plt.ylabel('Score')
+    plt.grid(axis='y', alpha=0.3)
+    
+    output_path = os.path.join(output_dir, f'quality_metrics_{prefix}_{algorithm}.png')
+    plt.savefig(output_path, dpi=100, bbox_inches='tight')
+    plt.close()
+    print(f"Quality metrics plot saved to {output_path}")
 
 
 def extract_folder_name(file_rawdata):
@@ -183,7 +206,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix=None):
         
     final_df.to_csv(metrics_file, index=False)
     print(f"Metrics saved to {metrics_file}")
-    plot_cluster_quality_metrics(cluster_output_dir, output_prefix=f'quality_metrics_comparison_{output_prefix}')
+    plot_quality_metrics_local(silhouette, dbi, quantization_error, cluster_output_dir, output_prefix, 'kmeans')
     
     # Opcional: Salvar em arquivo txt também
     results_path_txt = os.path.join(cluster_output_dir, f'metrics_{output_prefix}.txt')
@@ -337,7 +360,7 @@ def run(current_animal, file_rawdata_name):
         final_df = pd.DataFrame([metrias])
     final_df.to_csv(metrics_csv_path, index=False)
     print(f"Metrics saved to {metrics_csv_path}")
-    plot_cluster_quality_metrics(cluster_output_dir, output_prefix=f'quality_metrics_comparison_{current_animal}')
+    plot_quality_metrics_local(silhouette, dbi, quantization_error, cluster_output_dir, current_animal, 'kmeans')
 
     # Opcional: Salvar em arquivo
     results_path = os.path.join(cluster_output_dir, f'metrics_{current_animal}.txt')
