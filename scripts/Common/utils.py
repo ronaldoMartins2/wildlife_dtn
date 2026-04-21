@@ -366,7 +366,7 @@ def merge_all_interpolations_nbeat(file_rawdata):
         print(f"Diretório de interpolação não encontrado: {interpolation_dir}")
         return
 
-    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nbeats.csv")]
+    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nbeats_merged.csv")]
 
     if not files:
         print("Nenhum arquivo nbeats encontrado para merge.")
@@ -403,7 +403,7 @@ def merge_all_interpolations_nhits(file_rawdata):
         print(f"Diretório de interpolação não encontrado: {interpolation_dir}")
         return
 
-    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nhits.csv")]
+    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_nhits_merged.csv")]
 
     if not files:
         print("Nenhum arquivo nhits encontrado para merge.")
@@ -440,7 +440,7 @@ def merge_all_interpolations_pidl(file_rawdata):
         print(f"Diretório de interpolação não encontrado: {interpolation_dir}")
         return
 
-    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_pidl.csv")]
+    files = [f for f in os.listdir(interpolation_dir) if f.endswith("_interpolation_pidl_merged.csv")]
 
     if not files:
         print("Nenhum arquivo pidl encontrado para merge.")

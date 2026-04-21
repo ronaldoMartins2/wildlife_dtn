@@ -76,13 +76,14 @@ def extract_folder_name(file_rawdata):
     file_name = file_rawdata.split('/')
     file_name = file_name[-1].split('.')[0]
     return file_name
-def run_all(file_rawdata_name, file_rawdata, output_prefix=None):
+
+def run_all(file_rawdata_name, file_rawdata, output_prefix=None, n_clusters=None):
     
     # Define o caminho para SALVAR os resultados usando o nome extraído de file_rawdata (dataset original)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     folder_name = extract_folder_name(file_rawdata)
     results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
-    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
+    cluster_output_dir = os.path.join(results_dir, f'Clusterization_{n_clusters}')
     create_clusterization_results(cluster_output_dir)
 
     if not os.path.exists(file_rawdata_name):
@@ -103,11 +104,12 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix=None):
         print("No valid coordinates for clustering.")
         return
 
+    """Aqui os valores mudam conforme é mudado em hiperparametros"""
     # Hiperparâmetros
     script_dir = os.path.dirname(os.path.abspath(__file__))
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
-    n_clusters = read_field_from_json(hyperparam_path, "n_clusters_kmeans")
+    # n_clusters = read_field_from_json(hyperparam_path, "n_clusters_kmeans")
     random_state = read_field_from_json(hyperparam_path, "random_state_kmeans")
     n_init = read_field_from_json(hyperparam_path, "n_init_kmeans")
 
