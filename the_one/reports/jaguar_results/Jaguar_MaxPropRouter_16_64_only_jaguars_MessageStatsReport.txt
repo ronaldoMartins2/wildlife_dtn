@@ -1,5 +1,5 @@
 Message stats for scenario Jaguar_MaxPropRouter_16_64_only_jaguars
-sim_time: 58752000.0000
+sim_time: 241940.0000
 created: 0
 started: 0
 relayed: 0

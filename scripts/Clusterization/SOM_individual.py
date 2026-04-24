@@ -100,6 +100,66 @@ def plot_quality_metrics_local(silhouette, dbi, quantization_error, output_dir, 
     plt.close()
     print(f"Quality metrics plot saved to {output_path}")
 
+
+def plot_quality_metrics_comparison(metrics_csv_path, output_dir=None, prefix=None, algorithms=None):
+    """Plot a grouped comparison of the three quality metrics for multiple algorithms."""
+    if output_dir is None:
+        output_dir = os.path.dirname(metrics_csv_path)
+    if prefix is None:
+        prefix = os.path.splitext(os.path.basename(metrics_csv_path))[0].replace('Metricas_de_qualidade_', '')
+
+    if not os.path.exists(metrics_csv_path):
+        print(f"Error: metrics file not found at {metrics_csv_path}")
+        return
+
+    try:
+        df = pd.read_csv(metrics_csv_path)
+    except Exception as e:
+        print(f"Error reading metrics file {metrics_csv_path}: {e}")
+        return
+
+    if df.empty:
+        print(f"Error: metrics file {metrics_csv_path} is empty.")
+        return
+
+    supported_algorithms = ['KMeans', 'SOM', 'BIRCH']
+    if algorithms is None:
+        algorithms = supported_algorithms
+
+    df = df[df['Algorithm'].isin(algorithms)].copy()
+    if df.empty:
+        print(f"Error: no metrics found for algorithms {algorithms} in {metrics_csv_path}.")
+        return
+
+    # Keep the last row for each algorithm in case the file has multiple entries
+    df = df.groupby('Algorithm', sort=False).last().reindex(algorithms).dropna(axis=0, how='all')
+
+    metrics = ['Silhouette Score', 'Davies-Bouldin Index', 'Quantization Error']
+    x = np.arange(len(metrics))
+    bar_width = 0.2
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+
+    plt.figure(figsize=(12, 6))
+    for idx, algorithm in enumerate(df.index):
+        row = df.loc[algorithm]
+        values = [float(row.get(metric, 0) or 0) for metric in metrics]
+        positions = x + idx * bar_width
+        bars = plt.bar(positions, values, width=bar_width, label=algorithm, color=colors[idx % len(colors)], alpha=0.8)
+        for bar, value in zip(bars, values):
+            plt.text(bar.get_x() + bar.get_width() / 2., value,
+                     f'{value:.4f}', ha='center', va='bottom', fontsize=9, rotation=90)
+
+    plt.xticks(x + bar_width * (len(df.index) - 1) / 2, metrics)
+    plt.ylabel('Score')
+    plt.title(f'Comparativo de Métricas de Qualidade - {prefix.replace("_", " ").title()}')
+    plt.legend()
+    plt.grid(axis='y', alpha=0.3)
+
+    output_path = os.path.join(output_dir, f'quality_metrics_comparison_{prefix}.png')
+    plt.savefig(output_path, dpi=100, bbox_inches='tight')
+    plt.close()
+    print(f"Comparative metrics plot saved to {output_path}")
+
 # pip install minisom
 
 # python3 -m venv venv
@@ -296,7 +356,10 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
         
     final_df.to_csv(metrics_file, index=False)
     print(f"Metrics saved to {metrics_file}")
-    plot_quality_metrics_local(silhouette, dbi, erro_quantizacao, cluster_output_dir, output_prefix, 'som')
+
+    plot_quality_metrics_comparison(metrics_csv_path=os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv'), output_dir=cluster_output_dir, prefix=output_prefix, algorithms=['KMeans', 'SOM', 'BIRCH'])
+
+    #plot_quality_metrics_local(silhouette, dbi, erro_quantizacao, cluster_output_dir, output_prefix, 'som')
     
     # Opcional: Salvar em arquivo txt também
     results_path_txt = os.path.join(cluster_output_dir, f'metrics_{output_prefix}.txt')

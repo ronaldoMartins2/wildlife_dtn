@@ -206,7 +206,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix=None):
         
     final_df.to_csv(metrics_file, index=False)
     print(f"Metrics saved to {metrics_file}")
-    plot_quality_metrics_local(silhouette, dbi, quantization_error, cluster_output_dir, output_prefix, 'kmeans')
+    #plot_quality_metrics_local(silhouette, dbi, quantization_error, cluster_output_dir, output_prefix, 'kmeans')
     
     # Opcional: Salvar em arquivo txt também
     results_path_txt = os.path.join(cluster_output_dir, f'metrics_{output_prefix}.txt')

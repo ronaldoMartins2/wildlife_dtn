@@ -53,7 +53,8 @@ Events.nrof = 2
 # Evento 1: Seu arquivo de contatos atualizado
 Events1.type = ExternalEventsQueue
 # Substitua pelo nome do arquivo que você estiver testando no momento
-Events1.filePath = simulacoes/jaguar_mamiraua_contacts_rawdata.txt
+#Events1.filePath = simulacoes/jaguar_mamiraua_contacts_rawdata.txt
+Events1.filePath = simulacoes/jaguar_mamiraua_contacts_rawdata_2.wkt
 
 # Evento 2: Geração de Dados das Onças para o Gateway
 Events2.type = MessageEventGenerator
