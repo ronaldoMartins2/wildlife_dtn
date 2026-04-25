@@ -106,9 +106,9 @@ def process_dataset(filepath, dataset_type, output_path):
 if __name__ == "__main__":
     import argparse
     
-    parser = argparse.ArgumentParser(description="Preprocess data for PIDL")
+    parser = argparse.ArgumentParser(description="Preprocess data for BiLSTM")
     parser.add_argument("--raw_dir", type=str, default="rawdata", help="Directory containing raw CSVs")
-    parser.add_argument("--output_dir", type=str, default="scripts/Results/PIDL_Preprocessed", help="Output directory")
+    parser.add_argument("--output_dir", type=str, default="scripts/Results/BiLSTM_Preprocessed", help="Output directory")
     
     args = parser.parse_args()
     

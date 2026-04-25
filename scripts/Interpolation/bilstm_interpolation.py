@@ -13,7 +13,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from Common.utils import results_folder, get_list_animals, get_id_from_json
 from Data_preparation.data_field import DataField
 
-# --- Model Definition (Must match train_pidl.py) ---
+# --- Model Definition (Must match train_bilstm.py) ---
 class BFBiLSTM(nn.Module):
     def __init__(self, input_dim=4, hidden_dim=64):
         super().__init__()
@@ -120,7 +120,7 @@ def project_back(df, transformer):
     df['Longitude'], df['Latitude'] = reverse_trans.transform(df['pos_x'].values, df['pos_y'].values)
     return df
 
-def run_single_pidl(current_animal, file_rawdata, model, device, epsg):
+def run_single_bilstm(current_animal, file_rawdata, model, device, epsg):
     results_dir = results_folder(file_rawdata)
     input_path = os.path.join(results_dir, f'map_{current_animal}.csv')
     
@@ -160,7 +160,7 @@ def run_single_pidl(current_animal, file_rawdata, model, device, epsg):
     
     df_imputed['ID'] = current_animal
     
-    out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_pidl.csv')
+    out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_bilstm.csv')
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     
     # Format
@@ -179,11 +179,11 @@ def run_single_pidl(current_animal, file_rawdata, model, device, epsg):
 
     save_cols = ['ID', 'timestamp', 'Longitude', 'Latitude']
     df_imputed[save_cols].to_csv(out_path, index=False, header=False)
-    print(f"Saved PIDL interpolation for {current_animal}")
+    print(f"Saved BiLSTM interpolation for {current_animal}")
 
 
-def run_pipeline_all_pidl(file_rawdata, file_rawdata_columns):
-    print("Starting PIDL Interpolation Pipeline...")
+def run_pipeline_all_bilstm(file_rawdata, file_rawdata_columns):
+    print("Starting BiLSTM Interpolation Pipeline...")
     
     # 1. Detect Model
     if "jaguar" in file_rawdata.lower():
@@ -197,7 +197,7 @@ def run_pipeline_all_pidl(file_rawdata, file_rawdata_columns):
         model_name = "tangara_model.pth"
         epsg = "EPSG:32723"
 
-    model_path = os.path.join(os.path.dirname(__file__), '../Results/PIDL_Output', model_name)
+    model_path = os.path.join(os.path.dirname(__file__), '../Results/BiLSTM_Output', model_name)
     
     if not os.path.exists(model_path):
         print(f"Model not found at {model_path}. Please train first.")
@@ -216,10 +216,10 @@ def run_pipeline_all_pidl(file_rawdata, file_rawdata_columns):
 
     # 4. Process Each
     for animal in list_animals:
-        run_single_pidl(animal, file_rawdata, model, device, epsg)
+        run_single_bilstm(animal, file_rawdata, model, device, epsg)
 
-    print("PIDL Pipeline Complete.")
+    print("BiLSTM Pipeline Complete.")
 
 if __name__ == "__main__":
     if len(sys.argv) >= 3:
-        run_pipeline_all_pidl(sys.argv[1], sys.argv[2])
+        run_pipeline_all_bilstm(sys.argv[1], sys.argv[2])

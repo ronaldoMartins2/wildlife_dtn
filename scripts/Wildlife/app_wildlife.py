@@ -4,7 +4,7 @@ import os
 import time
 
 # Environment preparation
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # =================================================================================================
 # IMPORTS
@@ -19,13 +19,13 @@ from Common.utils import (
     results_folder,
     merge_all_interpolations_nbeat,
     merge_all_interpolations_nhits,
-    merge_all_interpolations_pidl,
+    merge_all_interpolations_bilstm,
     remove_nan_data, 
     merge_maps,
     merge_csv,
     interpolations_methods,
     return_maps,
-    return_pidl_list
+    return_bilstm_list
 )
 
 # Data Preparation
@@ -37,7 +37,7 @@ from Interpolation.nbeat_trainer import train_nbeats_model_single
 from Interpolation.nbeat_interpolation import run as run_interpolation_nbeat
 from Interpolation.run_nbeats_all import run_pipeline_all as run_pipeline_all_nbeats
 from Interpolation.nhits_interpolation import run as run_interpolation_nhits
-from Interpolation.pidl_interpolation import run_pipeline_all_pidl
+from Interpolation.bilstm_interpolation import run_pipeline_all_bilstm
 from Interpolation.train_nbeats_global import train_nbeats_global
 from Interpolation.clean_interpolations import run_cleaning_pipeline
 
@@ -48,7 +48,7 @@ from Evaluation.average_by_individual import (
     get_len_animal,
     get_top_botom_date
 )
-from Interpolation.evaluate_pidl import run_evaluation_all_pidl
+from Interpolation.evaluate_bilstm import run_evaluation_all_bilstm
 from Evaluation.media_tempos_hist import run as run_media_tempos_hist
 from Evaluation.average_comparison import run as run_average_comparison
 
@@ -115,18 +115,18 @@ def main():
     #train_nbeats_global(file_rawdata, file_rawdata_columns)
     #run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=True, run_eval=True, run_predict=True)
    
-    # Run PER-DATASET PIDL Pipeline
-    #run_pipeline_all_pidl(file_rawdata, file_rawdata_columns)
-    #run_evaluation_all_pidl(file_rawdata, file_rawdata_columns)
+    # Run PER-DATASET BiLSTM Pipeline
+    #run_pipeline_all_bilstm(file_rawdata, file_rawdata_columns)
+    #run_evaluation_all_bilstm(file_rawdata, file_rawdata_columns)
 
     # CLEAN Interpolation Results
-    run_cleaning_pipeline(file_rawdata)
+    #run_cleaning_pipeline(file_rawdata)
 
     # Merge Interpolation Results per Animal
     for current_animal in list_animals:
         merge_csvs(current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns)
         #merge_csvs(current_animal, 'N_HITS', file_rawdata, file_rawdata_columns)
-        merge_csvs(current_animal, 'PIDL', file_rawdata, file_rawdata_columns)
+        merge_csvs(current_animal, 'BiLSTM', file_rawdata, file_rawdata_columns)
 
     # 4. DATA MERGING FOR CLUSTERING
     print("\n--- Preparing Data for Clustering ---")
@@ -134,15 +134,15 @@ def main():
     # Create merged map of raw data
     file_merged = merge_maps(file_rawdata, list_animals)
     file_interpolated_nbeats = merge_all_interpolations_nbeat(file_rawdata)
-    file_interpolated_pidl = merge_all_interpolations_pidl(file_rawdata)
+    file_interpolated_bilstm = merge_all_interpolations_bilstm(file_rawdata)
     file_merged_nbeats = None
-    file_merged_pidl = None
+    file_merged_bilstm = None
 
     if file_merged:
         print(f"Merged raw data file created: {file_merged}")
-        run_all_kmeans(file_merged, file_rawdata, 'raw_data')
-        run_birch_all(file_merged, file_rawdata, 'raw_data')
-        run_som_all(file_merged, file_rawdata, 'raw_data')
+        run_all_kmeans(file_merged, file_rawdata, 'Dado Bruto')
+        run_birch_all(file_merged, file_rawdata, 'Dado Bruto')
+        run_som_all(file_merged, file_rawdata, 'Dado Bruto')
 
     #sys.exit(0)
 
@@ -156,19 +156,22 @@ def main():
     #         run_birch_all(map_path, file_rawdata, animal_id)
     #         run_som_all(map_path, file_rawdata, animal_id)
     
-    # all_maps_pidl = return_pidl_list(file_rawdata, list_animals)
-    # if all_maps_pidl:
+    # all_maps_bilstm = return_bilstm_list(file_rawdata, list_animals)
+    # if all_maps_bilstm:
     #     print("\n--- Clusterizando todos os mapas Bi-LSTM detectados ---")
-    #     for map_name in all_maps_pidl:
+    #     for map_name in all_maps_bilstm:
     #         map_path = os.path.join(results_dir, "Interpolation", map_name)
-    #         animal_id = map_name.replace('map_pidl_','').replace('.csv','')
-    #         run_all_kmeans(map_path, file_rawdata, f'{animal_id}_pidl')
-    #         run_birch_all(map_path, file_rawdata, f'{animal_id}_pidl')
-    #         run_som_all(map_path, file_rawdata, f'{animal_id}_pidl')
+    #         animal_id = map_name.replace('map_bilstm_','').replace('.csv','')
+    #         run_all_kmeans(map_path, file_rawdata, f'{animal_id}_bilstm')
+    #         run_birch_all(map_path, file_rawdata, f'{animal_id}_bilstm')
+    #         run_som_all(map_path, file_rawdata, f'{animal_id}_bilstm')
 
     # print("\n--- Clustering Part A: Interpolated Data Only ---")
-    file_merged_pidl = merge_csv(file_merged, file_interpolated_pidl, file_rawdata, tangara, 'pidl')
-    file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
+    # Only merge if interpolation files exist
+    if file_interpolated_bilstm and file_merged:
+        file_merged_bilstm = merge_csv(file_merged, file_interpolated_bilstm, file_rawdata, tangara, 'bilstm')
+    if file_interpolated_nbeats and file_merged:
+        file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
 
     if file_merged_nbeats:
         print("Running Clustering on Merged N-BEATS Data...")
@@ -178,13 +181,13 @@ def main():
         run_birch_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
         run_som_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
 
-    if file_merged_pidl:
-        print("Running Clustering on Merged PIDL Data...")
+    if file_merged_bilstm:
+        print("Running Clustering on Merged BiLSTM Data...")
 
         """Cluster the merged points"""
-        run_all_kmeans(file_merged_pidl, file_rawdata, 'pidl_merged')
-        run_birch_all(file_merged_pidl, file_rawdata, 'pidl_merged')
-        run_som_all(file_merged_pidl, file_rawdata, 'pidl_merged')
+        run_all_kmeans(file_merged_bilstm, file_rawdata, 'bilstm_merged')
+        run_birch_all(file_merged_bilstm, file_rawdata, 'bilstm_merged')
+        run_som_all(file_merged_bilstm, file_rawdata, 'bilstm_merged')
 
     sys.exit(0)
 
@@ -199,25 +202,25 @@ def main():
 
     # 5. CLUSTERING: PART A - INTERPOLATED DATA ONLY
     
-    if file_interpolated_pidl:
-        print(f"Running Clustering on PIDL Interpolated Data: {file_interpolated_pidl}")
-        file_merged_pidl = merge_csv(file_merged, file_interpolated_pidl, file_rawdata, tangara, 'pidl')
+    if file_interpolated_bilstm:
+        print(f"Running Clustering on BiLSTM Interpolated Data: {file_interpolated_bilstm}")
+        file_merged_bilstm = merge_csv(file_merged, file_interpolated_bilstm, file_rawdata, tangara, 'bilstm')
         
         """Cluster ONLY the interpolated points"""
-        run_all_kmeans(file_interpolated_pidl, file_rawdata, 'pidl')
-        run_birch_all(file_interpolated_pidl, file_rawdata, 'pidl')
-        run_som_all(file_interpolated_pidl, file_rawdata, 'pidl')
+        run_all_kmeans(file_interpolated_bilstm, file_rawdata, 'bilstm')
+        run_birch_all(file_interpolated_bilstm, file_rawdata, 'bilstm')
+        run_som_all(file_interpolated_bilstm, file_rawdata, 'bilstm')
 
     # 6. CLUSTERING: PART B - MERGED DATA (RAW + INTERPOLATED)
     print("\n--- Clustering Part B: Merged Data (Raw + Interpolated) ---")
     
-    if file_merged_pidl:
-        print("Running Clustering on Merged PIDL Data...")
+    if file_merged_bilstm:
+        print("Running Clustering on Merged BiLSTM Data...")
 
         """Cluster the merged points"""
-        run_all_kmeans(file_merged_pidl, file_rawdata, 'pidl_merged')
-        run_birch_all(file_merged_pidl, file_rawdata, 'pidl_merged')
-        run_som_all(file_merged_pidl, file_rawdata, 'pidl_merged')
+        run_all_kmeans(file_merged_bilstm, file_rawdata, 'bilstm_merged')
+        run_birch_all(file_merged_bilstm, file_rawdata, 'bilstm_merged')
+        run_som_all(file_merged_bilstm, file_rawdata, 'bilstm_merged')
     
     if file_merged_nbeats:
         print("Running Clustering on Merged N-BEATS Data...")
@@ -288,8 +291,8 @@ if __name__ == "__main__":
 # python3 scripts/Wildlife/app_wildlife.py rawdata/jaguar_mamiraua.csv rawdata/jaguar_columns.json
 # python3 scripts/Wildlife/app_wildlife.py rawdata/tangara_mata_atlantica.csv rawdata/tangara_columns.json
 
-######## Rodando as metricas da Bi-LSTM PIDL #####
-python3 scripts/Interpolation/evaluate_pidl.py \
+######## Rodando as metricas da Bi-LSTM BiLSTM #####
+python3 scripts/Interpolation/evaluate_bilstm.py \
     rawdata/jaguar_mamiraua.csv \
     rawdata/jaguar_columns.json
 

@@ -332,8 +332,8 @@ def train(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, required=True, choices=['jaguar', 'tangara'])
-    parser.add_argument('--data_dir', type=str, default='scripts/Results/PIDL_Preprocessed')
-    parser.add_argument('--results_dir', type=str, default='scripts/Results/PIDL_Output')
+    parser.add_argument('--data_dir', type=str, default='scripts/Results/BiLSTM_Preprocessed')
+    parser.add_argument('--results_dir', type=str, default='scripts/Results/BiLSTM_Output')
     parser.add_argument('--w_kin', type=float, default=0.1)
     parser.add_argument('--w_bio', type=float, default=0.01)
     parser.add_argument('--epochs', type=int, default=20)

@@ -13,6 +13,22 @@ from Common.utils import (
     read_field_from_json
 )
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
+hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
+
+# Global variables for cluster numbers (loaded from hyperparameters.json)
+N_CLUSTERS_KMEANS = read_field_from_json(hyperparam_path, "n_clusters_kmeans")
+N_CLUSTERS_BIRCH = read_field_from_json(hyperparam_path, "BIRCH_NCLUSTERS")
+N_CLUSTERS_SOM = read_field_from_json(hyperparam_path, "som_x") * read_field_from_json(hyperparam_path, "som_y")
+
+# Dictionary for easy access in plots
+CLUSTER_CONFIG = {
+    'K-Means': N_CLUSTERS_KMEANS,
+    'SOM': N_CLUSTERS_SOM,
+    'BIRCH': N_CLUSTERS_BIRCH
+}
+
 def calculate_quality_metrics(y_true, y_pred):
     """
     y_true: IDs reais (ex: ID do animal)
@@ -77,7 +93,19 @@ def extract_folder_name(file_rawdata):
     return file_name
 
 
-def plot_quality_metrics_local(silhouette, dbi, quantization_error, output_dir, prefix, algorithm='som'):
+def normalize_title_text(text):
+    normalized = text.replace('_', ' ')
+    normalized = normalized.replace('BiLSTM', 'BiLSTM').replace('bilstm', 'BiLSTM').replace('bilstm', 'BiLSTM')
+    formatted_words = []
+    for token in normalized.split():
+        if token == 'BiLSTM':
+            formatted_words.append(token)
+        else:
+            formatted_words.append(token.capitalize())
+    return ' '.join(formatted_words).strip()
+
+
+def plot_quality_metrics_local(silhouette, dbi, quantization_error, output_dir, prefix, algorithm='som', n_clusters=None):
     """Plot silhouette score, davies-bouldin index e quantization error"""
     metrics = ['Silhouette Score', 'Davies-Bouldin Index', 'Quantization Error']
     values = [silhouette if silhouette is not None else 0, dbi if dbi is not None else 0, quantization_error]
@@ -85,13 +113,17 @@ def plot_quality_metrics_local(silhouette, dbi, quantization_error, output_dir, 
     plt.figure(figsize=(10, 6))
     bars = plt.bar(metrics, values, color=['#1f77b4', '#ff7f0e', '#2ca02c'], alpha=0.7)
     
-    # Adiciona valores nas barras
+    # Adiciona valores nas barras (rotacionado para não sobrepor título)
     for bar, value in zip(bars, values):
         height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2., height,
-                f'{value:.4f}', ha='center', va='bottom', fontsize=10)
+        plt.text(bar.get_x() + bar.get_width()/2., height + 0.01,
+                f'{value:.4f}', ha='center', va='bottom', fontsize=9, rotation=90)
     
-    plt.title(f'Clustering Quality Metrics - {prefix.replace("_", " ").title()} - {algorithm.upper()}')
+    display_prefix = normalize_title_text(prefix)
+    title = f'Clustering Quality Metrics - {display_prefix.title()} - {algorithm.upper()}'
+    if n_clusters is not None:
+        title += f' - Clusters: {n_clusters}'
+    plt.title(title)
     plt.ylabel('Score')
     plt.grid(axis='y', alpha=0.3)
     
@@ -101,7 +133,7 @@ def plot_quality_metrics_local(silhouette, dbi, quantization_error, output_dir, 
     print(f"Quality metrics plot saved to {output_path}")
 
 
-def plot_quality_metrics_comparison(metrics_csv_path, output_dir=None, prefix=None, algorithms=None):
+def plot_quality_metrics_comparison(metrics_csv_path, output_dir=None, prefix=None, algorithms=None, n_clusters=None):
     """Plot a grouped comparison of the three quality metrics for multiple algorithms."""
     if output_dir is None:
         output_dir = os.path.dirname(metrics_csv_path)
@@ -122,7 +154,7 @@ def plot_quality_metrics_comparison(metrics_csv_path, output_dir=None, prefix=No
         print(f"Error: metrics file {metrics_csv_path} is empty.")
         return
 
-    supported_algorithms = ['KMeans', 'SOM', 'BIRCH']
+    supported_algorithms = ['K-Means', 'SOM', 'BIRCH']
     if algorithms is None:
         algorithms = supported_algorithms
 
@@ -146,12 +178,17 @@ def plot_quality_metrics_comparison(metrics_csv_path, output_dir=None, prefix=No
         positions = x + idx * bar_width
         bars = plt.bar(positions, values, width=bar_width, label=algorithm, color=colors[idx % len(colors)], alpha=0.8)
         for bar, value in zip(bars, values):
-            plt.text(bar.get_x() + bar.get_width() / 2., value,
-                     f'{value:.4f}', ha='center', va='bottom', fontsize=9, rotation=90)
+            # Place text above the bar, horizontal (0 degrees) for better readability
+            plt.text(bar.get_x() + bar.get_width() / 2., bar.get_height() + 0.01,
+                     f'{value:.4f}', ha='center', va='bottom', fontsize=8)
 
     plt.xticks(x + bar_width * (len(df.index) - 1) / 2, metrics)
     plt.ylabel('Score')
-    plt.title(f'Comparativo de Métricas de Qualidade - {prefix.replace("_", " ").title()}')
+    display_prefix = normalize_title_text(prefix)
+    title = f'Comparativo de Métricas de Qualidade - {display_prefix.title()}'
+    if n_clusters is not None:
+        title += f' - Clusters: {n_clusters}'
+    plt.title(title)
     plt.legend()
     plt.grid(axis='y', alpha=0.3)
 
@@ -357,7 +394,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     final_df.to_csv(metrics_file, index=False)
     print(f"Metrics saved to {metrics_file}")
 
-    plot_quality_metrics_comparison(metrics_csv_path=os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv'), output_dir=cluster_output_dir, prefix=output_prefix, algorithms=['KMeans', 'SOM', 'BIRCH'])
+    plot_quality_metrics_comparison(metrics_csv_path=os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv'), output_dir=cluster_output_dir, prefix=output_prefix, algorithms=['KMeans', 'SOM', 'BIRCH'], n_clusters=N_CLUSTERS_SOM)
 
     #plot_quality_metrics_local(silhouette, dbi, erro_quantizacao, cluster_output_dir, output_prefix, 'som')
     
@@ -548,7 +585,7 @@ def run(current_animal, file_rawdata_name):
         final_df = pd.DataFrame([metrics])
     final_df.to_csv(metrics_csv_path, index=False)
     print(f"Metrics saved to {metrics_csv_path}")
-    plot_quality_metrics_local(silhouette_slice, dbi_slice, erro_quantizacao, cluster_output_dir, current_animal, 'som')
+    plot_quality_metrics_local(silhouette_slice, dbi_slice, erro_quantizacao, cluster_output_dir, current_animal, 'som', n_clusters=len(unique_labels_slice))
 
     # Opcional: Salvar em arquivo
     results_path = os.path.join(cluster_output_dir, f'metrics_{current_animal}.txt')

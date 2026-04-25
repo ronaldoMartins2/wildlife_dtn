@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from Data_preparation.data_field import DataField
 from Data_preparation.raw_data_integration import get_id_from_json
 
-interpolations_methods = ['N_BEATS', 'N_HITS', 'PIDL']
+interpolations_methods = ['N_BEATS', 'N_HITS', 'BiLSTM']
 
 #Modifiquei a ordem das funções somente. Coloquei as funções que nao dependem da variavel global sobre elas.
 
@@ -198,8 +198,8 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
         interp_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')
     elif method == 'N_HITS':
         interp_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits.csv')
-    elif method == 'PIDL':
-        interp_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_pidl.csv')
+    elif method == 'BiLSTM':
+        interp_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_bilstm.csv')
     else:
         print(f"Unknown method '{method}'.")
         return None
@@ -228,8 +228,8 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
 
     if method == 'N_BEATS':
         out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats_merged.csv')
-    elif method == 'PIDL':
-        out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_pidl_merged.csv')
+    elif method == 'BiLSTM':
+        out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_bilstm_merged.csv')
     else:
         out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nhits_merged.csv')
 
@@ -501,9 +501,9 @@ def merge_all_interpolations_nhits(file_rawdata):
         print(f"Erro ao realizar merge nhits: {e}")
         return
 
-def merge_all_interpolations_pidl(file_rawdata):
+def merge_all_interpolations_bilstm(file_rawdata):
     """
-    Junta todos os arquivos map_{animal}_interpolation_pidl.csv em um único arquivo.
+    Junta todos os arquivos map_{animal}_interpolation_bilstm.csv em um único arquivo.
     """
     results_dir = results_folder(file_rawdata)
     if not os.path.exists(results_dir):
@@ -517,11 +517,11 @@ def merge_all_interpolations_pidl(file_rawdata):
 
     excluded_animals = {"95", "100"}
     files = [f for f in os.listdir(interpolation_dir)
-             if f.endswith("_interpolation_pidl.csv")
+             if f.endswith("_interpolation_bilstm.csv")
              and os.path.basename(f).split("_")[1] not in excluded_animals]
 
     if not files:
-        print("Nenhum arquivo pidl encontrado para merge.")
+        print("Nenhum arquivo bilstm encontrado para merge.")
         return
     
     try:
@@ -532,13 +532,13 @@ def merge_all_interpolations_pidl(file_rawdata):
 
         df_merged = pd.concat(dfs, ignore_index=True)
         animal_name = os.path.basename(file_rawdata).split('.')[0]
-        output_path = os.path.join(interpolation_dir, f"map_{animal_name}_interpolation_pidl_all.csv")
+        output_path = os.path.join(interpolation_dir, f"map_{animal_name}_interpolation_bilstm_all.csv")
         df_merged.to_csv(output_path, index=False, header=False)
         
         print(f"Arquivo gerado: {output_path}")
         return output_path
     except Exception as e:
-        print(f"Erro ao realizar merge pidl: {e}")
+        print(f"Erro ao realizar merge bilstm: {e}")
         return
 
 def merge_maps(file_rawdata, list_animals):
@@ -626,23 +626,23 @@ def return_maps(file_rawdata, list_animals):
 
     return all_files
 
-def return_pidl_list(file_rawdata, list_animals):
+def return_bilstm_list(file_rawdata, list_animals):
     results_dir = results_folder(file_rawdata)
     interpotalion_dir = os.path.join(results_dir, "Interpolation")
     animal_name = os.path.basename(file_rawdata).split('.')[0]
     
-    # Coletar todos os arquivos map_{animal}_interpolation_pidl.csv de todos os animais
+    # Coletar todos os arquivos map_{animal}_interpolation_bilstm.csv de todos os animais
     all_files = []
     for current_animal in list_animals:
-        files = [f for f in os.listdir(interpotalion_dir) if f == f"map_{current_animal}_interpolation_pidl.csv"]
+        files = [f for f in os.listdir(interpotalion_dir) if f == f"map_{current_animal}_interpolation_bilstm.csv"]
         if files:
             all_files.extend(files)
-            print(f"Encontrado arquivo PIDL para animal {current_animal}: {files[0]}")
+            print(f"Encontrado arquivo BiLSTM para animal {current_animal}: {files[0]}")
         else:
-            print(f"Nenhum arquivo map_{current_animal}_interpolation_pidl.csv encontrado.")
+            print(f"Nenhum arquivo map_{current_animal}_interpolation_bilstm.csv encontrado.")
 
     if not all_files:
-        print("Nenhum arquivo PIDL encontrado para merge.")
+        print("Nenhum arquivo BiLSTM encontrado para merge.")
         return None
 
     return all_files

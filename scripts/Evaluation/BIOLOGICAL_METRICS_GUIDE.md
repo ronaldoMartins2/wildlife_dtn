@@ -2,7 +2,7 @@
 
 ## Resumo das Métricas Adicionadas
 
-Este documento descreve as novas métricas biológicas e ecológicas adicionadas ao pipeline de avaliação de interpolação para N-BEATS e PIDL.
+Este documento descreve as novas métricas biológicas e ecológicas adicionadas ao pipeline de avaliação de interpolação para N-BEATS e BiLSTM.
 
 ---
 
@@ -267,11 +267,11 @@ scripts/Interpolation/models/
 └── nbeats_biological_metrics_{filename}.json  # ✅ NOVO: Métricas biológicas
 ```
 
-#### Para PIDL
+#### Para BiLSTM
 ```
 Results/{dataset}/Interpolation/
-├── metrics_pidl_{animal}.json            # ✅ Atualizado: inclui bio metrics
-└── pidl_eval_summary_{base}.csv          # ✅ Atualizado: inclui bio metrics
+├── metrics_bilstm_{animal}.json            # ✅ Atualizado: inclui bio metrics
+└── bilstm_eval_summary_{base}.csv          # ✅ Atualizado: inclui bio metrics
 ```
 
 ### Estrutura do JSON de Métricas Biológicas
@@ -430,12 +430,12 @@ Ambas estão em `scripts/requirements.txt` e serão instaladas automaticamente.
    cd /home/abinadabe/projetos/wildlife_dtn
    source venv/bin/activate
    python scripts/Interpolation/evaluate_nbeats.py <caminho_mapa> <arquivo_bruto> <colunas_json>
-   python scripts/Interpolation/evaluate_pidl.py <arquivo_bruto> <colunas_json>
+   python scripts/Interpolation/evaluate_bilstm.py <arquivo_bruto> <colunas_json>
    ```
 
 2. **Visualizar métricas biológicas**: Criar gráficos dos resultados JSON
 
-3. **Ajustar modelos**: Usar as métricas para otimizar N-BEATS e PIDL
+3. **Ajustar modelos**: Usar as métricas para otimizar N-BEATS e BiLSTM
 
 4. **Comparação entre métodos**: Usar todas as métricas para comparação justa entre interpolações
 

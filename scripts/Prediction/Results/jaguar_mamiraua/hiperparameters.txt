@@ -64,28 +64,28 @@ Hyper SOM learning_rate 0.5
 Hyper SOM ephocs 500
 Total merged 2007 method N_BEATS animal 93
 Total merged 1023 method N_HITS animal 93
-Total merged 2249 method PIDL animal 93
+Total merged 2249 method BiLSTM animal 93
 Total merged 740 method N_BEATS animal 94
 Total merged 516 method N_HITS animal 94
-Total merged 1199 method PIDL animal 94
+Total merged 1199 method BiLSTM animal 94
 Total merged 2916 method N_BEATS animal 95
 Total merged 61 method N_HITS animal 95
-Total merged 123 method PIDL animal 95
+Total merged 123 method BiLSTM animal 95
 Total merged 595 method N_BEATS animal 96
 Total merged 491 method N_HITS animal 96
-Total merged 1034 method PIDL animal 96
+Total merged 1034 method BiLSTM animal 96
 Total merged 1479 method N_BEATS animal 97
 Total merged 295 method N_HITS animal 97
-Total merged 621 method PIDL animal 97
+Total merged 621 method BiLSTM animal 97
 Total merged 1522 method N_BEATS animal 98
 Total merged 784 method N_HITS animal 98
-Total merged 1840 method PIDL animal 98
+Total merged 1840 method BiLSTM animal 98
 Total merged 5129 method N_BEATS animal 99
 Total merged 3698 method N_HITS animal 99
-Total merged 7691 method PIDL animal 99
+Total merged 7691 method BiLSTM animal 99
 Total merged 42 method N_BEATS animal 100
 Total merged 42 method N_HITS animal 100
-Total merged 84 method PIDL animal 100
+Total merged 84 method BiLSTM animal 100
 Hyper BIRCH threshold 0.05
 Hyper SOM sigma 0.5
 Hyper SOM learning_rate 0.5
