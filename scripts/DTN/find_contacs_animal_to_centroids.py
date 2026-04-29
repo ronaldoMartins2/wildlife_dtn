@@ -97,16 +97,19 @@ def run(animal_id_str, file_rawdata_name):
                 # 4. Formatação e Mapeamento de IDs para o simulador
                 df_res = pd.DataFrame(contacts_list)
                 # Cálculo do tempo em segundos desde BASE_DATE
-                df_res['id'] = (df_res['timestamp'] - BASE_DATE).dt.total_seconds().astype(int)
+                df_res['id'] = (df_res['timestamp'] - BASE_DATE).dt.total_seconds() / 3600
                 df_res['conn'] = 'CONN'
                 df_res['for'] = mapped_id
                 # Mapeamento do Centroide (ID + Offset)
                 df_res['to'] = df_res['cluster_id'].astype(int) + CENTROID_START_OFFSET
                 df_res['state'] = 'up'
 
-                # 5. Lógica de Eventos DOWN - 10.33h - 49680s (raw_data)
+                # 5. Lógica de Eventos DOWN - 10.33h - 37188s - [49680s?] (raw_data)
                 df_down = df_res.copy()
-                df_down['id'] = df_down['id'] + 37188
+                df_down['id'] = df_down['id'] + 10.33
+                temp = df_res['for']
+                df_down['for'] = df_res['to']
+                df_down['to'] = temp
                 df_down['state'] = 'down'
 
                 final_df = pd.concat([df_res, df_down], ignore_index=True)

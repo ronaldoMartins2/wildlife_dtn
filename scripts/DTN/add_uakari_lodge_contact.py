@@ -11,8 +11,16 @@ ANIMAL_OFFSET = 93
 FIXED_GATEWAY_ID = 40 
 
 # Uakari Lodge - Certifique-se que estes valores estão corretos: (Lat, Lon)
-GATEWAY_LAT = -3.0631181700354824
-GATEWAY_LON = -64.84904676693218
+# GATEWAY_LAT = -3.0631181700354824
+# GATEWAY_LON = -64.84904676693218
+
+# Centro da Área Total (Bounding Box)
+# GATEWAY_LAT = -2.939023
+# GATEWAY_LON = -64.877404
+
+# Centro Geográfico Calculado (Média)
+GATEWAY_LAT = -3.048894
+GATEWAY_LON = -64.857451
 
 def run(animal_id_str, file_rawdata_name):
     results_dir = results_folder(file_rawdata_name)
@@ -47,12 +55,14 @@ def run(animal_id_str, file_rawdata_name):
             dist = geodesic((row['lat'], row['lon']), (GATEWAY_LAT, GATEWAY_LON)).meters
             
             if dist <= LIMIT_DISTANCE_M:
-                delta = (row['timestamp'] - BASE_DATE).total_seconds()
+                delta = (row['timestamp'] - BASE_DATE).total_seconds() / 3600
                 contacts_list.append({
                     'id': int(delta),
                     'conn': 'CONN',
-                    'for': mapped_id,
-                    'to': FIXED_GATEWAY_ID,
+                    # 'for': mapped_id,
+                    # 'to': FIXED_GATEWAY_ID,
+                    'for': FIXED_GATEWAY_ID,  # Gateway agora é a origem (No 0)
+                    'to': mapped_id,          # Onça agora é o destino (No 1)
                     'state': 'up'
                 })
         except Exception as e:
@@ -65,12 +75,19 @@ def run(animal_id_str, file_rawdata_name):
     df_res = pd.DataFrame(contacts_list)
     
     df_down = df_res.copy()
-    df_down['id'] = df_down['id'] + 3600 # 1 hora de duração
+    df_down['id'] = df_down['id'] + 1 # 1 hora de duração
     df_down['state'] = 'down'
 
-    final_df = pd.concat([df_res, df_down], ignore_index=True)
-    final_df.sort_values(by=['id', 'state'], ascending=[True, False], inplace=True)
+    # --- ADICIONE ESTA LINHA PARA REALIZAR A INVERSÃO ---
+    # O que era 'for' vira 'to' e o que era 'to' vira 'for'
+    df_down['for'], df_down['to'] = df_res['to'], df_res['for']
+    # ----------------------------------------------------
 
+    final_df = pd.concat([df_res, df_down], ignore_index=True)
+    
+    # Ordenação: primeiro por tempo, depois garante que 'up' venha antes de 'down' se o tempo for igual
+    final_df.sort_values(by=['id', 'state'], ascending=[True, False], inplace=True)
+    
     # 5. Salvamento
     out_dir = os.path.join(results_dir, 'contacts')
     os.makedirs(out_dir, exist_ok=True)
