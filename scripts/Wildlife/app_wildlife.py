@@ -25,7 +25,9 @@ from Common.utils import (
     merge_csv,
     interpolations_methods,
     return_maps,
-    return_bilstm_list
+    return_bilstm_list,
+    calculate_average_metrics,
+    plot_interpolation_comparisons
 )
 
 # Data Preparation
@@ -127,6 +129,15 @@ def main():
         merge_csvs(current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns)
         #merge_csvs(current_animal, 'N_HITS', file_rawdata, file_rawdata_columns)
         merge_csvs(current_animal, 'BiLSTM', file_rawdata, file_rawdata_columns)
+
+    calculate_average_metrics(file_rawdata, "bilstm", list_animals)
+    calculate_average_metrics(file_rawdata, "nbeats", list_animals)
+    
+    # 3.1. PLOT INTERPOLATION METRICS COMPARISON
+    print("\n--- Gerando Gráficos de Comparação de Interpolação ---")
+    plot_interpolation_comparisons(file_rawdata, ["bilstm", "nbeats"])
+
+    sys.exit(0)
 
     # 4. DATA MERGING FOR CLUSTERING
     print("\n--- Preparing Data for Clustering ---")

@@ -646,3 +646,154 @@ def return_bilstm_list(file_rawdata, list_animals):
         return None
 
     return all_files
+
+def calculate_average_metrics(file_rawdata, method, list_animals):
+    """
+    Calcula a média geral das métricas de interpolação a partir dos arquivos JSON
+    para uma lista de animais e um método específico.
+    """
+    results_dir = results_folder(file_rawdata)
+    interpolation_dir = os.path.join(results_dir, "Interpolation")
+    
+    metrics_sum = {
+        "rmse_deltas": 0.0,
+        "mae_deltas": 0.0,
+        "ade_meters": 0.0,
+        "fde_meters": 0.0,
+        "infeasible_steps_ratio": 0.0,
+        "turning_angles_kl_divergence": 0.0,
+        "sinuosity_ratio": 0.0,
+        "area_difference_ratio": 0.0,
+        "frechet_distance_meters": 0.0
+    }
+    
+    valid_files_count = 0
+    
+    for animal in list_animals:
+        # Padrão de nome do arquivo: metrics_{method}_{animal}.json
+        file_path = os.path.join(interpolation_dir, f"metrics_{method.lower()}_{animal}.json")
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'r') as f:
+                    data = json.load(f)
+                    
+                metrics_sum["rmse_deltas"] += data.get("rmse_deltas", 0.0) or 0.0
+                metrics_sum["mae_deltas"] += data.get("mae_deltas", 0.0) or 0.0
+                metrics_sum["ade_meters"] += data.get("ade_meters", 0.0) or 0.0
+                metrics_sum["fde_meters"] += data.get("fde_meters", 0.0) or 0.0
+                
+                biological = data.get("biological_metrics", {})
+                if biological:
+                    metrics_sum["infeasible_steps_ratio"] += biological.get("infeasible_steps_ratio", 0.0) or 0.0
+                    metrics_sum["turning_angles_kl_divergence"] += biological.get("turning_angles_kl_divergence", 0.0) or 0.0
+                    metrics_sum["sinuosity_ratio"] += biological.get("sinuosity_ratio", 0.0) or 0.0
+                    metrics_sum["area_difference_ratio"] += biological.get("area_difference_ratio", 0.0) or 0.0
+                    metrics_sum["frechet_distance_meters"] += biological.get("frechet_distance_meters", 0.0) or 0.0
+                
+                valid_files_count += 1
+            except Exception as e:
+                print(f"Erro ao ler {file_path}: {e}")
+        else:
+            print(f"Arquivo não encontrado: {file_path}")
+            
+    if valid_files_count > 0:
+        metrics_avg = {k: v / valid_files_count for k, v in metrics_sum.items()}
+        output_path = os.path.join(interpolation_dir, f"metrics_{method.lower()}_average.json")
+        with open(output_path, 'w') as f:
+            json.dump(metrics_avg, f, indent=4)
+        print(f"Média calculada para {valid_files_count} arquivos ({method}) e salva em {output_path}")
+        return metrics_avg
+    else:
+        print(f"Nenhum arquivo válido encontrado para calcular a média do método {method}.")
+        return None
+
+def plot_interpolation_comparisons(file_rawdata, list_methods):
+    """
+    Gera o Gráfico 1 (Desempenho Espacial) e o Gráfico 2 (Fidelidade Ecológica)
+    comparando os métodos a partir dos arquivos de média gerados.
+    """
+    results_dir = results_folder(file_rawdata)
+    interpolation_dir = os.path.join(results_dir, "Interpolation")
+    
+    data = {}
+    for method in list_methods:
+        filepath = os.path.join(interpolation_dir, f"metrics_{method.lower()}_average.json")
+        if os.path.exists(filepath):
+            with open(filepath, 'r') as f:
+                data[method] = json.load(f)
+        else:
+            print(f"Arquivo não encontrado: {filepath}")
+            
+    if not data:
+        print("Dados insuficientes para gerar gráficos.")
+        return
+    
+    methods = list(data.keys())
+    
+    # ----------------------------------------------------
+    # GRÁFICO 1: Desempenho Espacial
+    # ----------------------------------------------------
+    g1_metrics = ['rmse_deltas', 'ade_meters', 'fde_meters', 'frechet_distance_meters']
+    g1_labels = ['RMSE Deltas', 'ADE (m)', 'FDE (m)', 'Distância de Fréchet (m)']
+    
+    x = np.arange(len(g1_metrics))
+    width = 0.35
+    
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c'] # Cores para diferenciar os modelos
+    
+    for i, method in enumerate(methods):
+        values = [data[method].get(m, 0) for m in g1_metrics]
+        
+        # Ajuste de posição dependendo da quantidade de métodos (funciona bem p/ 2 métodos)
+        offset = x + (i * width) - (width * (len(methods) - 1) / 2)
+        
+        bars = ax.bar(offset, values, width, label=method, color=colors[i % len(colors)])
+        
+        # Adicionar o valor acima das barras para o Gráfico 1
+        for bar in bars:
+            yval = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2, yval + (0.01 * max(values)), 
+                    f"{yval:.0f}", ha='center', va='bottom', fontsize=9)
+        
+    ax.set_ylabel('Distância / Erro (Metros)')
+    ax.set_title('Desempenho Espacial dos Modelos de Interpolação (Quanto Menor, Melhor)')
+    ax.set_xticks(x)
+    ax.set_xticklabels(g1_labels)
+    ax.legend()
+    ax.grid(axis='y', linestyle='--', alpha=0.7)
+    
+    plt.tight_layout()
+    g1_path = os.path.join(interpolation_dir, 'grafico_1_desempenho_espacial.png')
+    plt.savefig(g1_path, dpi=300)
+    plt.close()
+    
+    # ----------------------------------------------------
+    # GRÁFICO 2: Fidelidade Ecológica
+    # ----------------------------------------------------
+    g2_metrics = ['turning_angles_kl_divergence', 'sinuosity_ratio', 'area_difference_ratio']
+    g2_labels = ['KL Divergence (Ângulos)\nIdeal: ~0', 'Razão de Sinuosidade\nIdeal: ~1.0', 'Diferença de Home Range\nIdeal: ~0']
+    
+    fig2, axes = plt.subplots(1, 3, figsize=(16, 6))
+    fig2.suptitle('Fidelidade Ecológica (Índices e Distribuições)', fontsize=16)
+    
+    for idx, (metric, label) in enumerate(zip(g2_metrics, g2_labels)):
+        ax = axes[idx]
+        values = [data[method].get(metric, 0) for method in methods]
+        bars = ax.bar(methods, values, color=colors[:len(methods)])
+        ax.set_title(label)
+        ax.grid(axis='y', linestyle='--', alpha=0.7)
+        
+        # Adding values on top of bars
+        for i, v in enumerate(values):
+            offset = 0.05 * max([abs(val) for val in values] + [1])
+            y_pos = v + offset if v >= 0 else v - offset
+            ax.text(i, y_pos, f"{v:.2f}", ha='center', va='center', fontsize=11, fontweight='bold')
+            
+    plt.tight_layout()
+    g2_path = os.path.join(interpolation_dir, 'grafico_2_fidelidade_ecologica.png')
+    plt.savefig(g2_path, dpi=300)
+    plt.close()
+
+    print(f"Gráficos gerados com sucesso e salvos em:\n- {g1_path}\n- {g2_path}")
