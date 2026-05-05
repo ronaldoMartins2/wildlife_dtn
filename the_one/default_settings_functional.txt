@@ -1,0 +1,91 @@
+## Parâmetros Gerais
+Scenario.name = Jaguar_Teste_Settings_seed_19
+Scenario.simulateConnections = true
+Scenario.updateInterval = 1
+Scenario.endTime = 16320
+
+# -------------------------------------------------------
+MovementModel = ExternalMovement
+ExternalMovement.file = data/jaguar_mamiraua_contacts_32_centroids_kmeans_rawdata.txt
+MovementModel.worldSize = 10000, 10000
+
+# -------------------------------------------------------
+# Define que, por padrão, cada grupo tem 1 interface de comunicação
+Group.nrofInterfaces = 1
+loRaInterface.type = SimpleBroadcastInterface
+loRaInterface.transmitSpeed = 293
+loRaInterface.transmitRange = 250
+
+# -------------------------------------------------------
+## Definição dos Grupos de Nós
+Scenario.nrofHostGroups = 3
+
+# -------------------------------------------------------
+## Eventos Externos (Geração de Dados das Onças para o Gateway)
+Events.nrof = 2
+
+Events1.class = ExternalEventsQueue
+Events1.filePath = data/jaguar_mamiraua_contacts.txt
+
+Events2.class = MessageEventGenerator
+Events2.interval = 250, 350
+Events2.size = 256
+Events2.hosts = 0, 7
+Events2.prefix = M
+Events2.toHosts = 40
+
+# -----------------------------------------------------
+## Movement model settings
+# seed for movement models' pseudo random number generator (default = 0)
+# MovementModel.rngSeed = 1
+MovementModel.rngSeed = 19
+
+Group.nrofInterfaces = 1
+Group.interface1 = loRaInterface
+Group.movementModel = ShortestPathMapBasedMovement
+Group.groupID = p
+
+## Map based movement -movement model specific settings
+MapBasedMovement.nrofMapFiles = 4
+
+MapBasedMovement.mapFile1 = data/roads.wkt
+MapBasedMovement.mapFile2 = data/main_roads.wkt
+MapBasedMovement.mapFile3 = data/pedestrian_paths.wkt
+MapBasedMovement.mapFile4 = data/shops.wkt
+
+# ----------------------------------------------------
+# Grupo 1: Sensores Móveis (Jaguars)
+Group1.groupID = J
+Group1.nrofHosts = 8
+# Group1.movementModel = StationaryMovement
+# Group1.nodeLocation = 0, 10000
+Group1.interface1 = loRaInterface
+
+# Grupo 2: Sensores Fixos (Centroides BIRCH/K-Means/SOM)
+Group2.groupID = C
+Group2.nrofHosts = 32
+# Group2.movementModel = StationaryMovement
+# Group2.nodeLocation = 0, 10000
+Group2.interface1 = loRaInterface
+
+# Grupo 3: Estação Base (Gateway/Uakari)
+Group3.groupID = U
+Group3.nrofHosts = 1
+# Group3.movementModel = StationaryMovement
+# Group3.nodeLocation = 5000, 5000
+Group3.interface1 = loRaInterface
+
+## Configuração de Roteamento
+Group.router = EpidemicRouter
+Group.bufferSize = 5M
+Group.msgTtl = 48
+EpidemicRouter.maxCopies = 10
+
+# ------------------------------------------------
+Report.reportDir = reports/jaguar_results
+## Relatórios de Avaliação
+Report.nrofReports = 2
+Report.report1 = MessageReport
+Report.report2 = MessageStatsReport
+
+LogSettings.logLevel = INFO
