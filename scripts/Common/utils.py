@@ -742,6 +742,7 @@ def plot_interpolation_comparisons(file_rawdata, list_methods):
     fig, ax = plt.subplots(figsize=(12, 6))
     
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c'] # Cores para diferenciar os modelos
+    hatches = ['/', '.']  # Padrões de hachura para cada modelo
     
     for i, method in enumerate(methods):
         values = [data[method].get(m, 0) for m in g1_metrics]
@@ -749,15 +750,15 @@ def plot_interpolation_comparisons(file_rawdata, list_methods):
         # Ajuste de posição dependendo da quantidade de métodos (funciona bem p/ 2 métodos)
         offset = x + (i * width) - (width * (len(methods) - 1) / 2)
         
-        bars = ax.bar(offset, values, width, label=method, color=colors[i % len(colors)])
-        
+        bars = ax.bar(offset, values, width, label=method, color=colors[i % len(colors)], hatch=hatches[i % len(hatches)])
+
         # Adicionar o valor acima das barras para o Gráfico 1
         for bar in bars:
             yval = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2, yval + (0.01 * max(values)), 
                     f"{yval:.0f}", ha='center', va='bottom', fontsize=9)
         
-    ax.set_ylabel('Distância / Erro (Metros)')
+    ax.set_ylabel('Distância / Erro (M)')
     ax.set_title('Desempenho Espacial dos Modelos de Interpolação (Quanto Menor, Melhor)')
     ax.set_xticks(x)
     ax.set_xticklabels(g1_labels)
@@ -773,23 +774,36 @@ def plot_interpolation_comparisons(file_rawdata, list_methods):
     # GRÁFICO 2: Fidelidade Ecológica
     # ----------------------------------------------------
     g2_metrics = ['turning_angles_kl_divergence', 'sinuosity_ratio', 'area_difference_ratio']
-    g2_labels = ['KL Divergence (Ângulos)\nIdeal: ~0', 'Razão de Sinuosidade\nIdeal: ~1.0', 'Diferença de Home Range\nIdeal: ~0']
+    g2_labels = ['TAKD\nIdeal: ~0', 'Razão de Sinuosidade\nIdeal: ~1.0', 'Diferença de Area de Vida\nIdeal: ~0']
     
     fig2, axes = plt.subplots(1, 3, figsize=(16, 6))
-    fig2.suptitle('Fidelidade Ecológica (Índices e Distribuições)', fontsize=16)
+    fig2.suptitle('Fidelidade ecológica dos modelos de interpretação.', fontsize=16)
     
     for idx, (metric, label) in enumerate(zip(g2_metrics, g2_labels)):
         ax = axes[idx]
         values = [data[method].get(metric, 0) for method in methods]
-        bars = ax.bar(methods, values, color=colors[:len(methods)])
+        bars = ax.bar(methods, values, color=colors[:len(methods)], hatch=hatches[:len(methods)])
         ax.set_title(label)
         ax.grid(axis='y', linestyle='--', alpha=0.7)
-        
-        # Adding values on top of bars
+    
+        # Add ideal value line and adjust limits
+        if metric == 'turning_angles_kl_divergence':
+            ax.axhline(y=0.01, color='green', linestyle='--', linewidth=3)
+            ax.set_ylim(bottom=0)
+            max_val = max(values) if values else 0
+            ax.set_ylim(top=max(0.1, max_val * 1.2))
+        elif metric == 'sinuosity_ratio':
+            ax.axhline(y=1.0, color='green', linestyle='--', linewidth=3)
+            max_val = max(values) if values else 0
+            ax.set_ylim(top=max(1.1, max_val * 1.2))
+        elif metric == 'area_difference_ratio':
+            ax.axhline(y=0, color='green', linestyle='--', linewidth=3)
+
         for i, v in enumerate(values):
             offset = 0.05 * max([abs(val) for val in values] + [1])
             y_pos = v + offset if v >= 0 else v - offset
-            ax.text(i, y_pos, f"{v:.2f}", ha='center', va='center', fontsize=11, fontweight='bold')
+            format_str = "{:.4f}" if metric == 'turning_angles_kl_divergence' else "{:.2f}"
+            ax.text(i, y_pos, format_str.format(v), ha='center', va='center', fontsize=11, fontweight='bold')
             
     plt.tight_layout()
     g2_path = os.path.join(interpolation_dir, 'grafico_2_fidelidade_ecologica.png')
