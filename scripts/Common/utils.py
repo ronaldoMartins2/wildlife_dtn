@@ -787,6 +787,8 @@ def plot_interpolation_comparisons(file_rawdata, list_methods):
         bars = ax.bar(methods, values, color=colors[:len(methods)], hatch=hatches[:len(methods)])
         ax.set_title(label)
         ax.grid(axis='y', linestyle='--', alpha=0.7)
+
+        ax.set_xticklabels([])
     
         # Add ideal value line and adjust limits
         if metric == 'turning_angles_kl_divergence':
@@ -806,7 +808,22 @@ def plot_interpolation_comparisons(file_rawdata, list_methods):
             y_pos = v + offset if v >= 0 else v - offset
             format_str = "{:.4f}" if metric == 'turning_angles_kl_divergence' else "{:.2f}"
             ax.text(i, y_pos, format_str.format(v), ha='center', va='center', fontsize=11, fontweight='bold')
-            
+
+    # Create a single legend for all methods
+    legend_handles = [plt.Rectangle((0, 0), 1, 1, color=colors[i % len(colors)], hatch=hatches[i % len(hatches)]) for i in range(len(methods))]
+    fig2.legend(
+        legend_handles,
+        methods,
+        loc='upper left',
+        ncol=min(len(methods), 2),
+        bbox_to_anchor=(0.02, 0.98),
+        fontsize=10,
+        title_fontsize=11,
+        frameon=True,
+        borderaxespad=0.3
+    )
+    fig2.subplots_adjust(top=0.92, right=0.96)
+
     plt.tight_layout()
     g2_path = os.path.join(interpolation_dir, 'grafico_2_fidelidade_ecologica.png')
     plt.savefig(g2_path, dpi=300)
