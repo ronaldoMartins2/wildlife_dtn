@@ -109,9 +109,12 @@ def plot_quality_metrics_local(silhouette, dbi, quantization_error, output_dir, 
     """Plot silhouette score, davies-bouldin index e quantization error"""
     metrics = ['Silhouette Score', 'Davies-Bouldin Index', 'Quantization Error']
     values = [silhouette if silhouette is not None else 0, dbi if dbi is not None else 0, quantization_error]
+    hatches = ['/', '\\', 'x']
     
     plt.figure(figsize=(10, 6))
     bars = plt.bar(metrics, values, color=['#1f77b4', '#ff7f0e', '#2ca02c'], alpha=0.7)
+    for bar, hatch in zip(bars, hatches):
+        bar.set_hatch(hatch)
     
     # Adiciona valores nas barras (rotacionado para não sobrepor título)
     for bar, value in zip(bars, values):
@@ -170,14 +173,16 @@ def plot_quality_metrics_comparison(metrics_csv_path, output_dir=None, prefix=No
     x = np.arange(len(metrics))
     bar_width = 0.2
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+    hatches = ['/', '\\', 'x']
 
     plt.figure(figsize=(12, 6))
     for idx, algorithm in enumerate(df.index):
         row = df.loc[algorithm]
         values = [float(row.get(metric, 0) or 0) for metric in metrics]
         positions = x + idx * bar_width
-        bars = plt.bar(positions, values, width=bar_width, label=algorithm, color=colors[idx % len(colors)], alpha=0.8)
+        bars = plt.bar(positions, values, width=bar_width, label=algorithm, color=colors[idx % len(colors)], alpha=0.8, hatch=hatches[idx % len(hatches)])
         for bar, value in zip(bars, values):
+            bar.set_hatch(hatches[idx % len(hatches)])
             # Place text above the bar, horizontal (0 degrees) for better readability
             plt.text(bar.get_x() + bar.get_width() / 2., bar.get_height() + 0.01,
                      f'{value:.4f}', ha='center', va='bottom', fontsize=8)
@@ -186,6 +191,7 @@ def plot_quality_metrics_comparison(metrics_csv_path, output_dir=None, prefix=No
     plt.ylabel('Score')
     display_prefix = normalize_title_text(prefix)
     title = f'Comparativo de Métricas de Qualidade - {display_prefix.title()}'
+    #title = f'Comparison of quality metrics - {display_prefix.title()}'
     if n_clusters is not None:
         title += f' - Clusters: {n_clusters}'
     plt.title(title)

@@ -138,7 +138,6 @@ def main():
     plot_interpolation_comparisons(file_rawdata, ["bilstm", "nbeats"])
 
     sys.exit(0)
-
     # 4. DATA MERGING FOR CLUSTERING
     print("\n--- Preparing Data for Clustering ---")
     
@@ -151,11 +150,9 @@ def main():
 
     if file_merged:
         print(f"Merged raw data file created: {file_merged}")
-        run_all_kmeans(file_merged, file_rawdata, 'Dado Bruto')
-        run_birch_all(file_merged, file_rawdata, 'Dado Bruto')
-        run_som_all(file_merged, file_rawdata, 'Dado Bruto')
-
-    #sys.exit(0)
+        run_all_kmeans(file_merged, file_rawdata, 'Raw data')
+        run_birch_all(file_merged, file_rawdata, 'Raw data')
+        run_som_all(file_merged, file_rawdata, 'Raw data')
 
     # all_maps_animals = return_maps(file_rawdata, list_animals)
     # if all_maps_animals:
@@ -184,13 +181,6 @@ def main():
     if file_interpolated_nbeats and file_merged:
         file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
 
-    if file_merged_nbeats:
-        print("Running Clustering on Merged N-BEATS Data...")
-
-        """Cluster the merged points"""
-        run_all_kmeans(file_merged_nbeats, file_rawdata, 'nbeats_merged')   
-        run_birch_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
-        run_som_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
 
     if file_merged_bilstm:
         print("Running Clustering on Merged BiLSTM Data...")
@@ -201,6 +191,14 @@ def main():
         run_som_all(file_merged_bilstm, file_rawdata, 'bilstm_merged')
 
     sys.exit(0)
+
+    if file_merged_nbeats:
+        print("Running Clustering on Merged N-BEATS Data...")
+
+        """Cluster the merged points"""
+        run_all_kmeans(file_merged_nbeats, file_rawdata, 'nbeats_merged')   
+        run_birch_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
+        run_som_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
 
     if file_interpolated_nbeats:
         print(f"Running Clustering on N-BEATS Interpolated Data: {file_interpolated_nbeats}")

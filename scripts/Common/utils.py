@@ -758,8 +758,13 @@ def plot_interpolation_comparisons(file_rawdata, list_methods):
             ax.text(bar.get_x() + bar.get_width()/2, yval + (0.01 * max(values)), 
                     f"{yval:.0f}", ha='center', va='bottom', fontsize=9)
         
+    # Linha horizontal verde no eixo y em y = 0.1
+    ax.axhline(y=0.2, color='green', linestyle='--', linewidth=3)
+
+    #ax.set_ylabel('Distance / Error (m)')
     ax.set_ylabel('Distância / Erro (m)')
     #ax.set_title('Desempenho Espacial dos Modelos de Interpolação (Quanto Menor, Melhor)')
+    #ax.set_title('Spatial Performance of Interpolation Models')
     ax.set_title('Desempenho Espacial dos Modelos de Interpolação')
     ax.set_xticks(x)
     ax.set_xticklabels(g1_labels)
@@ -777,9 +782,11 @@ def plot_interpolation_comparisons(file_rawdata, list_methods):
     g2_metrics = ['turning_angles_kl_divergence', 'sinuosity_ratio', 'area_difference_ratio']
     #g2_labels = ['TAKD\nIdeal: ~0', 'Razão de Sinuosidade\nIdeal: ~1.0', 'Diferença de Area de Vida\nIdeal: ~0']
     g2_labels = ['TAKD\n', 'Razão de Sinuosidade\n', 'Diferença de Area de Vida\n']
+    #g2_labels = ['TAKD\n', 'Sinuosity Ratio\n', 'Area Difference Ratio\n']
 
     fig2, axes = plt.subplots(1, 3, figsize=(16, 6))
     fig2.suptitle('Fidelidade ecológica dos modelos de interpolação.', fontsize=16)
+    #fig2.suptitle('Ecological fidelity of interpolation models.', fontsize=16)
     
     for idx, (metric, label) in enumerate(zip(g2_metrics, g2_labels)):
         ax = axes[idx]
