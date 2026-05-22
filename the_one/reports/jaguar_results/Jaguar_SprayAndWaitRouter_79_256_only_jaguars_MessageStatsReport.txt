@@ -1,0 +1,20 @@
+Message stats for scenario Jaguar_SprayAndWaitRouter_79_256_only_jaguars
+sim_time: 16320.0000
+created: 54
+started: 493
+relayed: 491
+aborted: 2
+dropped: 427
+removed: 0
+delivered: 37
+delivery_prob: 0.6852
+response_prob: 0.0000
+overhead_ratio: 12.2703
+latency_avg: 1349.8189
+latency_med: 1236.0000
+hopcount_avg: 2.2703
+hopcount_med: 2
+buffertime_avg: 2270.0967
+buffertime_med: 2486.7000
+rtt_avg: NaN
+rtt_med: NaN
