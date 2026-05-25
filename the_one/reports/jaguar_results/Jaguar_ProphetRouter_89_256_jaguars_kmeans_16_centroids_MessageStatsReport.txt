@@ -1,0 +1,20 @@
+Message stats for scenario Jaguar_ProphetRouter_89_256_jaguars_kmeans_16_centroids
+sim_time: 16320.0000
+created: 54
+started: 1214
+relayed: 1213
+aborted: 1
+dropped: 1127
+removed: 0
+delivered: 41
+delivery_prob: 0.7593
+response_prob: 0.0000
+overhead_ratio: 28.5854
+latency_avg: 1129.1073
+latency_med: 1230.6000
+hopcount_avg: 3.6098
+hopcount_med: 3
+buffertime_avg: 1497.5840
+buffertime_med: 1461.0000
+rtt_avg: NaN
+rtt_med: NaN
