@@ -68,6 +68,12 @@ def make_grouped_barplot(df, value_column, title, ylabel, output_path):
     # Prepara estrutura de dados para o matplotlib
     data = {m: [] for m in methods}
     
+    hatches_config = {
+        "BIRCH": "//",
+        "K-Means": "\\\\",
+        "SOM": "//\\\\"
+    }
+
     for k in clusters:
         df_k = df[df["num_clusters"] == k]
         for m in methods:
@@ -84,6 +90,7 @@ def make_grouped_barplot(df, value_column, title, ylabel, output_path):
 
     # Loop para criar as barras de cada método
     for i, m in enumerate(methods):
+        hatch_style = hatches_config.get(m, "")
         color = COLORS.get(m, "#7f7f7f") # Cinza se não achado
         bars = ax.bar(
             x + i * width, 
@@ -93,7 +100,8 @@ def make_grouped_barplot(df, value_column, title, ylabel, output_path):
             color=color, 
             zorder=3,
             alpha=0.9,
-            edgecolor='white'
+            edgecolor='black',
+            hatch=hatch_style
         )
 
         # Anotações (valores acima das barras)

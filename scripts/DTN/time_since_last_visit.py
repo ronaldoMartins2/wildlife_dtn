@@ -20,7 +20,7 @@ Agora o script:
 
 Exemplo de uso:
 
-    python scripts\DTN\time_since_last_visit.py --base_dir scripts\Results\jaguar_mamiraua --methods birch kmeans som --ks 8 16 32 --raio_m 250 --tc_min 120
+    python scripts\DTN\\time_since_last_visit.py --base_dir scripts\Results\jaguar_mamiraua --methods birch kmeans som --ks 8 16 32 --raio_m 250 --tc_min 120
 """
 
 # ----------------------------------------------------------------------
@@ -386,8 +386,8 @@ def main():
     for method in args.methods:
         for k in args.ks:
             # Monta nomes dos arquivos de entrada conforme o padrão informado
-            traj_path = base_dir / f"points_{method}_mapping_{k}_centroids_rawdata.csv"
-            cent_path = base_dir / f"centroids_{k}_{method}_rawdata.csv"
+            traj_path = base_dir / f"points_{method}_mapping_{k}_centroids_bilstm.csv"
+            cent_path = base_dir / f"centroids_{k}_{method}_bilstm.csv"
 
             print(f"\n=== Processando método={method}, k={k} ===")
             print(f"Trajetos : {traj_path}")

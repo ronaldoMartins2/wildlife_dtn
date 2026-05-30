@@ -45,17 +45,17 @@ animal = "jaguar_mamiraua"
 
 # Ajuste conforme seus arquivos
 CONFIG = [
-    {"method": "K-Means",   "k": 8,  "path": rf"scripts\Results\{animal}\points_kmeans_mapping_8_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
-    {"method": "K-Means",   "k": 16, "path": rf"scripts\Results\{animal}\points_kmeans_mapping_16_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
-    {"method": "K-Means",   "k": 32, "path": rf"scripts\Results\{animal}\points_kmeans_mapping_32_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "K-Means",   "k": 8,  "path": rf"scripts\Results\{animal}\points_kmeans_mapping_8_centroids_bilstm_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "K-Means",   "k": 16, "path": rf"scripts\Results\{animal}\points_kmeans_mapping_16_centroids_bilstm_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "K-Means",   "k": 32, "path": rf"scripts\Results\{animal}\points_kmeans_mapping_32_centroids_bilstm_retorno_250m_tc120min_vizinhanca.csv"},
 
-    {"method": "SOM",       "k": 8,  "path": rf"scripts\Results\{animal}\points_som_mapping_8_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
-    {"method": "SOM",       "k": 16, "path": rf"scripts\Results\{animal}\points_som_mapping_16_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
-    {"method": "SOM",       "k": 32, "path": rf"scripts\Results\{animal}\points_som_mapping_32_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "SOM",       "k": 8,  "path": rf"scripts\Results\{animal}\points_som_mapping_8_centroids_bilstm_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "SOM",       "k": 16, "path": rf"scripts\Results\{animal}\points_som_mapping_16_centroids_bilstm_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "SOM",       "k": 32, "path": rf"scripts\Results\{animal}\points_som_mapping_32_centroids_bilstm_retorno_250m_tc120min_vizinhanca.csv"},
 
-    {"method": "BIRCH",     "k": 8,  "path": rf"scripts\Results\{animal}\points_birch_mapping_8_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
-    {"method": "BIRCH",     "k": 16, "path": rf"scripts\Results\{animal}\points_birch_mapping_16_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
-    {"method": "BIRCH",     "k": 32, "path": rf"scripts\Results\{animal}\points_birch_mapping_32_centroids_rawdata_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "BIRCH",     "k": 8,  "path": rf"scripts\Results\{animal}\points_birch_mapping_8_centroids_bilstm_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "BIRCH",     "k": 16, "path": rf"scripts\Results\{animal}\points_birch_mapping_16_centroids_bilstm_retorno_250m_tc120min_vizinhanca.csv"},
+    {"method": "BIRCH",     "k": 32, "path": rf"scripts\Results\{animal}\points_birch_mapping_32_centroids_bilstm_retorno_250m_tc120min_vizinhanca.csv"},
 ]
 
 OUT_DIR = Path(rf"scripts\Results\{animal}\figuras_tempo_retorno")
@@ -201,6 +201,12 @@ def plot_barras(resumo: pd.DataFrame, value_col: str, error_col: str, ylabel: st
     methods = sorted(resumo["method"].unique())
     ks = sorted(resumo["k"].unique())
 
+    hatches_config = {
+        "BIRCH": "//",
+        "K-Means": "\\\\",
+        "SOM": "//\\\\"
+    }
+
     # coleta valores e erros para cada k por método
     data = {m: [] for m in methods}
     errors = {m: [] for m in methods}
@@ -226,6 +232,8 @@ def plot_barras(resumo: pd.DataFrame, value_col: str, error_col: str, ylabel: st
 
     # plota barras + rótulos
     for i, m in enumerate(methods):
+        hatch_style = hatches_config.get(m, "")
+        
         barras = ax.bar(
             x + i * width,
             data[m],
@@ -234,7 +242,9 @@ def plot_barras(resumo: pd.DataFrame, value_col: str, error_col: str, ylabel: st
             capsize=4,
             label=m,
             zorder=3,
-            alpha=0.9
+            alpha=0.9,
+            hatch=hatch_style,      # <--- Adicionado aqui o estilo da hachura
+            edgecolor="black"
         )
 
         # Anotação dos valores

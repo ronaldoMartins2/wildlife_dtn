@@ -164,8 +164,8 @@ import DTN.generate_all_distances_data_n_plots as run_generate_distances_n_data_
 file_rawdata = sys.argv [1]
 file_rawdata_columns = sys.argv [2]
 
-results_dir = results_folder(file_rawdata)
-hiper_path = os.path.join(results_dir, 'hiperparameters.txt')
+# results_dir = results_folder(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua")
+# hiper_path = os.path.join(results_dir, 'hiperparameters.txt')
 
 # Check if the file exists before trying to delete it
 # if os.path.exists(hiper_path):
@@ -269,7 +269,7 @@ merge_maps(file_rawdata, list_animals)
 
 # file_interpolated_nbeats = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nbeats_all.csv' )
 # file_interpolated_nhits = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nhits_all.csv' )
-file_marged = os.path.join(results_folder(file_rawdata), f'map_{tangara}_all_animals.csv')
+file_marged = os.path.join(results_folder(file_rawdata), f'map_{tangara}_all_animals_bilstm.csv')
 
 # run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
 # run_all_kmeans(file_interpolated_nhits, file_rawdata, 'nhits')
@@ -346,9 +346,9 @@ for animal_id in list_animals:
 raw_name = "jaguar_mamiraua"
     
 # Listas para o loop de experimentos
-centroids_list = [8, 16, 32]
-algorithms_list = ["kmeans", "birch", "som"] # Seus 3 algoritmos
-interpolations_list = ["rawdata"] # Neste primeiro momento apenas o rawdata
+centroids_list = [16]
+algorithms_list = ["kmeans"] # Seus 3 algoritmos
+interpolations_list = ["bilstm"] # Neste primeiro momento apenas o rawdata
 
 # Gerar arquivos para cada combinação
 for n in centroids_list:

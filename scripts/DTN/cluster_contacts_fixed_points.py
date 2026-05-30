@@ -8,8 +8,8 @@ from Common.utils import (
     read_field_from_json
 )
 
-CLUSTERING_TYPES = ['som', 'birch', 'kmeans']
-PROCESSING_MODES = ['nbeats', 'nhits', 'rawdata']
+CLUSTERING_TYPES = ['kmeans']
+PROCESSING_MODES = ['bilstm']
 
 def run(current_animal, file_rawdata_name):
     limit_distance_m = 250
@@ -28,7 +28,7 @@ def run(current_animal, file_rawdata_name):
         return
 
     # 2. Leitura dos dados de movimentação (GPS)
-    csv_path = os.path.join(results_dir, f'map_{animal_name}_all_animals.csv')
+    csv_path = os.path.join(results_dir, f'map_{animal_name}_all_animals_bilstm.csv')
     
     if not os.path.exists(csv_path):
         print(f"ERRO: Arquivo de movimentação não encontrado: {csv_path}")

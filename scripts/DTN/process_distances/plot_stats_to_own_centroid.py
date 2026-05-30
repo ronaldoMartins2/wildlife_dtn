@@ -77,7 +77,14 @@ def make_grouped_barplot(df, value_column, title, ylabel, output_path):
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
+    hatches_config = {
+        "BIRCH": "//",
+        "K-Means": "\\\\",
+        "SOM": "//\\\\"
+    }
+
     for i, m in enumerate(methods):
+        hatch_style = hatches_config.get(m, "")
         color = COLORS.get(m, "#7f7f7f")
         bars = ax.bar(
             x + i * width, 
@@ -87,7 +94,8 @@ def make_grouped_barplot(df, value_column, title, ylabel, output_path):
             color=color, 
             zorder=3,
             alpha=0.9,
-            edgecolor='white'
+            edgecolor='black',
+            hatch=hatch_style
         )
 
         # Rótulos de valor

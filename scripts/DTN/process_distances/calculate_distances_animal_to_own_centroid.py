@@ -42,7 +42,7 @@ def find_pairs(folder):
     centroid_files = [
         f for f in files 
         if f.startswith('centroids_') 
-        and f.endswith('_rawdata.csv') 
+        and f.endswith('_bilstm.csv') 
         and 'distances' not in f 
     ]
     
@@ -50,7 +50,7 @@ def find_pairs(folder):
         f for f in files 
         if 'points' in f 
         and 'mapping' in f 
-        and f.endswith('_rawdata.csv') 
+        and f.endswith('_bilstm.csv') 
         and 'distances' not in f
     ]
     
@@ -185,7 +185,7 @@ if __name__ == "__main__":
     statistics_list = []
     
     if not pairs:
-        print("No pairs found. Check if files end with '_rawdata.csv'.")
+        print("No pairs found. Check if files end with '_bilstm.csv'.")
     else:
         for c_file, p_file in pairs:
             res = calculate_distances(c_file, p_file, OUTPUT_FOLDER)

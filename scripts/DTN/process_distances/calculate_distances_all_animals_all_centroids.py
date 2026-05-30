@@ -5,8 +5,8 @@ import os
 import time
 
 # --- CONFIGURAÇÕES ---
-ANIMAL_FILE = 'scripts\\Results\\jaguar_mamiraua\\map_jaguar_mamiraua_all_animals.csv'
-CENTROID_PATTERN = 'scripts\\Results\\jaguar_mamiraua\\centroids_*_rawdata.csv'
+ANIMAL_FILE = 'scripts\\Results\\jaguar_mamiraua\\map_jaguar_mamiraua_all_animals_bilstm.csv'
+CENTROID_PATTERN = 'scripts\\Results\\jaguar_mamiraua\\centroids_*_bilstm.csv'
 OUTPUT_FOLDER = 'scripts\\Results\\jaguar_mamiraua\\distances_all_to_all'
 SUMMARY_FILE = 'scripts\\Results\\jaguar_mamiraua\\distances_all_to_all\\stats_all_to_all.csv' # Nome do arquivo de resumo
 
@@ -130,7 +130,7 @@ def process_clustering_scenarios():
             })
 
             # --- SALVAR ARQUIVO INDIVIDUAL ---
-            base_name = os.path.basename(cent_file).replace('centroids_', '').replace('_rawdata.csv', '')
+            base_name = os.path.basename(cent_file).replace('centroids_', '').replace('_bilstm.csv', '')
             output_name = os.path.join(OUTPUT_FOLDER, f"distances_{base_name}.csv")
             
             final_columns = [
