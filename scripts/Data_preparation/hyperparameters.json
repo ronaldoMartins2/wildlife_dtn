@@ -1,11 +1,8 @@
 {
     "language": "PT_BR",
 
-<<<<<<< HEAD
-=======
     "distancia_limite_contatos": 400,
 
->>>>>>> 8d2c5826fdb60c68bdfd5214c1fc06d839a1ab87
     "CONTACT_DISTANCE": 5000,
 
     "output_dim_nbeat": 1,
@@ -14,15 +11,9 @@
 
     "input_dim_nhits": 3,
     "hidden_dim_nhits": 64,
-<<<<<<< HEAD
-    "num_blocks_nhits": 5,
-    "num_hierarchies_nhits": 4,
-    "epochs_nhits": 300,
-=======
     "num_blocks_nhits": 4,
     "num_hierarchies_nhits": 4,
     "epochs_nhits": 200,
->>>>>>> 8d2c5826fdb60c68bdfd5214c1fc06d839a1ab87
     "lr_nhits": 0.001,
     "patience_nhits": 20,
     "sequence_length_nhits": 20,
@@ -34,11 +25,7 @@
     "learning_rate_SOM": 0.5,
     "ephocs_SOM": 500,
     "som_x": 8,
-<<<<<<< HEAD
-    "som_y": 8,
-=======
     "som_y": 1,
->>>>>>> 8d2c5826fdb60c68bdfd5214c1fc06d839a1ab87
 
     "n_clusters_kmeans": 8,
     "random_state_kmeans": 0,

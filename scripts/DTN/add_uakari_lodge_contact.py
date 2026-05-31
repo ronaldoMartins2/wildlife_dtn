@@ -24,7 +24,8 @@ GATEWAY_LON = -64.857451
 
 def run(animal_id_str, file_rawdata_name):
     results_dir = results_folder(file_rawdata_name)
-    animal_path = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", f'map_{animal_id_str}.csv')
+    #animal_path = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", f'map_{animal_id_str}.csv')
+    animal_path = os.path.join(results_dir, f'map_{animal_id_str}.csv')
     
     if not os.path.exists(animal_path):
         return
@@ -89,7 +90,9 @@ def run(animal_id_str, file_rawdata_name):
     final_df.sort_values(by=['id', 'state'], ascending=[True, False], inplace=True)
     
     # 5. Salvamento
-    out_dir = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts')
+    #out_dir = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts')
+    out_dir = os.path.join(results_dir, 'contacts')
+    
     os.makedirs(out_dir, exist_ok=True)
     output_path = os.path.join(out_dir, f"down_contact_{animal_id_str}_uakari_lodge.csv")
     

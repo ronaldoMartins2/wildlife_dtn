@@ -54,6 +54,7 @@ VALIDATION_SET = 0.1
 TESTING_SET = 0.1
 CONTACT_DISTANCE = get_contact_distance()
 
+'''
 def results_folder( file_rawdata_name ):
 
     file_name = file_rawdata_name.split('/')
@@ -65,6 +66,26 @@ def results_folder( file_rawdata_name ):
 
     results_dir = os.path.join(script_dir, f'Results/{file_name}')
     
+    os.makedirs(results_dir, exist_ok=True)
+
+    return results_dir
+'''
+
+def results_folder(file_rawdata_name):
+
+    file_name = os.path.splitext(
+        os.path.basename(file_rawdata_name)
+    )[0]
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = script_dir.replace('Common', '')
+
+    results_dir = os.path.join(
+        script_dir,
+        'Results',
+        file_name
+    )
+
     os.makedirs(results_dir, exist_ok=True)
 
     return results_dir

@@ -3,12 +3,22 @@ from geopy.distance import geodesic
 import glob
 import os
 import time
+from Common.utils import results_folder
 
 # --- CONFIGURAÇÕES ---
-ANIMAL_FILE = 'scripts\\Results\\jaguar_mamiraua\\map_jaguar_mamiraua_all_animals_bilstm.csv'
-CENTROID_PATTERN = 'scripts\\Results\\jaguar_mamiraua\\centroids_*_bilstm.csv'
-OUTPUT_FOLDER = 'scripts\\Results\\jaguar_mamiraua\\distances_all_to_all'
-SUMMARY_FILE = 'scripts\\Results\\jaguar_mamiraua\\distances_all_to_all\\stats_all_to_all.csv' # Nome do arquivo de resumo
+
+results_dir = results_folder('map_jaguar_mamiraua_all_animals_bilstm')
+
+#ANIMAL_FILE = 'scripts\\Results\\jaguar_mamiraua\\map_jaguar_mamiraua_all_animals_bilstm.csv'
+#CENTROID_PATTERN = 'scripts\\Results\\jaguar_mamiraua\\centroids_*_bilstm.csv'
+#OUTPUT_FOLDER = 'scripts\\Results\\jaguar_mamiraua\\distances_all_to_all'
+#SUMMARY_FILE = 'scripts\\Results\\jaguar_mamiraua\\distances_all_to_all\\stats_all_to_all.csv' # Nome do arquivo de resumo
+
+ANIMAL_FILE = os.path.join(results_dir, 'map_jaguar_mamiraua_all_animals_bilstm')
+CENTROID_PATTERN = os.path.join(results_dir, 'centroids_*_bilstm')
+OUTPUT_FOLDER = os.path.join(results_dir, 'distances_all_to_all')
+SUMMARY_FILE = os.path.join(results_dir, 'stats_all_to_all') # Nome do arquivo de resumo
+
 
 def process_clustering_scenarios():
     

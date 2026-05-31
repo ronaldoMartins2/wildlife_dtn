@@ -20,11 +20,18 @@ def get_db_connection():
 def run(file_target, file_rawdata_name):
     results_dir = results_folder(file_rawdata_name)
     
+    print(results_dir)
+    print("######################### brazil ##############################")
+    #exit()
+
     # --- Lógica de Nome de Arquivo ---
     filename = f"{file_target}.csv"
-    path_original = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", filename)
-    path_contact = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts', f"contact_{file_target}.csv")
+    #path_original = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", filename)
+    #path_contact = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts', f"contact_{file_target}.csv")
     
+    path_original = os.path.join(results_dir, filename)
+    path_contact = os.path.join(results_dir, 'contacts', f"contact_{file_target}.csv")
+
     input_path = path_original
     if not os.path.exists(path_original) and os.path.exists(path_contact):
         input_path = path_contact
@@ -66,7 +73,9 @@ def run(file_target, file_rawdata_name):
     final_df.sort_values(by=['id', 'state'], ascending=[True, False], inplace=True)
 
     # 4. Salva o CSV processado (mantendo a estrutura original das colunas)
-    out_dir = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts')
+    #out_dir = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts')
+    out_dir = os.path.join(results_dir, 'contacts')
+    
     os.makedirs(out_dir, exist_ok=True)
     output_path = os.path.join(out_dir, f'down_{filename}')
     final_df.to_csv(output_path, index=False)

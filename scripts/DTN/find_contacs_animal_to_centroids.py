@@ -24,7 +24,8 @@ def run(animal_id_str, file_rawdata_name):
     cluster_dir = results_dir #os.path.join(results_dir, 'Clusterization')
     
     # Busca o arquivo de movimentação individual
-    animal_path = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", f'map_{animal_id_str}.csv') # os.path.join(results_dir, f'map_{animal_id_str}_all_animals.csv')
+    #animal_path = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", f'map_{animal_id_str}.csv') # os.path.join(results_dir, f'map_{animal_id_str}_all_animals.csv')
+    animal_path = os.path.join(results_dir, f'map_{animal_id_str}.csv') # os.path.join(results_dir, f'map_{animal_id_str}_all_animals.csv')
     
     if not os.path.exists(animal_path):
         print(f"[-] Arquivo de movimentação não encontrado para o animal {animal_id_str} em: {animal_path}")
@@ -116,7 +117,9 @@ def run(animal_id_str, file_rawdata_name):
                 final_df.sort_values(by=['id', 'state'], ascending=[True, False], inplace=True)
 
                 # 6. Salvamento
-                out_dir = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts')
+                #out_dir = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts')
+                out_dir = os.path.join(results_dir, 'contacts')
+                
                 os.makedirs(out_dir, exist_ok=True)
                 
                 output_name = f"down_contact_{animal_id_str}_{os.path.splitext(cluster_filename)[0]}.csv"

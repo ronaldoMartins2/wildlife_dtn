@@ -19,7 +19,13 @@ def run(file_rawdata_name, n_centroids, algorithm, interpolation):
     print(f"\n>>> Iniciando: {n_centroids} centroids | {algorithm} | {interpolation}")
     
     results_dir = results_folder(file_rawdata_name)
-    output_dir = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts')
+
+    print(results_dir)
+    print("@@@@@@@@@@@@@@@@@ Amazonas @@@@@@@@@@@@@@@@@")
+
+    #output_dir = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts')
+    output_dir = os.path.join(results_dir, 'contacts')
+    
     os.makedirs(output_dir, exist_ok=True)
     
     # Nome do arquivo final conforme o padrão solicitado
@@ -35,8 +41,9 @@ def run(file_rawdata_name, n_centroids, algorithm, interpolation):
         conn.commit()
 
         # 2. Identificar quais arquivos CSV devem ser incluídos
-        all_files = glob.glob(os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", "contacts", "*.csv"))
-        
+        #all_files = glob.glob(os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", "contacts", "*.csv"))
+        all_files = glob.glob(os.path.join(results_dir, "contacts", "*.csv"))
+
         files_to_import = []
         for f in all_files:
             basename = os.path.basename(f)
