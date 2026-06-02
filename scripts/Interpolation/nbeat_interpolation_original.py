@@ -74,11 +74,21 @@ def load_trained_nbeats_model(file_rawdata_name):
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
 
     input_dim = 3
-    output_dim = read_field_from_json(hyperparam_path, "output_dim")
-    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim")
-    num_blocks = read_field_from_json(hyperparam_path, "num_blocks")
+    output_dim = read_field_from_json(hyperparam_path, "output_dim_nbeat")
+    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nbeat")
+    num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nbeat")
+    
+    # Novos parâmetros de otimização: Batch Normalization e Dropout
+    dropout_rate = read_field_from_json(hyperparam_path, 'dropout_rate_nbeat')
+    use_batch_norm = read_field_from_json(hyperparam_path, 'use_batch_norm_nbeat')
+    
+    # Valores padrão caso não encontrados
+    if dropout_rate is None:
+        dropout_rate = 0.1
+    if use_batch_norm is None:
+        use_batch_norm = True
 
-    model = NBeats(input_dim, output_dim, hidden_dim, num_blocks)
+    model = NBeats(input_dim, output_dim, hidden_dim, num_blocks, dropout_rate=dropout_rate, use_batch_norm=use_batch_norm)
 
     script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
     data_prep_dir = os.path.join(script_dir, '..', 'Interpolation')  # Navigate to the parent directory and into 'Results'
@@ -155,9 +165,19 @@ def run(    current_animal,
     output_dim = read_field_from_json(hyperparam_path, "output_dim_nbeat")  # Output: predict multiple future time steps
     hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nbeat")  # Hidden layer size
     num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nbeat")  # Number of N-BEATS blocks
+    
+    # Novos parâmetros de otimização: Batch Normalization e Dropout
+    dropout_rate = read_field_from_json(hyperparam_path, 'dropout_rate_nbeat')
+    use_batch_norm = read_field_from_json(hyperparam_path, 'use_batch_norm_nbeat')
+    
+    # Valores padrão caso não encontrados
+    if dropout_rate is None:
+        dropout_rate = 0.1
+    if use_batch_norm is None:
+        use_batch_norm = True
 
     # Create the model
-    model = NBeats(input_dim, output_dim, hidden_dim, num_blocks)
+    model = NBeats(input_dim, output_dim, hidden_dim, num_blocks, dropout_rate=dropout_rate, use_batch_norm=use_batch_norm)
 
     # Training loop (for demonstration)
     criterion = nn.MSELoss()  # Mean Squared Error Loss

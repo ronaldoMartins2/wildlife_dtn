@@ -1,417 +1,340 @@
 import pandas as pd
 import torch
-import torch.nn as nn
 import numpy as np
-from datetime import timedelta
-import sys
+import joblib
 import os
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
+import sys
+import json
+# Add scripts folder to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from datetime import timedelta
+from pyproj import Transformer
 from Data_preparation.raw_data_integration import get_id_from_json
 from Data_preparation.data_field import DataField
-
-from Common.utils import (
-    create_clusterization_results,
-    results_folder,
-    remove_nan_data
-)
-
-from Interpolation.nbeat_trainer import train_nbeats_model
-
+from Common.utils import results_folder
 from Interpolation.nbeat_model import NBeats
+from Interpolation.nbeat_data_prep import preprocess_nbeats_data, get_utm_proj
 
-from Common.utils import (
-    read_field_from_json,
-    TRAINNING_SET
-)
-
-from Data_preparation.clear_outtliers import (
-    run as run_clear_outliers
-)
-
-def getDataFromCSV( current_animal, file_rawdata_name ):
-    # Read the CSV file into a DataFrame
+def generate_forecast_raw(model, scaler, input_deltas, metadata, steps=10, noise_level=0.1):
+    """
+    Core generation loop that takes raw deltas (numpy) and returns predicted deltas (numpy).
+    """
+    device = next(model.parameters()).device
+    input_width = metadata['input_width']
+    forecast_horizon = metadata['forecast_horizon']
     
-    results_dir = results_folder( file_rawdata_name )
+    # Sanitize input_deltas immediately to prevent Scaler errors
+    input_deltas = np.nan_to_num(input_deltas, nan=0.0, posinf=0.0, neginf=0.0)
+    
+    current_input = input_deltas.copy() # (input_width, 2)
+    generated_deltas = []
+    
+    loops = int(np.ceil(steps / forecast_horizon))
+    
+    for _ in range(loops):
+        # Scale
+        curr_shape = current_input.shape
+        input_flat = current_input.reshape(-1, 2)
+        input_scaled = scaler.transform(input_flat).reshape(curr_shape)
+        # Sanitize input
+        input_scaled = np.nan_to_num(input_scaled, nan=0.0, posinf=0.0, neginf=0.0)
+        
+        # Tensor
+        input_t = torch.tensor(input_scaled, dtype=torch.float32).unsqueeze(0).to(device)
+        
+        # Predict
+        with torch.no_grad():
+            pred_scaled = model(input_t).cpu().numpy().squeeze(0)
+            # Sanitize output
+            pred_scaled = np.nan_to_num(pred_scaled, nan=0.0, posinf=0.0, neginf=0.0)
+            
+        # Noise
+        if noise_level > 0:
+            noise = np.random.normal(0, noise_level, pred_scaled.shape)
+            pred_scaled += noise
+            
+        # Inverse Scale
+        pred_flat = pred_scaled.reshape(-1, 2)
+        pred_deltas = scaler.inverse_transform(pred_flat)
+        
+        generated_deltas.extend(pred_deltas)
+        
+        # Update Input
+        if forecast_horizon <= input_width:
+             current_input = np.vstack([current_input[forecast_horizon:], pred_deltas])
+        else:
+             current_input = pred_deltas[-input_width:]
+             
+    return np.array(generated_deltas)[:steps]
 
+def generate_bidirectional_forecast(df_gap_context, gap_size_steps, model, scaler, metadata):
+    """
+    Fills a gap using both Forward and Backward prediction.
+    df_gap_context: DataFrame containing [Data Before] + [Gap (NaNs)] + [Data After]
+    gap_size_steps: Number of missing steps.
+    """
+    input_width = metadata['input_width']
+    
+    e_vals = df_gap_context['E'].values
+    n_vals = df_gap_context['N'].values
+    
+    valid_mask = ~np.isnan(e_vals)
+    valid_indices = np.where(valid_mask)[0]
+   
+    diffs = np.diff(valid_indices)
+    gap_starts = np.where(diffs > 1)[0]
+    if len(gap_starts) == 0:
+        return None # No gap?
+        
+    last_valid_before = valid_indices[gap_starts[0]]
+    first_valid_after = valid_indices[gap_starts[0] + 1]
+    
+    real_gap_size = first_valid_after - last_valid_before - 1
+    
+    if real_gap_size != gap_size_steps:
+        # Mismatch in expected gap size, but we trust the index
+        gap_size_steps = real_gap_size
+     
+    start_context_idx = max(0, last_valid_before - input_width)
+    forward_segment = df_gap_context.iloc[start_context_idx : last_valid_before + 1][['E', 'N']].values
+    # If segment is shorter than required (input_width+1 points), pad by repeating the first point
+    needed_len = input_width + 1
+    if forward_segment.shape[0] < needed_len:
+        if forward_segment.shape[0] == 0:
+            # no history at all, create zeros
+            forward_segment = np.vstack([np.zeros(2) for _ in range(needed_len)])
+        else:
+            pad_count = needed_len - forward_segment.shape[0]
+            pad = np.tile(forward_segment[0], (pad_count, 1))
+            forward_segment = np.vstack([pad, forward_segment])
+
+    
+    forward_deltas = np.diff(forward_segment, axis=0)
+    
+    end_context_idx = min(len(df_gap_context) - 1, first_valid_after + input_width)
+    backward_segment = df_gap_context.iloc[first_valid_after : end_context_idx + 1][['E', 'N']].values
+   
+    if backward_segment.shape[0] < needed_len:
+        if backward_segment.shape[0] == 0:
+            backward_segment = np.vstack([np.zeros(2) for _ in range(needed_len)])
+        else:
+            pad_count = needed_len - backward_segment.shape[0]
+            pad = np.tile(backward_segment[-1], (pad_count, 1))
+            backward_segment = np.vstack([backward_segment, pad])
+   
+    backward_segment_rev = backward_segment[::-1]
+    backward_deltas = np.diff(backward_segment_rev, axis=0) # (10, 2)
+    
+    pred_forward_deltas = generate_forecast_raw(model, scaler, forward_deltas, metadata, steps=gap_size_steps, noise_level=0.1)
+    
+    pred_backward_deltas = generate_forecast_raw(model, scaler, backward_deltas, metadata, steps=gap_size_steps, noise_level=0.1)
+
+    start_point = df_gap_context.iloc[last_valid_before][['E', 'N']].values
+    path_forward = np.zeros((gap_size_steps, 2))
+    curr = start_point
+    for i in range(gap_size_steps):
+        curr = curr + pred_forward_deltas[i]
+        path_forward[i] = curr
+        
+
+    end_point = df_gap_context.iloc[first_valid_after][['E', 'N']].values
+    path_backward = np.zeros((gap_size_steps, 2))
+    
+    curr = end_point
+    path_backward_rev = []
+    for i in range(gap_size_steps):
+        curr = curr + pred_backward_deltas[i]
+        path_backward_rev.append(curr)
+        
+    path_backward = np.array(path_backward_rev)[::-1]
+
+    weights = np.linspace(1, 0, gap_size_steps)
+    weights = weights[:, None] 
+    
+    mixed_path = path_forward * weights + path_backward * (1 - weights)
+    
+    return mixed_path
+
+
+def run(current_animal, legacy_number, file_rawdata_name, file_rawdata_columns):
+    print(f"Running Bidirectional N-BEATS for {current_animal}...")
+
+    # Load Data
+    results_dir = results_folder(file_rawdata_name)
     file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
+    try:
+        df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
+    except:
+        print(f"Could not load map_{current_animal}.csv")
+        return
+        
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+    df = df.sort_values('Timestamp')
 
-    df = pd.read_csv(file_path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
-
-    df = remove_nan_data(df, current_animal)
-
-    if len(df) != 0:
-        if 'jaguar' in file_rawdata_name:
-            df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Jaguar" )
-        else:
-            df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"] )
-    else:
-        return pd.DataFrame()
-
-    columns_to_save = ['ID', 'Timestamp', 'Longitude', 'Latitude']
-    file_path = os.path.join(results_dir, f'map_{current_animal}_outliers_less.csv')
-    df[columns_to_save].to_csv( file_path, index=False, header=False)
-
-    # Limita a 80% do número de registros
-    limit = int(TRAINNING_SET * len(df))
-    df = df.iloc[:limit]
-
-    hiper_content = []
-
-    hiper_content.append( f"Trainning nbeat animal {current_animal} 80% {limit}" )
-
-    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
-
-    file_path = os.path.join(results_dir, f'map_{current_animal}_outliers_less_test_only.csv')
-    df[columns_to_save].to_csv( file_path, index=False, header=False)
-
-    with open(hiper_path, "a") as file:
-        for line in hiper_content:
-            file.write(line + '\n')
-
-    return df
-
-def load_trained_nbeats_model(file_rawdata_name):
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
-
-    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
-
-    input_dim = 3
-    output_dim = read_field_from_json(hyperparam_path, "output_dim")
-    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim")
-    num_blocks = read_field_from_json(hyperparam_path, "num_blocks")
-
-    model = NBeats(input_dim, output_dim, hidden_dim, num_blocks)
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    data_prep_dir = os.path.join(script_dir, '..', 'Interpolation')  # Navigate to the parent directory and into 'Results'
-
-    filename = file_rawdata_name.split('/')[-1].split('.')[0]
-    model_path = os.path.join(data_prep_dir, f'nbeats_model_general_{filename}.pth')
-
-    print(f'Loading trained model from {model_path}')
-    checkpoint = torch.load(model_path, map_location=torch.device('cpu'))  # Add map_location if needed
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.eval()
-    return model
-
-def run(    current_animal, 
-            number_of_predictions, 
-            #len_animal, 
-            file_rawdata_name, 
-            file_rawdata_columns ):
-
-    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-
-    df = getDataFromCSV( current_animal, file_rawdata_name )
-
-    len_animal_outliers_less = len(df)
-
-    if len(df) == 0:
-        print(f'df is empty {current_animal}-{file_rawdata_name}')
-        return None
-
-    '''
-    if 'jaguar' in file_rawdata_name:
-        df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Jaguar" )
-    else:
-        df = run_clear_outliers( df, current_animal, file_rawdata_name, dataset_name="Tangará", exclude_cols=["manually-marked-outlier"] )
-
-    results_dir = results_folder(file_rawdata_name)
-    columns_to_save = ['ID', 'Timestamp', 'Longitude', 'Latitude']
-    file_path = os.path.join(results_dir, f'map_{current_animal}_outliers_less.csv')
-    df[columns_to_save].to_csv( file_path, index=False, header=False)
-    '''
-
-    mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
-
-    # Convert the 'Timestamp' column to datetime objects
-    df['Timestamp'] = pd.to_datetime(df['Timestamp'], format=mask)
-
-    # Calculate the time differences between consecutive timestamps in hours
-    df['Time Difference (hours)'] = df['Timestamp'].diff().dt.total_seconds() / 3600
-
-    # Drop the first row since it will have a NaN value for 'Time Difference (hours)'
-    df = df.dropna(subset=['Time Difference (hours)'])
-
-    # Let's use the time differences as the target and the latitude, longitude, and previous time differences as features.
-    df['Prev Time Difference (hours)'] = df['Time Difference (hours)'].shift(1)
-
-    df = df.dropna(subset=['Prev Time Difference (hours)'])
-
-    features = ['Prev Time Difference (hours)', 'Longitude', 'Latitude']
-    target = 'Time Difference (hours)'
-
-    X = df[features].values
-    y = df[target].values
-
-    X_tensor = torch.tensor(X, dtype=torch.float32)
-    y_tensor = torch.tensor(y, dtype=torch.float32)
-
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
-    hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
-
-    # Hyperparameters
-    input_dim = X_tensor.shape[1]  # Number of features (Prev Time Difference, Longitude, Latitude)
-    output_dim = read_field_from_json(hyperparam_path, "output_dim_nbeat")  # Output: predict multiple future time steps
-    hidden_dim = read_field_from_json(hyperparam_path, "hidden_dim_nbeat")  # Hidden layer size
-    num_blocks = read_field_from_json(hyperparam_path, "num_blocks_nbeat")  # Number of N-BEATS blocks
-
-    # Create the model
-    model = NBeats(input_dim, output_dim, hidden_dim, num_blocks)
-
-    # Training loop (for demonstration)
-    criterion = nn.MSELoss()  # Mean Squared Error Loss
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
-    # Ensure the target tensor is reshaped correctly to have the same shape as the forecast
-    y_tensor = y_tensor.view(-1, 1)  # Reshape to (12, 1) if the model is predicting single values    
+    # Load Model
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    models_dir = os.path.join(script_dir, 'models')
+    model_path = os.path.join(models_dir, f'nbeats_model_{current_animal}.pth')
     
-    hiper_content = []
-    hiper_content.append( f"Hyper nbeats input_dim {input_dim}" )
-    hiper_content.append( f"Hyper nbeats output_dim {output_dim}" )
-    hiper_content.append( f"Hyper nbeats hidden_dim {hidden_dim}" )
-    hiper_content.append( f"Hyper nbeats num_blocks {num_blocks}" )
-    #hiper_content.append( f"Hyper nbeats num_hierarchies {num_hierarchies}" )
-
-    results_dir = results_folder(file_rawdata_name)
-    hiper_path = os.path.join(results_dir, f'hiperparameters.txt')
-
-    with open(hiper_path, "a") as file:
-        for line in hiper_content:
-            file.write(line + '\n')
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    data_prep_dir = os.path.join(script_dir, '..', 'Interpolation/models')  # Navigate to the parent directory and into 'Results'
-
-    filename = file_rawdata_name.split('/')[-1].split('.')[0]
-    model_path = os.path.join(data_prep_dir, f'nbeats_model_general_{filename}.pth')
-
     if not os.path.exists(model_path):
-        print("Model not found for nbeat, training...")
-        # train_nbeats_model(current_animal, file_rawdata_name, file_rawdata_columns)
-        print('need first generate trainning model')
-        sys.exit()
+        print(f"Model for {current_animal} not found.")
+        return
+        
+    checkpoint = torch.load(model_path)
+    metadata = checkpoint['metadata']
+    model_state = checkpoint['model_state_dict']
+    scaler = joblib.load(os.path.join(models_dir, f'scaler_{current_animal}.pkl'))
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    model = NBeats(
+        input_steps=metadata['input_width'],
+        output_steps=metadata['forecast_horizon'],
+        input_features=len(metadata['feature_names']),
+        hidden_dim=metadata.get('hidden_dim', 64), 
+        num_blocks=metadata.get('num_blocks', 2)
+    ).to(device)
+    model.load_state_dict(model_state)
+    model.eval()
+    
+    # 1. Project to UTM
+    median_lon = df['Longitude'].median()
+    median_lat = df['Latitude'].median()
+    epsg = metadata['utm_epsg']
+    transformer = Transformer.from_crs("EPSG:4326", f"EPSG:{epsg}", always_xy=True)
+    transformer_back = Transformer.from_crs(f"EPSG:{epsg}", "EPSG:4326", always_xy=True)
+    
+    e, n = transformer.transform(df['Longitude'].values, df['Latitude'].values)
+    df['E'] = e
+    df['N'] = n
+    
+    # 2. Resample on Full Range
+    freq_str = metadata['freq_str']
+    df_resampled = df.set_index('Timestamp')[['E', 'N']].resample(freq_str).first()
+    
+    # Mask of valid data
+    is_valid = df_resampled['E'].notna()
+    valid_indices = np.where(is_valid)[0]
+    
+    if len(valid_indices) < 2:
+        print("Not enough data to interpolate.")
+        return
+        
+    first_valid = valid_indices[0]
+    last_valid = valid_indices[-1]
+    
+    # Truncate to relevant range
+    df_resampled = df_resampled.iloc[first_valid : last_valid + 1]
+    
+    # Re-calc mask
+    is_valid = df_resampled['E'].notna().values
+    nan_indices = np.where(~is_valid)[0]
+    
+    if len(nan_indices) == 0:
+        print("No gaps to fill.")
+        return
+        
+    # Group NaNs into segments
+    from itertools import groupby
+    from operator import itemgetter
+    
+    filled_df = df_resampled.copy()
+    
+    gap_count = 0
+    filled_points = 0
+    skipped_context_count = 0
+    
+    # Create a mask to track which points are interpolated
+    is_interpolated = np.zeros(len(filled_df), dtype=bool)
 
-    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& 22222222222222")
+    for k, g in groupby(enumerate(nan_indices), lambda x: x[0]-x[1]):
+        group = list(map(itemgetter(1), g))
+        start_gap = group[0]
+        end_gap = group[-1]
+        gap_len = end_gap - start_gap + 1
+        
+        # Check context
+        if start_gap - metadata['input_width'] < 0:
+             continue
+        if end_gap + metadata['input_width'] >= len(df_resampled):
+             continue
+            
+        # Extract context window
+        c_start = start_gap - metadata['input_width']
+        c_end = end_gap + metadata['input_width']
 
-    '''
-    # Function to predict values between dates
-    def predict_between_dates(start_date, end_date, df, file_rawdata_columns, model, num_steps=5):
-        new_data = []
-        current_timestamp = start_date
+        # Clean Context Check
+        context_subset = df_resampled.iloc[c_start : c_end + 1]
+        
+        pre_context = df_resampled.iloc[c_start : start_gap]['E']
+        post_context = df_resampled.iloc[end_gap + 1 : c_end + 1]['E']
+        
+        if pre_context.isna().any() or post_context.isna().any():
+             
+             temp_filled = context_subset.interpolate(method='linear', limit_direction='both').ffill().bfill()
+             
+             rel_start = start_gap - c_start
+             rel_end = end_gap - c_start
+             
+             temp_filled.iloc[rel_start : rel_end + 1] = np.nan
+             
+             context_subset = temp_filled
+        
+        # Interpolate
+        reconstructed_path = generate_bidirectional_forecast(context_subset, gap_len, model, scaler, metadata)
+        
+        if reconstructed_path is not None:
+             filled_df.iloc[start_gap : end_gap + 1, 0] = reconstructed_path[:, 0]
+             filled_df.iloc[start_gap : end_gap + 1, 1] = reconstructed_path[:, 1]
+             # Mark these indices as interpolated
+             is_interpolated[start_gap : end_gap + 1] = True
+             gap_count += 1
+             filled_points += len(reconstructed_path)
+        
+    print(f"Filled {gap_count} gaps ({filled_points} points).")
 
-        while current_timestamp <= end_date:
+    final_e = filled_df.loc[is_interpolated, 'E'].values
+    final_n = filled_df.loc[is_interpolated, 'N'].values
+    timestamps = filled_df.index[is_interpolated]
+    
+    out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
-            # Prepare the input for the model (use the last known values from the previous row)
-            last_row = df.iloc[-1]
-            last_features = torch.tensor([[last_row['Prev Time Difference (hours)'], last_row['Longitude'], last_row['Latitude']]], dtype=torch.float32)
+    if len(final_e) == 0:
+        print("No gaps were successfully filled properly. Saving empty interpolation file.")
+        # Save empty file
+        pd.DataFrame(columns=['ID', 'Timestamp', 'Longitude', 'Latitude']).to_csv(out_path, index=False, header=False)
+        return
 
-            # Predict the next time difference (forecasting multiple steps)
-            forecast = model(last_features)
-
-            # We can choose how to use the forecast vector. Here we use the first predicted time difference.
-            #predicted_time_diff = forecast[0].item()  # Use the first predicted time difference as a scalar
-            predicted_time_diff = forecast.item()  # Use the first predicted time difference as a scalar
-
-            #print(".")
-
-            if predicted_time_diff <= 0:
-                print("Predicted time difference is non-positive, breaking loop.")
-                break
-
-            # Calculate the next timestamp using the predicted time difference
-            new_timestamp = current_timestamp + timedelta(hours=predicted_time_diff)
-
-            # Append the new entry to the data with the correct number of columns
-            mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
-
-            #new_data.append([current_animal, new_timestamp.strftime('%m/%d/%y %H:%M'), last_row['Longitude'], last_row['Latitude'],
-            new_data.append([current_animal, new_timestamp.strftime(mask), last_row['Longitude'], last_row['Latitude'],
-                            last_row['Time Difference (hours)'], last_row['Prev Time Difference (hours)']])
-
-            # Update current_timestamp and last_row for the next iteration
-            current_timestamp = new_timestamp
-            df = pd.concat([df, pd.DataFrame([new_data[-1]], columns=df.columns)], ignore_index=True)
-
-        return pd.DataFrame(new_data, columns=['ID', 'Timestamp', 'Longitude', 'Latitude', 'Time Difference (hours)', 'Prev Time Difference (hours)'])
-    '''
-
-    #Funcionando
-    def predict_between_dates(start_date, end_date, df, file_rawdata_columns, model, num_steps=5, max_rows=None):
-        new_data = []
-        current_timestamp = start_date
-        rows_generated = 0
-
-        while current_timestamp <= end_date:
-            # Check if we've reached the maximum rows limit
-            if max_rows is not None and rows_generated >= max_rows:
-                break
-
-            # Prepare the input for the model (use the last known values from the previous row)
-            last_row = df.iloc[-1]
-            last_features = torch.tensor([[last_row['Prev Time Difference (hours)'], last_row['Longitude'], last_row['Latitude']]], dtype=torch.float32)
-
-            # Predict the next time difference (forecasting multiple steps)
-            forecast = model(last_features)
-            predicted_time_diff = forecast.item()
-
-            if predicted_time_diff <= 0:
-                print("Predicted time difference is non-positive, breaking loop.")
-                break
-
-            # Calculate the next timestamp using the predicted time difference
-            new_timestamp = current_timestamp + timedelta(hours=predicted_time_diff)
-
-            # Append the new entry to the data with the correct number of columns
-            mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
-            new_data.append([current_animal, new_timestamp.strftime(mask), last_row['Longitude'], last_row['Latitude'],
-                            last_row['Time Difference (hours)'], last_row['Prev Time Difference (hours)']])
-
-            # Update current_timestamp and last_row for the next iteration
-            current_timestamp = new_timestamp
-            df = pd.concat([df, pd.DataFrame([new_data[-1]], columns=df.columns)], ignore_index=True)
-            rows_generated += 1
-
-        return pd.DataFrame(new_data, columns=['ID', 'Timestamp', 'Longitude', 'Latitude', 'Time Difference (hours)', 'Prev Time Difference (hours)'])
-
-    def find_min_max_dates(current_animal, file_rawdata_columns):
-        """
-        Reads a CSV file and identifies the earliest and latest dates in the 'Datetime' column.
-
-        Args:
-            file_path (str): Path to the CSV file.
-
-        Returns:
-            tuple: A tuple containing the earliest and latest dates.
-        """
-
+    final_lon, final_lat = transformer_back.transform(final_e, final_n)
+    
+    out_df = pd.DataFrame({
+        'ID': current_animal,
+        'Timestamp': timestamps,
+        'Longitude': final_lon,
+        'Latitude': final_lat
+    })
+    
+    # Rounding
+    out_df['Longitude'] = out_df['Longitude'].round(6)
+    out_df['Latitude'] = out_df['Latitude'].round(6)
+    
+    # Format
+    try:
         mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
-
-        results_dir = results_folder( file_rawdata_name )
-
-        file_path = os.path.join(results_dir, f'map_{current_animal}.csv')
-
-        data = pd.read_csv(file_path, header=None)
-
-        # Rename columns for clarity (modify as per actual column names)
-        data.columns = ['ID', 'Datetime', 'Longitude', 'Latitude']
-
-        # Display the first few rows of the 'Datetime' column for validation
-        print("Sample of 'Datetime' column:")
-        print(data['Datetime'].head())
-
-        # Convert the 'Datetime' column to datetime format
-        data['Datetime'] = pd.to_datetime(data['Datetime'], format=mask, errors='coerce')
-
-
-        # Check for rows with invalid or missing dates
-        invalid_dates = data[data['Datetime'].isna()]
-        if not invalid_dates.empty:
-            print("Warning: Some rows have invalid or missing dates:")
-            print(invalid_dates)
-
-        # Drop rows with invalid dates
-        data = data.dropna(subset=['Datetime'])
-
-        # Find the minimum and maximum dates
-        min_date = data['Datetime'].min().strftime( mask )
-        max_date = data['Datetime'].max().strftime( mask )
-
-        return min_date, max_date
-    # Define start and end dates
-
-    start_date_str, end_date_str = find_min_max_dates( current_animal, file_rawdata_columns )
-
-    mask = get_id_from_json(file_rawdata_columns, DataField.DATETIME_MASK)
-
-    start_date = datetime.strptime(start_date_str, mask)
-
-    # Add 2 months to start_date
-    end_date = start_date + relativedelta(months=+2)
-
-    end_date_str = end_date.strftime(mask)
-
-    start_date = pd.to_datetime( start_date_str, format=mask)
-    end_date = pd.to_datetime(end_date_str, format=mask)
-
-    print(f'>>>>>>>>>>>>>>>>>>>>>>>>> len_animal_outliers_less {len_animal_outliers_less} current_animal {current_animal} nbeat')
-
-    predicted_df = pd.DataFrame()
-
-    if not df.empty:
-        # Generate exactly the number of rows needed
-        predicted_df = predict_between_dates(
-            start_date, end_date, df, file_rawdata_columns, model, 
-            max_rows=len_animal_outliers_less
-        )
-    else:
-        print("Warning: DataFrame is empty.")
-
-    '''
-    while len(predicted_df) < len_animal_outliers_less:
-        # Call the function to predict data between the given dates
-        if not df.empty:
-            new_predictions = predict_between_dates(start_date, end_date, df, file_rawdata_columns, model, max_rows=len_animal_outliers_less)
-            
-            # Check if new predictions were actually generated
-            if new_predictions.empty:
-                print("Warning: No new predictions generated. Breaking loop to prevent infinite iteration.")
-                break
-                
-            # Concatenate the new predictions to the existing predicted_df
-            predicted_df = pd.concat([predicted_df, new_predictions], ignore_index=True)
-            
-            # Optional: Add a counter to prevent infinite loops
-            # iteration_count += 1
-            # if iteration_count > max_iterations:
-            #     print(f"Warning: Maximum iterations ({max_iterations}) reached.")
-            #     break
+        if mask:
+             out_df['Timestamp'] = out_df['Timestamp'].dt.strftime(mask)
         else:
-            print("Warning: DataFrame is empty. Breaking loop.")
-            break
-    '''
-
-    '''
-    while len(predicted_df) < len_animal:
-
-        # Call the function to predict data between the given dates
-
-        if not df.empty:
-
-            new_predictions = predict_between_dates(start_date, end_date, df, file_rawdata_columns, model)
-
-            # Concatenate the new predictions to the existing predicted_df
-            predicted_df = pd.concat([predicted_df, new_predictions], ignore_index=True)
-    '''
-
-    print(f'############################### len(predicted_df)  {len(predicted_df)}')
-
-    hiper_content = []
-    hiper_content.append( f"Number of nbeat interpolations {len_animal_outliers_less} animal {current_animal}" )
-
-    results__rawdataset_dir = results_folder(file_rawdata_name)
-    hiper_path = os.path.join(results__rawdataset_dir, f'hiperparameters.txt')
-
-    with open(hiper_path, "a") as file:
-        for line in hiper_content:
-            file.write(line + '\n')
-
-    columns_to_save = ['ID', 'Timestamp', 'Longitude', 'Latitude']
-
-    create_clusterization_results(f'{results__rawdataset_dir}/Interpolation')
-    file_path = os.path.join(results__rawdataset_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats.csv')
-
-    predicted_df[columns_to_save].to_csv( file_path, index=False, header=False)
+             out_df['Timestamp'] = out_df['Timestamp'].dt.strftime('%m/%d/%y %H:%M')
+    except:
+        out_df['Timestamp'] = out_df['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
 
 
-def run_mock( ):
+    
+    out_df.to_csv(out_path, index=False, header=False, date_format='%m/%d/%y %H:%M')
+    print(f"Saved interpolated path to {out_path}")
 
-    current_animal = sys.argv [1]
-    number_of_predictions = sys.argv[2]
-
-    run( current_animal, number_of_predictions )
+if __name__ == "__main__":
+    if len(sys.argv) >= 4:
+        run(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])

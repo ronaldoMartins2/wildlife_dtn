@@ -38,8 +38,8 @@ def load_data(filename, mask):
 
 def load_trained_model(current_animal, file_rawdata_name):
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the script directory
-    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')  # Navigate to the parent directory and into 'Results'
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
 
     input_dim = read_field_from_json(hyperparam_path, "input_dim_nhits")
@@ -60,6 +60,10 @@ def load_trained_model(current_animal, file_rawdata_name):
         for line in hiper_content:
             file.write(line + '\n')
 
+    # --- Novo: detectar device (GPU/CPU) ---
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"[NHITS] Using device: {device}")
+
     filename = file_rawdata_name.split('/')[-1].split('.')[0]
     model_path = os.path.join(results_dir, f'nhits_model_general_{filename}.pth')
     
@@ -68,10 +72,20 @@ def load_trained_model(current_animal, file_rawdata_name):
 
     print(f'model_path >>> {model_path}')
 
-    # Load trained weights
-    checkpoint = torch.load(model_path, weights_only=False)
+    # Load trained weights com map_location para device correto
+    try:
+        checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        print(f"[NHITS] Checkpoint loaded successfully from {model_path}")
+    except FileNotFoundError:
+        print(f"[NHITS] ERROR: Model checkpoint not found at {model_path}")
+        raise
+    except RuntimeError as e:
+        print(f"[NHITS] ERROR loading checkpoint state dict: {e}")
+        raise
 
-    model.load_state_dict(checkpoint['model_state_dict'])
+    # Mover modelo para o device correto
+    model = model.to(device)
     model.eval()
 
     return model
@@ -94,7 +108,7 @@ def predict_between_dates(start_date, end_date, df, model, trainer, mask, num_st
     - new_data: list of [ID, Timestamp, Longitude, Latitude]
     """
     current_timestamp = start_date
-    new_data = []
+    new_data = []   
 
     # Get the last known row (most recent data point)
     last_row = df.iloc[-1]

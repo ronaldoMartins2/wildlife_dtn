@@ -5,18 +5,106 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import os
 import json
+from sklearn.metrics.cluster import contingency_matrix
+from sklearn.metrics import silhouette_score, davies_bouldin_score, pairwise_distances_argmin_min
 from Common.utils import (
     create_clusterization_results,
     results_folder,
     read_field_from_json
 )
 
+def calculate_quality_metrics(y_true, y_pred):
+    """
+    y_true: IDs reais (ex: ID do animal)
+    y_pred: IDs dos clusters gerados pelo algoritmo
+    """
+    # Matriz de contingência (linhas = classes reais, colunas = clusters)
+    matrix = contingency_matrix(y_true, y_pred)
+    N = np.sum(matrix) # Total de itens [cite: 35]
+    
+    # 1. PURITY [cite: 36]
+    purity = np.sum(np.amax(matrix, axis=0)) / N
+    
+    # 2. ENTROPIA (Global) [cite: 54]
+    total_entropy = 0
+    cluster_sums = np.sum(matrix, axis=0)
+    for j in range(matrix.shape[1]):
+        nj = cluster_sums[j]
+        if nj > 0:
+            p_ij = matrix[:, j] / nj
+            p_ij_nonzero = p_ij[p_ij > 0]
+            cluster_entropy = -np.sum(p_ij_nonzero * np.log2(p_ij_nonzero))
+            total_entropy += (nj / N) * cluster_entropy
+            
+    # 3. F-MEASURED [cite: 50]
+    # Precisão = n_ij / col_sum; Revocação = n_ij / row_sum
+    # Avoid division by zero
+    col_sums = matrix.sum(axis=0)
+    row_sums = matrix.sum(axis=1)
+    
+    precision = np.divide(matrix, col_sums, out=np.zeros_like(matrix, dtype=float), where=col_sums!=0)
+    recall = np.divide(matrix, row_sums[:, None], out=np.zeros_like(matrix, dtype=float), where=row_sums[:, None]!=0)
+    
+    f_matrix = np.divide(2 * precision * recall, precision + recall, 
+                         out=np.zeros_like(matrix, dtype=float), where=(precision + recall)!=0)
+    # Média ponderada do melhor F-measure por categoria [cite: 40, 45]
+    f_measured = np.sum(np.amax(f_matrix, axis=1) * row_sums) / N
+    
+    # 4. PARTITION COEFFICIENT (PC) [cite: 57]
+    # Para cada cluster j, calcula a soma dos quadrados das proporções de cada animal
+    pc_clusters = []
+    for j in range(matrix.shape[1]):
+        nj = cluster_sums[j]
+        if nj > 0:
+            # Fração de cada animal no cluster j: |Cp ∩ Cp+| / |Cp|
+            proportions = matrix[:, j] / nj
+            pc_j = np.sum(proportions**2) # Segundo a descrição do PDF de ser entre 1/k+ e 1 
+            pc_clusters.append(pc_j)
+    
+    avg_pc = np.mean(pc_clusters) if pc_clusters else 0
+    
+    return {
+        "Purity": purity,
+        "Entropy": total_entropy,
+        "F-Measure": f_measured,
+        "PC": avg_pc
+    }
+
+def calculate_quantization_error(points, centers):
+    _, distances = pairwise_distances_argmin_min(points, centers)
+    return float(np.mean(distances)) if len(distances) > 0 else 0.0
+
+
+def plot_quality_metrics_local(silhouette, dbi, quantization_error, output_dir, prefix, algorithm='kmeans'):
+    """Plot silhouette score, davies-bouldin index e quantization error"""
+    metrics = ['Silhouette Score', 'Davies-Bouldin Index', 'Quantization Error']
+    values = [silhouette, dbi, quantization_error]
+    
+    plt.figure(figsize=(10, 6))
+    bars = plt.bar(metrics, values, color=['#1f77b4', '#ff7f0e', '#2ca02c'], alpha=0.7)
+    
+    # Adiciona valores nas barras
+    for bar, value in zip(bars, values):
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2., height,
+                f'{value:.4f}', ha='center', va='bottom', fontsize=10)
+    
+    plt.title(f'Clustering Quality Metrics - {prefix.replace("_", " ").title()} - {algorithm.upper()}')
+    plt.ylabel('Score')
+    plt.grid(axis='y', alpha=0.3)
+    
+    output_path = os.path.join(output_dir, f'quality_metrics_{prefix}_{algorithm}.png')
+    plt.savefig(output_path, dpi=100, bbox_inches='tight')
+    plt.close()
+    print(f"Quality metrics plot saved to {output_path}")
+
+
 def extract_folder_name(file_rawdata):
     """Extrai o nome da pasta do file_rawdata_name"""
     file_name = file_rawdata.split('/')
     file_name = file_name[-1].split('.')[0]
     return file_name
-def run_all(file_rawdata_name, file_rawdata, output_prefix):
+def run_all(file_rawdata_name, file_rawdata, output_prefix=None):
     
     # Define o caminho para SALVAR os resultados usando o nome extraído de file_rawdata (dataset original)
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -54,6 +142,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=n_init)
     kmeans.fit(coords)
     centroids = kmeans.cluster_centers_
+    quantization_error = calculate_quantization_error(coords, centroids)
 
     # Salva centroides
     output_file_csv = os.path.join(cluster_output_dir, f'centroids_kmeans_{output_prefix}.csv')
@@ -61,6 +150,70 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     df_centroids['Index'] = df_centroids['Index'] + 1  # começa por 1
     df_centroids.to_csv(output_file_csv, index=False, header=None)
     print(f"Cluster centroids saved to {output_file_csv}")
+
+    # --- Novo: salvar mapeamento ponto -> centróide ---
+    labels = kmeans.predict(coords)
+    df_points = data_cleaned.reset_index(drop=True).copy()
+    df_map = pd.DataFrame({
+        'id_centroid': (labels + 1),                        # centróides numerados a partir de 1
+        'id_animal': df_points.iloc[:, 0].values,           # coluna ID original
+        'timestamp': df_points.iloc[:, 1].values,           # coluna 1 é o timestamp
+        'latitude_animal': df_points.iloc[:, 3].values,     # latitude
+        'longitude_animal': df_points.iloc[:, 2].values     # longitude
+    })
+    map_file = os.path.join(cluster_output_dir, f'points_kmeans_mapping_{output_prefix}.csv')
+    df_map.to_csv(map_file, index=False)
+    print(f"Point->centroid mapping saved to {map_file}")
+
+    #Metrics
+    metrics_antigas = calculate_quality_metrics(df_points.iloc[:, 0].values, labels + 1)
+
+    if len(np.unique(labels)) > 1:
+        silhouette = silhouette_score(coords, labels)
+        dbi = davies_bouldin_score(coords, labels)
+    else:
+        silhouette = -1.0
+        dbi = -1.0
+
+    metrics = {
+        "Purity": metrics_antigas['Purity'],
+        "Entropy": metrics_antigas['Entropy'],
+        "F-Measure": metrics_antigas['F-Measure'],
+        "Partition Coefficient (PC)": metrics_antigas['PC'],
+        "Silhouette Score": silhouette,
+        "Davies-Bouldin Index": dbi,
+        "Quantization Error": quantization_error
+    }
+
+    print("\n--- Resultados de Qualidade da Clusterização (Run All) ---")
+    print(f"Purity:      {metrics_antigas['Purity']:.4f}")
+    print(f"Entropy:     {metrics_antigas['Entropy']:.4f}")
+    print(f"F-Measure:   {metrics_antigas['F-Measure']:.4f}")
+    print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
+    print(f"Silhouette Score: {silhouette:.4f}")
+    print(f"Davies-Bouldin Index: {dbi:.4f}")
+    print(f"Quantization Error: {quantization_error:.4f}")
+    
+    metrics['Algorithm'] = 'KMeans'
+    metrics_file = os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv')
+    
+    if os.path.exists(metrics_file):
+        existing_df = pd.read_csv(metrics_file)
+        new_df = pd.DataFrame([metrics])
+        final_df = pd.concat([existing_df, new_df], ignore_index=True)
+    else:
+        final_df = pd.DataFrame([metrics])
+        
+    final_df.to_csv(metrics_file, index=False)
+    print(f"Metrics saved to {metrics_file}")
+    #plot_quality_metrics_local(silhouette, dbi, quantization_error, cluster_output_dir, output_prefix, 'kmeans')
+    
+    # Opcional: Salvar em arquivo txt também
+    results_path_txt = os.path.join(cluster_output_dir, f'metrics_{output_prefix}.txt')
+    with open(results_path_txt, "w") as f:
+        for k, v in metrics.items():
+            if k != 'Algorithm':
+                f.write(f"{k}: {v}\n")
 
     # Gráfico
     language = read_field_from_json(hyperparam_path, "language")
@@ -135,6 +288,7 @@ def run(current_animal, file_rawdata_name):
     kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=n_init)
     kmeans.fit(coords)
     centroids = kmeans.cluster_centers_
+    quantization_error = calculate_quantization_error(coords, centroids)
 
     # --- SALVAMENTO DOS RESULTADOS ---
     # Salva os hiperparâmetros usados no arquivo de log
@@ -154,6 +308,65 @@ def run(current_animal, file_rawdata_name):
     df_centroids['Index'] = df_centroids['Index'] + 1  # começa por 1
     df_centroids.to_csv(output_file_csv, index=False, header=None)
     print(f"Cluster centroids saved to {output_file_csv}")
+
+    # --- Novo: salvar mapeamento ponto -> centróide ---
+    labels = kmeans.predict(coords)
+    df_points = data_cleaned.reset_index(drop=True).copy()
+    df_map = pd.DataFrame({
+        'id_centroid': (labels + 1),
+        'id_animal': df_points.iloc[:, 0].values,
+        'latitude_animal': df_points.iloc[:, 3].values,
+        'longitude_animal': df_points.iloc[:, 2].values
+    })
+    map_file = os.path.join(cluster_output_dir, f'points_kmeans_mapping_{current_animal}.csv')
+    df_map.to_csv(map_file, index=False)
+    print(f"Point->centroid mapping saved to {map_file}")
+
+    # --- INSERÇÃO DAS MÉTRICAS ---
+    metrics_antigas = calculate_quality_metrics(df_map['id_animal'], df_map['id_centroid'])
+
+    if len(np.unique(labels)) > 1:
+        silhouette = silhouette_score(coords, labels)
+        dbi = davies_bouldin_score(coords, labels)
+    else:
+        silhouette = -1.0
+        dbi = -1.0
+
+    metrias = {
+        "Purity": metrics_antigas['Purity'],
+        "Entropy": metrics_antigas['Entropy'],
+        "F-Measure": metrics_antigas['F-Measure'],
+        "Partition Coefficient (PC)": metrics_antigas['PC'],
+        "Silhouette Score": silhouette,
+        "Davies-Bouldin Index": dbi,
+        "Quantization Error": quantization_error
+    }
+
+    print("\n--- Resultados de Qualidade da Clusterização ---")
+    print(f"Purity:      {metrics_antigas['Purity']:.4f}")
+    print(f"Entropy:     {metrics_antigas['Entropy']:.4f}")
+    print(f"F-Measure:   {metrics_antigas['F-Measure']:.4f}")
+    print(f"Partition Coeff (PC): {metrics_antigas['PC']:.4f}")
+    print(f"Silhouette Score: {silhouette:.4f}")
+    print(f"Davies-Bouldin Index: {dbi:.4f}")
+    print(f"Quantization Error: {quantization_error:.4f}")
+    
+    metrias['Algorithm'] = 'KMeans'
+    metrics_csv_path = os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{current_animal}.csv')
+    if os.path.exists(metrics_csv_path):
+        existing_df = pd.read_csv(metrics_csv_path)
+        final_df = pd.concat([existing_df, pd.DataFrame([metrias])], ignore_index=True)
+    else:
+        final_df = pd.DataFrame([metrias])
+    final_df.to_csv(metrics_csv_path, index=False)
+    print(f"Metrics saved to {metrics_csv_path}")
+    plot_quality_metrics_local(silhouette, dbi, quantization_error, cluster_output_dir, current_animal, 'kmeans')
+
+    # Opcional: Salvar em arquivo
+    results_path = os.path.join(cluster_output_dir, f'metrics_{current_animal}.txt')
+    with open(results_path, "w") as f:
+        for k, v in metrias.items():
+            f.write(f"{k}: {v}\n")
 
     # --- GERAÇÃO DO GRÁFICO ---
     # Carrega textos do gráfico (título, eixos) de acordo com o idioma definido

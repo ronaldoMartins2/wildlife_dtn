@@ -225,6 +225,26 @@ def get_top_botom_date(current_animal, file_rawdata_name, file_rawdata_columns):
     # Convert the 'timestamp' column to datetime format
     df['timestamp'] = pd.to_datetime(df['timestamp'], format=mask)
 
+    # Robust timestamp parsing: normalize, remove header-like rows, try mask then fallback to infer/coerce
+    df['timestamp'] = df['timestamp'].astype(str).str.strip()
+    header_mask = df['timestamp'].str.lower().isin(['timestamp', 'datetime', 'date', 'time'])
+    if header_mask.any():
+        df = df.loc[~header_mask].reset_index(drop=True)
+
+    if mask:
+        try:
+            df['timestamp'] = pd.to_datetime(df['timestamp'], format=mask)
+        except Exception:
+            df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce', infer_datetime_format=True)
+    else:
+        df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce', infer_datetime_format=True)
+
+    # Drop invalid timestamps
+    df = df.dropna(subset=['timestamp']).reset_index(drop=True)
+
+    if df.empty:
+        raise RuntimeError(f"No valid timestamps found in {file_path} after parsing.")
+
     # Find the earliest and latest dates
     earliest_date = df['timestamp'].min()
     latest_date = df['timestamp'].max()
