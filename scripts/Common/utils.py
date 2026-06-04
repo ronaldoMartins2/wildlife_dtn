@@ -259,8 +259,13 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
     with open(hiper_path, "a") as f:
         f.write(f"Total merged {len(result)} method {method} animal {current_animal}\n")
 
+    out_path = os.path.join(results_dir, f'Interpolation')
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
     # Save without NaN
     result[columns_to_save].to_csv(out_path, index=False, header=False)
+
+
 
 def read_field_from_json(json_file, field_name):
     """
