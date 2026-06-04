@@ -259,8 +259,8 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
     with open(hiper_path, "a") as f:
         f.write(f"Total merged {len(result)} method {method} animal {current_animal}\n")
 
-    out_path = os.path.join(results_dir, f'Interpolation')
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    # out_path = os.path.join(results_dir, f'Interpolation')
+    # os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
     # Save without NaN
     result[columns_to_save].to_csv(out_path, index=False, header=False)
@@ -625,6 +625,8 @@ def merge_csv(file_csv1, file_csv2, file_rawdata, animal_name, method):
 
     results_dir = results_folder(file_rawdata)
     output_path = os.path.join(results_dir, f"map_interpolation_merged_{animal_name}_{method}.csv")
+    print(results_dir)
+    print(output_path)
     merged = pd.concat([df1, df2], ignore_index=True)
     merged.to_csv(path_or_buf=output_path, index=False, header=False)
 

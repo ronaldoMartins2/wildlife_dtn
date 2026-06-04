@@ -285,6 +285,7 @@ def run_evaluation_all_bilstm(file_rawdata, file_rawdata_columns):
                 'biological_metrics': res.get('biological_metrics', {})
             }
             metrics_path = os.path.join(results_dir, 'Interpolation', f'metrics_bilstm_{animal}.json')
+            print(metrics_path)
             os.makedirs(os.path.dirname(metrics_path), exist_ok=True)
             with open(metrics_path, 'w') as mf:
                 json.dump(sanitize_for_json(metrics_obj), mf, indent=2)

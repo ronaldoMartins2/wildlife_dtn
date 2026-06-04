@@ -102,6 +102,13 @@ from DTN.cluster_contacts_fixed_points import run as run_cluster_contacts
 from DTN.find_contacts_between_nodes import run as run_find_contacts_between_nodes
 from DTN.add_down_event import run as run_add_down_event
 
+from DTN.export_final_contacts import run as run_export_final_trace
+from DTN.find_contacs_animal_to_centroids import run as run_contacts_animal_centroids
+from DTN.add_uakari_lodge_contact import run as run_contacts_animal_uakari
+from DTN.export_all_final_contacts import run as run_export_all_final_trace
+from DTN.setup_database import recreate_table as run_recreate_table
+import DTN.generate_all_distances_data_n_plots as run_generate_distances_n_data_n_plots
+
 
 # ============================================================================
 # MAIN PIPELINE
@@ -147,15 +154,15 @@ def main():
     print("\n--- Interpolation Phase ---")
     
     # Run N-BEATS Pipeline (Train -> Eval -> Interpolate)
-    #train_nbeats_global(file_rawdata, file_rawdata_columns)
-    #run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=True, run_eval=True, run_predict=True)
+    # train_nbeats_global(file_rawdata, file_rawdata_columns)
+    # run_pipeline_all_nbeats(file_rawdata, file_rawdata_columns, run_train=True, run_eval=True, run_predict=True)
    
     # Run PER-DATASET BiLSTM Pipeline
-    #run_pipeline_all_bilstm(file_rawdata, file_rawdata_columns)
-    #run_evaluation_all_bilstm(file_rawdata, file_rawdata_columns)
+    # run_pipeline_all_bilstm(file_rawdata, file_rawdata_columns)
+    # run_evaluation_all_bilstm(file_rawdata, file_rawdata_columns)
 
     # CLEAN Interpolation Results
-    #run_cleaning_pipeline(file_rawdata)
+    # run_cleaning_pipeline(file_rawdata)
 
     # Merge Interpolation Results per Animal
     for current_animal in list_animals:
@@ -170,7 +177,7 @@ def main():
     print("\n--- Gerando Gráficos de Comparação de Interpolação ---")
     plot_interpolation_comparisons(file_rawdata, ["bilstm", "nbeats"])
 
-    sys.exit(0)
+    # sys.exit(0)
     # 4. DATA MERGING FOR CLUSTERING
     print("\n--- Preparing Data for Clustering ---")
     
@@ -223,7 +230,7 @@ def main():
         run_birch_all(file_merged_bilstm, file_rawdata, 'bilstm_merged')
         run_som_all(file_merged_bilstm, file_rawdata, 'bilstm_merged')
 
-    sys.exit(0)
+    # sys.exit(0)
 
     if file_merged_nbeats:
         print("Running Clustering on Merged N-BEATS Data...")
@@ -283,7 +290,7 @@ def main():
         run_som_all(file_merged, file_rawdata, 'raw_data')
         
     print("=== PIPELINE FINISHED SUCCESSFULLY ===")
-    sys.exit(0)
+    # sys.exit(0)
 
     for current_animal in list_animals:
         run_plot_kmeans_som_birch_mean_shift(current_animal)
@@ -310,12 +317,52 @@ def main():
     #Combinação sem repetições
     pairs = create_combinations(list_animals)
 
+    # Chamar todos os scripts de criação de dados de distancias e plots
+    import subprocess
+    subprocess.run([r"venv\Scripts\python.exe", r"scripts\DTN\generate_all_distances_data_n_plots.py"])
+
+    # Limpar o database para gerar novamente os contatos
+    run_recreate_table()
+
     for pair in pairs:
         run_contacts(pair[0], pair[1], file_rawdata)
 
     for pair in pairs:
         run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
         run_add_down_event(f'{pair[0]}_{pair[1]}', file_rawdata)
+
+
+    # run_find_contacts_between_nodes(93, 97, file_rawdata)
+    # run_add_down_event('contact_93_97', file_rawdata)
+
+    # Fora do loop dos pares de animais
+    print("Gerando arquivo final consolidado...")
+    run_export_final_trace(file_rawdata)
+
+    # No app_wildlife.py, após processar os mapas individuais
+    list_animals = ['93', '94', '95', '96', '97', '98', '99', '100']
+
+    # Criar contatos entre onças e centroids
+    for animal_id in list_animals:
+        # Agora passamos o ID numérico (ex: '93') e não o nome do arquivo bruto
+        run_contacts_animal_centroids(animal_id, file_rawdata)
+
+    # Criar contatos entre onças e o Uakari Lodge
+    for animal_id in list_animals:
+        run_contacts_animal_uakari(animal_id, file_rawdata)
+
+    raw_name = "map_jaguar_mamiraua_all_animals_bilstm"
+        
+    # Listas para o loop de experimentos
+    centroids_list = [16]
+    algorithms_list = ["kmeans"] # Seus 3 algoritmos
+    interpolations_list = ["bilstm"] # Neste primeiro momento apenas o rawdata
+
+    # Gerar arquivos para cada combinação
+    for n in centroids_list:
+        for alg in algorithms_list:
+            for interp in interpolations_list:
+                run_export_all_final_trace(raw_name, n_centroids=n, algorithm=alg, interpolation=interp)
    
 
 if __name__ == "__main__":
@@ -348,36 +395,6 @@ python3 scripts/Interpolation/evaluate_bilstm.py \
 #nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
 #sys.exit()
 
-<<<<<<< HEAD
-#train_nbeats_model_single(current_animal, file_rawdata, file_rawdata_columns)
-#train_nbeats_model_list(list_animals, file_rawdata, file_rawdata_columns)
-#sys.exit()
-####################################################################################################################
-
-# for current_animal in list_animals:
-#     #TODO review number_of_predictions 
-#     number_of_predictions = 5
-#     len_animal = get_len_animal( current_animal, file_rawdata )
-   
-#     print(f'len_animal {len_animal} current_animal {current_animal} file_rawdata {file_rawdata}')
-
-#     run_interpolation_nbeat(current_animal, number_of_predictions, file_rawdata, file_rawdata_columns)
-
-#     start_date, end_date = get_top_botom_date( current_animal, file_rawdata, file_rawdata_columns )
-
-#     run_interpolation_nhits(current_animal, start_date, end_date, file_rawdata, file_rawdata_columns)
-#exit ()
-#sys.exit()
-
-# for current_animal in list_animals:
-#     merge_csvs( current_animal, 'N_BEATS', file_rawdata, file_rawdata_columns )
-#     merge_csvs( current_animal, 'N_HITS', file_rawdata, file_rawdata_columns )
-
-#exit()
-
-
-=======
->>>>>>> bc32e16774529cf1e099830e2f5cfb3b2ee82434
 # for current_animal in list_animals:
 #     calc_average_by_method( current_animal, 'N_BEATS', file_rawdata )
 #     calc_average_by_method( current_animal, 'N_HITS', file_rawdata )
@@ -392,40 +409,9 @@ python3 scripts/Interpolation/evaluate_bilstm.py \
 #n_c_SOM_x = read_field_from_json(hyperparam_path, "som_x")
 #n_c_SOM_y = read_field_from_json(hyperparam_path, "som_y")
 
-<<<<<<< HEAD
-############## CLUSTERIZATION ##############################
-# run clusterization kmeans
-
-#Rodando Dispersao Geral dos animais: Tangara e Jaguar
-#Criando csv das coordenadas interpoladas
-
-merge_maps(file_rawdata, list_animals)
-# merge_all_interpolations_nbeat(file_rawdata)
-# merge_all_interpolations_nhits(file_rawdata)
-
-# file_interpolated_nbeats = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nbeats_all.csv' )
-# file_interpolated_nhits = os.path.join( results_folder(file_rawdata), 'Interpolation', f'map_{tangara}_interpolation_nhits_all.csv' )
-file_marged = os.path.join(results_folder(file_rawdata), f'map_{tangara}_all_animals_bilstm.csv')
-
-# run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
-# run_all_kmeans(file_interpolated_nhits, file_rawdata, 'nhits')
-# run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
-# run_birch_all(file_interpolated_nhits, file_rawdata, 'nhits')
-# run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
-# run_som_all(file_interpolated_nhits, file_rawdata, 'nhits')
-
-#Por enquanto desabilitado
-#run_mean_shift_all(file_interpolated_nbeats, 'nbeats')
-#run_mean_shift_all(file_interpolated_nhits, 'nhits')
-
-#Roda dispersao geral para o dataset atual
-# run_all_dispersion(file_rawdata)
-#sys.exit()
-=======
 #run_all_kmeans(file_merged, file_rawdata, f'RawData_{n_c_KMEANS}_{tangara}')
 #run_birch_all(file_merged, file_rawdata, f'RawData_{n_c_BIRCH}_{tangara}')
 #run_som_all(file_merged, file_rawdata, f'RawData_{n_c_SOM_x * n_c_SOM_y}_{tangara}')
->>>>>>> bc32e16774529cf1e099830e2f5cfb3b2ee82434
 
 # for current_animal in list_animals:
 #     run_plot_kmeans_som_birch_mean_shift(current_animal)
@@ -443,13 +429,8 @@ file_marged = os.path.join(results_folder(file_rawdata), f'map_{tangara}_all_ani
 #for current_animal in list_animals:
 #    run_cluster_contacts(current_animal, file_rawdata, tangara)
 
-<<<<<<< HEAD
-# run_cluster_contacts(current_animal, file_rawdata)
-# sys.exit()
-=======
 #run_cluster_contacts(current_animal, file_rawdata)
 #sys.exit()
->>>>>>> bc32e16774529cf1e099830e2f5cfb3b2ee82434
 
 ############## #DTN Contacts ##################################
 #criar os conjunto dois a dois sem repetição
@@ -467,39 +448,4 @@ run_recreate_table()
 for pair in pairs:
     run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
     run_add_down_event(f'{pair[0]}_{pair[1]}', file_rawdata)
-<<<<<<< HEAD
-
-# run_find_contacts_between_nodes(93, 97, file_rawdata)
-# run_add_down_event('contact_93_97', file_rawdata)
-
-# Fora do loop dos pares de animais
-print("Gerando arquivo final consolidado...")
-run_export_final_trace(file_rawdata)
-
-# No app_wildlife.py, após processar os mapas individuais
-list_animals = ['93', '94', '95', '96', '97', '98', '99', '100']
-
-# Criar contatos entre onças e centroids
-for animal_id in list_animals:
-    # Agora passamos o ID numérico (ex: '93') e não o nome do arquivo bruto
-    run_contacts_animal_centroids(animal_id, file_rawdata)
-
-# Criar contatos entre onças e o Uakari Lodge
-for animal_id in list_animals:
-    run_contacts_animal_uakari(animal_id, file_rawdata)
-
-raw_name = "jaguar_mamiraua"
-    
-# Listas para o loop de experimentos
-centroids_list = [16]
-algorithms_list = ["kmeans"] # Seus 3 algoritmos
-interpolations_list = ["bilstm"] # Neste primeiro momento apenas o rawdata
-
-# Gerar arquivos para cada combinação
-for n in centroids_list:
-    for alg in algorithms_list:
-        for interp in interpolations_list:
-            run_export_all_final_trace(raw_name, n_centroids=n, algorithm=alg, interpolation=interp)
-=======
 """
->>>>>>> bc32e16774529cf1e099830e2f5cfb3b2ee82434
