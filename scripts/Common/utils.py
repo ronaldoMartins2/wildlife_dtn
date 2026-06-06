@@ -247,6 +247,9 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
     result = result.sort_values(by='DateTime')
     columns_to_save = ['ID', 'DateTime', 'Longitude', 'Latitude']
 
+    interpolation_path = os.path.join(results_dir, f'Interpolation')
+    os.makedirs(interpolation_path, exist_ok=True)
+
     if method == 'N_BEATS':
         out_path = os.path.join(results_dir, f'Interpolation/map_{current_animal}_interpolation_nbeats_merged.csv')
     elif method == 'BiLSTM':
@@ -258,9 +261,6 @@ def merge_csvs(current_animal, method, file_rawdata_name, file_rawdata_columns):
     hiper_path = os.path.join(results_dir, 'hiperparameters.txt')
     with open(hiper_path, "a") as f:
         f.write(f"Total merged {len(result)} method {method} animal {current_animal}\n")
-
-    # out_path = os.path.join(results_dir, f'Interpolation')
-    # os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
     # Save without NaN
     result[columns_to_save].to_csv(out_path, index=False, header=False)

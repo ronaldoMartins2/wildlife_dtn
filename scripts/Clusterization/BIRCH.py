@@ -108,12 +108,12 @@ def extract_folder_name(file_rawdata):
     file_name = file_name[-1].split('.')[0]
     return file_name
 
-def run_all(file_rawdata_name, file_rawdata, output_prefix):
+def run_all(file_rawdata_name, file_rawdata, output_prefix, n_clusters):
     #Caminho de saída
     script_dir = os.path.dirname(os.path.abspath(__file__))
     folder_name = extract_folder_name(file_rawdata)
     results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
-    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization', str(n_clusters))
     create_clusterization_results(cluster_output_dir)
 
     #LEITURA E LIMPEZA DOS DADOS
@@ -144,7 +144,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
     threshold = read_field_from_json(hyperparam_path, "threshold")
-    n_clusters = read_field_from_json(hyperparam_path, "BIRCH_NCLUSTERS")
+    # n_clusters = read_field_from_json(hyperparam_path, "BIRCH_NCLUSTERS")
 
     birch_model = Birch(n_clusters=n_clusters, threshold=threshold)
     clusters = birch_model.fit_predict(coordinates)
@@ -170,7 +170,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     quantization_error = calculate_quantization_error(coords_original, centroids_final)
  
     # Salva apenas os centroides finais
-    output_centroids_csv = os.path.join(cluster_output_dir, f'centroids_birch_{output_prefix}.csv')
+    output_centroids_csv = os.path.join(cluster_output_dir, f'centroids_{n_clusters}_birch_{output_prefix}.csv')
     # adiciona índice (começando em 1) aos centroides
     df_centroids = pd.DataFrame(centroids_final, columns=['Longitude', 'Latitude']).reset_index().rename(columns={'index': 'Index'})
     df_centroids['Index'] = df_centroids['Index'] + 1
@@ -187,7 +187,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
         'latitude_animal': df_points.iloc[:, 3].values,     # latitude
         'longitude_animal': df_points.iloc[:, 2].values     # longitude
     })
-    map_file = os.path.join(cluster_output_dir, f'points_birch_mapping_{output_prefix}.csv')
+    map_file = os.path.join(cluster_output_dir, f'points_birch_mapping_{n_clusters}_{output_prefix}.csv')
     df_map.to_csv(map_file, index=False)
     print(f"Point->centroid mapping saved to {map_file}")
 

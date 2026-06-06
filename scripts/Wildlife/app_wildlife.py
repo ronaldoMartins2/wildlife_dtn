@@ -145,10 +145,10 @@ def main():
     print("\n--- Data Preparation & Dispersion ---")
     run_all_dispersion(file_rawdata)
 
-    for current_animal in list_animals:
-        run_preparation(current_animal, file_rawdata, file_rawdata_columns)
-        run_average_by_individual(current_animal, file_rawdata, file_rawdata_columns)
-        run_media_tempos_hist(current_animal, file_rawdata)
+    # for current_animal in list_animals:
+    #     run_preparation(current_animal, file_rawdata, file_rawdata_columns)
+    #     run_average_by_individual(current_animal, file_rawdata, file_rawdata_columns)
+    #     run_media_tempos_hist(current_animal, file_rawdata)
 
     # 3. INTERPOLATION (Training & Serving)
     print("\n--- Interpolation Phase ---")
@@ -188,66 +188,75 @@ def main():
     file_merged_nbeats = None
     file_merged_bilstm = None
 
-    if file_merged:
-        print(f"Merged raw data file created: {file_merged}")
-        run_all_kmeans(file_merged, file_rawdata, 'Raw data')
-        run_birch_all(file_merged, file_rawdata, 'Raw data')
-        run_som_all(file_merged, file_rawdata, 'Raw data')
+    # Apenas dados brutos
+    # if file_merged:
+    #     print(f"Merged raw data file created: {file_merged}")
+    #     run_all_kmeans(file_merged, file_rawdata, 'Raw data')
+    #     run_birch_all(file_merged, file_rawdata, 'Raw data')
+    #     run_som_all(file_merged, file_rawdata, 'Raw data')
 
-    # all_maps_animals = return_maps(file_rawdata, list_animals)
-    # if all_maps_animals:
-    #     print("\n--- Clusterizando todos os mapas individuais detectados ---")
-    #     for map_name in all_maps_animals:
-    #         map_path = os.path.join(results_dir, map_name)
-    #         animal_id = map_name.replace('map_','').replace('.csv','')
-    #         run_all_kmeans(map_path, file_rawdata, animal_id)
-    #         run_birch_all(map_path, file_rawdata, animal_id)
-    #         run_som_all(map_path, file_rawdata, animal_id)
+    clusters = [8, 16, 32]
     
-    # all_maps_bilstm = return_bilstm_list(file_rawdata, list_animals)
-    # if all_maps_bilstm:
-    #     print("\n--- Clusterizando todos os mapas Bi-LSTM detectados ---")
-    #     for map_name in all_maps_bilstm:
-    #         map_path = os.path.join(results_dir, "Interpolation", map_name)
-    #         animal_id = map_name.replace('map_bilstm_','').replace('.csv','')
-    #         run_all_kmeans(map_path, file_rawdata, f'{animal_id}_bilstm')
-    #         run_birch_all(map_path, file_rawdata, f'{animal_id}_bilstm')
-    #         run_som_all(map_path, file_rawdata, f'{animal_id}_bilstm')
+    all_maps_animals = return_maps(file_rawdata, list_animals)
+    if all_maps_animals:
+        print("\n--- Clusterizando todos os mapas individuais detectados ---")
+        for map_name in all_maps_animals:
+            map_path = os.path.join(results_dir, map_name)
+            animal_id = map_name.replace('map_','').replace('.csv','')
+            for n_clusters in clusters:
+                run_all_kmeans(map_path, file_rawdata, animal_id, n_clusters)
+                run_birch_all(map_path, file_rawdata, animal_id, n_clusters)
+                run_som_all(map_path, file_rawdata, animal_id, n_clusters)
+
+    # sys.exit(0)
+
+    all_maps_bilstm = return_bilstm_list(file_rawdata, list_animals)
+    if all_maps_bilstm:
+        print("\n--- Clusterizando todos os mapas Bi-LSTM detectados ---")
+        for map_name in all_maps_bilstm:
+            map_path = os.path.join(results_dir, "Interpolation", map_name)
+            animal_id = map_name.replace('map_bilstm_','').replace('.csv','')
+            for n_clusters in clusters:
+                run_all_kmeans(map_path, file_rawdata, f'{animal_id}_bilstm', n_clusters)
+                run_birch_all(map_path, file_rawdata, f'{animal_id}_bilstm', n_clusters)
+                run_som_all(map_path, file_rawdata, f'{animal_id}_bilstm', n_clusters)
 
     # print("\n--- Clustering Part A: Interpolated Data Only ---")
     # Only merge if interpolation files exist
     if file_interpolated_bilstm and file_merged:
         file_merged_bilstm = merge_csv(file_merged, file_interpolated_bilstm, file_rawdata, tangara, 'bilstm')
+    
     if file_interpolated_nbeats and file_merged:
         file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
-
 
     if file_merged_bilstm:
         print("Running Clustering on Merged BiLSTM Data...")
 
         """Cluster the merged points"""
-        run_all_kmeans(file_merged_bilstm, file_rawdata, 'bilstm_merged')
-        run_birch_all(file_merged_bilstm, file_rawdata, 'bilstm_merged')
-        run_som_all(file_merged_bilstm, file_rawdata, 'bilstm_merged')
+        for n_clusters in clusters:
+            run_all_kmeans(file_merged_bilstm, file_rawdata, 'bilstm_merged', n_clusters)
+            run_birch_all(file_merged_bilstm, file_rawdata, 'bilstm_merged', n_clusters)
+            run_som_all(file_merged_bilstm, file_rawdata, 'bilstm_merged', n_clusters)
 
-    # sys.exit(0)
 
     if file_merged_nbeats:
         print("Running Clustering on Merged N-BEATS Data...")
 
         """Cluster the merged points"""
-        run_all_kmeans(file_merged_nbeats, file_rawdata, 'nbeats_merged')   
-        run_birch_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
-        run_som_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
+        for n_clusters in clusters:
+            run_all_kmeans(file_merged_nbeats, file_rawdata, 'nbeats_merged', n_clusters)   
+            run_birch_all(file_merged_nbeats, file_rawdata, 'nbeats_merged', n_clusters)
+            run_som_all(file_merged_nbeats, file_rawdata, 'nbeats_merged', n_clusters)
 
     if file_interpolated_nbeats:
         print(f"Running Clustering on N-BEATS Interpolated Data: {file_interpolated_nbeats}")
         file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
         
         """Cluster ONLY the interpolated points"""
-        run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats')
-        run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
-        run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats')
+        for n_clusters in clusters:
+            run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats', n_clusters)
+            run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats', n_clusters)
+            run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats', n_clusters)
 
     # 5. CLUSTERING: PART A - INTERPOLATED DATA ONLY
     
@@ -256,9 +265,10 @@ def main():
         file_merged_bilstm = merge_csv(file_merged, file_interpolated_bilstm, file_rawdata, tangara, 'bilstm')
         
         """Cluster ONLY the interpolated points"""
-        run_all_kmeans(file_interpolated_bilstm, file_rawdata, 'bilstm')
-        run_birch_all(file_interpolated_bilstm, file_rawdata, 'bilstm')
-        run_som_all(file_interpolated_bilstm, file_rawdata, 'bilstm')
+        for n_clusters in clusters:
+            run_all_kmeans(file_interpolated_bilstm, file_rawdata, 'bilstm', n_clusters)
+            run_birch_all(file_interpolated_bilstm, file_rawdata, 'bilstm', n_clusters)
+            run_som_all(file_interpolated_bilstm, file_rawdata, 'bilstm', n_clusters)
 
     # 6. CLUSTERING: PART B - MERGED DATA (RAW + INTERPOLATED)
     print("\n--- Clustering Part B: Merged Data (Raw + Interpolated) ---")
@@ -267,17 +277,19 @@ def main():
         print("Running Clustering on Merged BiLSTM Data...")
 
         """Cluster the merged points"""
-        run_all_kmeans(file_merged_bilstm, file_rawdata, 'bilstm_merged')
-        run_birch_all(file_merged_bilstm, file_rawdata, 'bilstm_merged')
-        run_som_all(file_merged_bilstm, file_rawdata, 'bilstm_merged')
+        for n_clusters in clusters:
+            run_all_kmeans(file_merged_bilstm, file_rawdata, 'bilstm_merged', n_clusters)
+            run_birch_all(file_merged_bilstm, file_rawdata, 'bilstm_merged', n_clusters)
+            run_som_all(file_merged_bilstm, file_rawdata, 'bilstm_merged', n_clusters)
     
     if file_merged_nbeats:
         print("Running Clustering on Merged N-BEATS Data...")
 
         """Cluster the merged points"""
-        run_all_kmeans(file_merged_nbeats, file_rawdata, 'nbeats_merged')   
-        run_birch_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
-        run_som_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
+        for n_clusters in clusters:
+            run_all_kmeans(file_merged_nbeats, file_rawdata, 'nbeats_merged', n_clusters)   
+            run_birch_all(file_merged_nbeats, file_rawdata, 'nbeats_merged', n_clusters)
+            run_som_all(file_merged_nbeats, file_rawdata, 'nbeats_merged', n_clusters)
 
     print("\n--- Clustering Part C: Raw Data Only ---")
 
@@ -285,59 +297,56 @@ def main():
         print("Running Clustering on Merged Raw Data...")
 
         """Cluster the merged points"""
-        run_all_kmeans(file_merged, file_rawdata, 'raw_data')
-        run_birch_all(file_merged, file_rawdata, 'raw_data')
-        run_som_all(file_merged, file_rawdata, 'raw_data')
+        for n_clusters in clusters:
+            run_all_kmeans(file_merged, file_rawdata, 'raw_data', n_clusters)
+            run_birch_all(file_merged, file_rawdata, 'raw_data', n_clusters)
+            run_som_all(file_merged, file_rawdata, 'raw_data', n_clusters)
         
     print("=== PIPELINE FINISHED SUCCESSFULLY ===")
     # sys.exit(0)
 
-    for current_animal in list_animals:
-        run_plot_kmeans_som_birch_mean_shift(current_animal)
-
-    #sys.exit()
-
-    #for current_animal in list_animals:
-    #   run_cluster_contacts(current_animal)
-
-    #for current_animal in list_animals:
-    #        run_plot_kmeans_som_birch_mean_shift(current_animal)
-
-    #run_cluster_contacts(current_animal, file_rawdata)
-
-    #for current_animal in list_animals:
-    #    run_cluster_contacts(current_animal, file_rawdata, tangara)
-
-    #run_cluster_contacts(current_animal, file_rawdata)
-    #sys.exit()
+    ########################################################################################
+    # Para a criação de dados de interpolação, é necessário passar os dados de raw_data
+    # Para a criação de dados clusterizados + interpolados, é necessário passar os dados de raw_data + interpolated
+    # Para a criação de dados de contatos, é necessário passar os dados de raw_data + interpolated + ou  clusterizados
 
     ############## #DTN Contacts ##################################
     #criar os conjunto dois a dois sem repetição
 
     #Combinação sem repetições
     pairs = create_combinations(list_animals)
+    print(pairs)
+
+    # sys.exit(0)
 
     # Chamar todos os scripts de criação de dados de distancias e plots
-    import subprocess
-    subprocess.run([r"venv\Scripts\python.exe", r"scripts\DTN\generate_all_distances_data_n_plots.py"])
+    # import subprocess
+    # subprocess.run([r"venv\Scripts\python.exe", r"scripts\DTN\generate_all_distances_data_n_plots.py"])
 
     # Limpar o database para gerar novamente os contatos
     run_recreate_table()
 
-    for pair in pairs:
-        run_contacts(pair[0], pair[1], file_rawdata)
+    file_rawdata = file_merged_bilstm
+
+    # for pair in pairs:
+    #     run_contacts(pair[0], pair[1], file_rawdata)
+
+    if file_merged_bilstm:
+        for pair in pairs:
+            run_find_contacts_between_nodes(pair[0], pair[1], file_interpolated_bilstm, file_rawdata, 'bilstm', n_clusters)
+            run_add_down_event(pair[0], pair[1], file_interpolated_bilstm, file_rawdata, 'bilstm', n_clusters)
 
     for pair in pairs:
         run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
         run_add_down_event(f'{pair[0]}_{pair[1]}', file_rawdata)
 
-
-    # run_find_contacts_between_nodes(93, 97, file_rawdata)
-    # run_add_down_event('contact_93_97', file_rawdata)
+    sys.exit(0)
 
     # Fora do loop dos pares de animais
     print("Gerando arquivo final consolidado...")
     run_export_final_trace(file_rawdata)
+
+    sys.exit(0)
 
     # No app_wildlife.py, após processar os mapas individuais
     list_animals = ['93', '94', '95', '96', '97', '98', '99', '100']
@@ -367,85 +376,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# =================================================================================================
-# ======================================= LEGACY / OLD CODE =======================================
-# =================================================================================================
-"""
-# pip3 install -r scripts/requirements.txt 
-# python3 -m venv venv
-# source ./venv/bin/activate
-# inside wildlife_dtn folder
-# python3 scripts/Wildlife/app_wildlife.py rawdata/jaguar_mamiraua.csv rawdata/jaguar_columns.json
-# python3 scripts/Wildlife/app_wildlife.py rawdata/tangara_mata_atlantica.csv rawdata/tangara_columns.json
-
-######## Rodando as metricas da Bi-LSTM BiLSTM #####
-python3 scripts/Interpolation/evaluate_bilstm.py \
-    rawdata/jaguar_mamiraua.csv \
-    rawdata/jaguar_columns.json
-
-# SELECT * FROM jaguar_contacts;
-
-#run_preparation( 93, file_rawdata, file_rawdata_columns )
-#run_preparation( 'G54907', file_rawdata, file_rawdata_columns )
-#run_average_by_individual( 'G54907', file_rawdata, file_rawdata_columns )
-
-############### call for training models Nbeat and Nhits #########################################################
-#nhits_main_training_list(list_animals, file_rawdata, file_rawdata_columns)
-#sys.exit()
-
-# for current_animal in list_animals:
-#     calc_average_by_method( current_animal, 'N_BEATS', file_rawdata )
-#     calc_average_by_method( current_animal, 'N_HITS', file_rawdata )
-
-#run_average_comparison( len_animals, file_rawdata )
-
-# script_dir = os.path.dirname(os.path.abspath(__file__))
-# data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
-# hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
-#n_c_BIRCH = read_field_from_json(hyperparam_path, "BIRCH_NCLUSTERS")
-#n_c_KMEANS = read_field_from_json(hyperparam_path, "n_clusters_kmeans")
-#n_c_SOM_x = read_field_from_json(hyperparam_path, "som_x")
-#n_c_SOM_y = read_field_from_json(hyperparam_path, "som_y")
-
-#run_all_kmeans(file_merged, file_rawdata, f'RawData_{n_c_KMEANS}_{tangara}')
-#run_birch_all(file_merged, file_rawdata, f'RawData_{n_c_BIRCH}_{tangara}')
-#run_som_all(file_merged, file_rawdata, f'RawData_{n_c_SOM_x * n_c_SOM_y}_{tangara}')
-
-# for current_animal in list_animals:
-#     run_plot_kmeans_som_birch_mean_shift(current_animal)
-
-#sys.exit()
-
-#for current_animal in list_animals:
-#   run_cluster_contacts(current_animal)
-
-#for current_animal in list_animals:
-#        run_plot_kmeans_som_birch_mean_shift(current_animal)
-
-# run_cluster_contacts(current_animal, file_rawdata)
-
-#for current_animal in list_animals:
-#    run_cluster_contacts(current_animal, file_rawdata, tangara)
-
-#run_cluster_contacts(current_animal, file_rawdata)
-#sys.exit()
-
-############## #DTN Contacts ##################################
-#criar os conjunto dois a dois sem repetição
-
-#Combinação sem repetições
-pairs = create_combinations(list_animals)
-
-# Chamar todos os scripts de criação de dados de distancias e plots
-import subprocess
-subprocess.run([r"venv\Scripts\python.exe", r"scripts\DTN\generate_all_distances_data_n_plots.py"])
-
-# Limpar o database para gerar novamente os contatos
-run_recreate_table()
-
-for pair in pairs:
-    run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
-    run_add_down_event(f'{pair[0]}_{pair[1]}', file_rawdata)
-"""

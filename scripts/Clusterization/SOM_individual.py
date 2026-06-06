@@ -210,12 +210,12 @@ def plot_quality_metrics_comparison(metrics_csv_path, output_dir=None, prefix=No
 
 # python3 7_SOM_individual.py 94
 
-def run_all(file_rawdata_name, file_rawdata, output_prefix):
+def run_all(file_rawdata_name, file_rawdata, output_prefix, n_clusters):
     #CAMINHO DE SAÍDA (para salvar os resultados)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     folder_name = extract_folder_name(file_rawdata)
     results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
-    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization', str(n_clusters))
     create_clusterization_results(cluster_output_dir)
 
     if not os.path.exists(file_rawdata_name):
@@ -282,7 +282,8 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     sigma = read_field_from_json(hyperparam_path, "sigma_SOM")
     learning_rate = read_field_from_json(hyperparam_path, "learning_rate_SOM")
     ephocs = read_field_from_json(hyperparam_path, "ephocs_SOM")
-    som_x = read_field_from_json(hyperparam_path,"som_x")
+    # som_x = read_field_from_json(hyperparam_path,"som_x")
+    som_x = n_clusters
     som_y = read_field_from_json(hyperparam_path,"som_y")
 
     som = MiniSom(som_x, som_y, coords.shape[1], sigma, learning_rate)
@@ -326,7 +327,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     centroids_real = np.array(centroids_real)
 
     # Salva os centroides reais dos clusters
-    output_centroids_csv = os.path.join(cluster_output_dir, f'centroids_som_{output_prefix}.csv')
+    output_centroids_csv = os.path.join(cluster_output_dir, f'centroids_{som_x}_som_{output_prefix}.csv')
     df_centroids_real = pd.DataFrame(centroids_real, columns=['Longitude', 'Latitude']).reset_index().rename(columns={'index': 'Index'})
     df_centroids_real['Index'] = df_centroids_real['Index'] + 1  # começa por 1
     df_centroids_real.to_csv(output_centroids_csv, index=False, header=None)
@@ -343,7 +344,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
         'latitude_animal': df_points.iloc[:, 3].values,
         'longitude_animal': df_points.iloc[:, 2].values
     })
-    map_file = os.path.join(cluster_output_dir, f'points_som_mapping_{output_prefix}.csv')
+    map_file = os.path.join(cluster_output_dir, f'points_som_mapping_{som_x}_{output_prefix}.csv')
     df_map.to_csv(map_file, index=False)
     print(f"Point->centroid mapping saved to {map_file}")
 

@@ -161,7 +161,7 @@ def run_single_bilstm(current_animal, file_rawdata, model, device, epsg):
     df_imputed['ID'] = current_animal
     
     out_path = os.path.join(results_dir, f'Interpolation')
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    os.makedirs(out_path, exist_ok=True)
     
     out_path = os.path.join(out_path, f'map_{current_animal}_interpolation_bilstm.csv')
     
