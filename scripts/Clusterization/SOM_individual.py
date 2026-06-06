@@ -210,12 +210,12 @@ def plot_quality_metrics_comparison(metrics_csv_path, output_dir=None, prefix=No
 
 # python3 7_SOM_individual.py 94
 
-def run_all(file_rawdata_name, file_rawdata, output_prefix):
+def run_all(file_rawdata_name, file_rawdata, output_prefix, n_clusters=None):
     #CAMINHO DE SAÍDA (para salvar os resultados)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     folder_name = extract_folder_name(file_rawdata)
     results_dir = os.path.join(script_dir, '..', 'Results', folder_name)
-    cluster_output_dir = os.path.join(results_dir, 'Clusterization')
+    cluster_output_dir = os.path.join(results_dir, 'Clusterization', str(n_clusters))
     create_clusterization_results(cluster_output_dir)
 
     if not os.path.exists(file_rawdata_name):
@@ -282,7 +282,8 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix):
     sigma = read_field_from_json(hyperparam_path, "sigma_SOM")
     learning_rate = read_field_from_json(hyperparam_path, "learning_rate_SOM")
     ephocs = read_field_from_json(hyperparam_path, "ephocs_SOM")
-    som_x = read_field_from_json(hyperparam_path,"som_x")
+    #som_x = read_field_from_json(hyperparam_path,"som_x")
+    som_x = n_clusters  # aqui usamos o n_clusters passado para run_all para definir o som_x (número de neurônios)
     som_y = read_field_from_json(hyperparam_path,"som_y")
 
     som = MiniSom(som_x, som_y, coords.shape[1], sigma, learning_rate)

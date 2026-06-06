@@ -105,10 +105,10 @@ def main():
     print("\n--- Data Preparation & Dispersion ---")
     run_all_dispersion(file_rawdata)
 
-    for current_animal in list_animals:
-        run_preparation(current_animal, file_rawdata, file_rawdata_columns)
-        run_average_by_individual(current_animal, file_rawdata, file_rawdata_columns)
-        run_media_tempos_hist(current_animal, file_rawdata)
+    # for current_animal in list_animals:
+    #     run_preparation(current_animal, file_rawdata, file_rawdata_columns)
+    #     run_average_by_individual(current_animal, file_rawdata, file_rawdata_columns)
+    #     run_media_tempos_hist(current_animal, file_rawdata)
 
     # 3. INTERPOLATION (Training & Serving)
     print("\n--- Interpolation Phase ---")
@@ -137,7 +137,6 @@ def main():
     print("\n--- Gerando Gráficos de Comparação de Interpolação ---")
     plot_interpolation_comparisons(file_rawdata, ["bilstm", "nbeats"])
 
-    sys.exit(0)
     # 4. DATA MERGING FOR CLUSTERING
     print("\n--- Preparing Data for Clustering ---")
     
@@ -148,11 +147,27 @@ def main():
     file_merged_nbeats = None
     file_merged_bilstm = None
 
+    clusters = [8, 16, 32]
+    all_maps_animals = return_maps(file_rawdata, list_animals)
+    if all_maps_animals:
+        print("\n--- Clusterizando todos os mapas individuais detectados ---")
+        for map_name in all_maps_animals:
+            map_path = os.path.join(results_dir, map_name)
+            animal_id = map_name.replace('map_','').replace('.csv','')
+            for n_clusters in clusters:
+                run_all_kmeans(map_path, file_rawdata, animal_id, n_clusters)
+                run_birch_all(map_path, file_rawdata, animal_id, n_clusters)
+                run_som_all(map_path, file_rawdata, animal_id, n_clusters)
+    
+    sys.exit(0)
+
     if file_merged:
         print(f"Merged raw data file created: {file_merged}")
         run_all_kmeans(file_merged, file_rawdata, 'Raw data')
         run_birch_all(file_merged, file_rawdata, 'Raw data')
         run_som_all(file_merged, file_rawdata, 'Raw data')
+
+    
 
     # all_maps_animals = return_maps(file_rawdata, list_animals)
     # if all_maps_animals:
