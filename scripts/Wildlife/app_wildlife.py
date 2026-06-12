@@ -326,39 +326,52 @@ def main():
     # Limpar o database para gerar novamente os contatos
     run_recreate_table()
 
-    file_rawdata = file_merged_bilstm
+    # file_rawdata = file_merged_bilstm
 
     # for pair in pairs:
     #     run_contacts(pair[0], pair[1], file_rawdata)
 
+    # for pair in pairs:
+    #     run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
+    #     run_add_down_event(f'{pair[0]}_{pair[1]}', file_rawdata)
+
     if file_merged_bilstm:
         for pair in pairs:
-            run_find_contacts_between_nodes(pair[0], pair[1], file_interpolated_bilstm, file_rawdata, 'bilstm', n_clusters)
-            run_add_down_event(pair[0], pair[1], file_interpolated_bilstm, file_rawdata, 'bilstm', n_clusters)
+            run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata, 'bilstm')
+            run_add_down_event(f'{pair[0]}_{pair[1]}', file_rawdata, 'bilstm')
 
-    for pair in pairs:
-        run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
-        run_add_down_event(f'{pair[0]}_{pair[1]}', file_rawdata)
-
-    sys.exit(0)
+    # sys.exit(0)
 
     # Fora do loop dos pares de animais
     print("Gerando arquivo final consolidado...")
-    run_export_final_trace(file_rawdata)
+    # run_export_final_trace(file_rawdata)
+    if file_merged_bilstm:
+        run_export_final_trace(file_rawdata, 'bilstm')
 
-    sys.exit(0)
+    # sys.exit(0)
 
     # No app_wildlife.py, após processar os mapas individuais
     list_animals = ['93', '94', '95', '96', '97', '98', '99', '100']
 
-    # Criar contatos entre onças e centroids
-    for animal_id in list_animals:
-        # Agora passamos o ID numérico (ex: '93') e não o nome do arquivo bruto
-        run_contacts_animal_centroids(animal_id, file_rawdata)
+    # # Criar contatos entre onças e centroids
+    # for animal_id in list_animals:
+    #     # Agora passamos o ID numérico (ex: '93') e não o nome do arquivo bruto
+    #     run_contacts_animal_centroids(animal_id, file_rawdata)
 
-    # Criar contatos entre onças e o Uakari Lodge
-    for animal_id in list_animals:
-        run_contacts_animal_uakari(animal_id, file_rawdata)
+    # # Criar contatos entre onças e o Uakari Lodge
+    # for animal_id in list_animals:
+    #     run_contacts_animal_uakari(animal_id, file_rawdata)
+    
+    # Criar contatos entre onças e centroids (INTERPOLATED)
+    if file_merged_bilstm:
+        for animal_id in list_animals:
+            # Agora passamos o ID numérico (ex: '93') e não o nome do arquivo bruto
+            run_contacts_animal_centroids(animal_id, file_rawdata, 'bilstm')
+
+    # Criar contatos entre onças e o Uakari Lodge (INTERPOLATED)
+    if file_merged_bilstm:
+        for animal_id in list_animals:
+            run_contacts_animal_uakari(animal_id, file_rawdata, 'bilstm')
 
     raw_name = "map_jaguar_mamiraua_all_animals_bilstm"
         
@@ -371,7 +384,7 @@ def main():
     for n in centroids_list:
         for alg in algorithms_list:
             for interp in interpolations_list:
-                run_export_all_final_trace(raw_name, n_centroids=n, algorithm=alg, interpolation=interp)
+                run_export_all_final_trace(file_rawdata, n_centroids=n, algorithm=alg, interpolation=interp)
    
 
 if __name__ == "__main__":

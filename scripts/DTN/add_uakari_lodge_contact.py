@@ -22,10 +22,14 @@ FIXED_GATEWAY_ID = 40
 GATEWAY_LAT = -3.048894
 GATEWAY_LON = -64.857451
 
-def run(animal_id_str, file_rawdata_name):
+def run(animal_id_str, file_rawdata_name, interpolation_method=None):
     results_dir = results_folder(file_rawdata_name)
     #animal_path = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", f'map_{animal_id_str}.csv')
-    animal_path = os.path.join(results_dir, f'map_{animal_id_str}.csv')
+
+    if interpolation_method:
+        animal_path = os.path.join(results_dir, 'Interpolation', f'map_{animal_id_str}_interpolation_{interpolation_method}_merged.csv')
+    else:
+        animal_path = os.path.join(results_dir, f'map_{animal_id_str}.csv')
     
     if not os.path.exists(animal_path):
         return
@@ -35,7 +39,8 @@ def run(animal_id_str, file_rawdata_name):
     df_animal = pd.read_csv(animal_path, header=None, names=['animal_id', 'timestamp', 'lon', 'lat'])
     
     # 2. Limpeza e Conversão Rígida
-    df_animal['timestamp'] = pd.to_datetime(df_animal['timestamp'], format="%m/%d/%y %H:%M", errors='coerce')
+    # df_animal['timestamp'] = pd.to_datetime(df_animal['timestamp'], format="%m/%d/%y %H:%M", errors='coerce')
+    df_animal['timestamp'] = pd.to_datetime(df_animal['timestamp'], format="%Y-%m-%d %H:%M:%S", errors='coerce')
     df_animal['lat'] = pd.to_numeric(df_animal['lat'], errors='coerce')
     df_animal['lon'] = pd.to_numeric(df_animal['lon'], errors='coerce')
     
@@ -95,6 +100,8 @@ def run(animal_id_str, file_rawdata_name):
     
     os.makedirs(out_dir, exist_ok=True)
     output_path = os.path.join(out_dir, f"down_contact_{animal_id_str}_uakari_lodge.csv")
+    if interpolation_method:
+        output_path = os.path.join(out_dir, f"down_contact_{animal_id_str}_uakari_lodge_interpolation_{interpolation_method}_merged.csv")
     
     final_df[['id', 'conn', 'for', 'to', 'state']].to_csv(output_path, index=False)
     print(f"[OK] Gateway 40: {len(df_res)} contatos para onça {animal_id_str}")

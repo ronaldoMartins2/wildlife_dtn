@@ -10,18 +10,22 @@ BASE_DATE = datetime(2014, 3, 14, 4, 0)
 
 # ids dos centroids [0-7, 8-16, 8-24, 8-40]
 
-def run(first_animal, second_animal, file_rawdata_name):
-    results_dir = results_folder(file_rawdata_name)
+def run(first_animal, second_animal, file_rawdata_path, interpolation_method=None):
+    results_dir = results_folder(file_rawdata_path)
 
-    #path_1 = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", f'map_{first_animal}.csv')
-    #path_2 = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", f'map_{second_animal}.csv')
-    #path_out = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts', f'contact_{first_animal}_{second_animal}.csv')
+    contacts_dir = os.path.join(results_dir, 'contacts')
+    os.makedirs(contacts_dir, exist_ok=True)
 
-    path_1 = os.path.join(results_dir, f'map_{first_animal}.csv')
-    path_2 = os.path.join(results_dir, f'map_{second_animal}.csv')
-    path_out = os.path.join(results_dir, 'contacts', f'contact_{first_animal}_{second_animal}.csv')
+    if interpolation_method:
+        path_1 = os.path.join(results_dir, 'Interpolation', f'map_{first_animal}_interpolation_{interpolation_method}_merged.csv')
+        path_2 = os.path.join(results_dir, 'Interpolation', f'map_{second_animal}_interpolation_{interpolation_method}_merged.csv')
+        path_out = os.path.join(results_dir, 'contacts', f'contact_{first_animal}_{second_animal}_interpolation_{interpolation_method}_merged.csv')
+    else:
+        path_1 = os.path.join(results_dir, f'map_{first_animal}.csv')
+        path_2 = os.path.join(results_dir, f'map_{second_animal}.csv')
+        path_out = os.path.join(results_dir, 'contacts', f'contact_{first_animal}_{second_animal}.csv')
 
-
+    # print(path_1)
     print(f"Processando par {first_animal} e {second_animal}...")
 
     # --- Carregamento e Limpeza ---
@@ -33,8 +37,11 @@ def run(first_animal, second_animal, file_rawdata_name):
         print(f"Arquivos de mapa não encontrados para {first_animal} ou {second_animal}. Pulando.")
         return
 
-    df1['timestamp'] = pd.to_datetime(df1['timestamp'], format="%m/%d/%y %H:%M", errors='coerce')
-    df2['timestamp'] = pd.to_datetime(df2['timestamp'], format="%m/%d/%y %H:%M", errors='coerce')
+    # df1['timestamp'] = pd.to_datetime(df1['timestamp'], format="%m/%d/%y %H:%M", errors='coerce')
+    # df2['timestamp'] = pd.to_datetime(df2['timestamp'], format="%m/%d/%y %H:%M", errors='coerce')
+
+    df1['timestamp'] = pd.to_datetime(df1['timestamp'], format="%Y-%m-%d %H:%M:%S", errors='coerce')
+    df2['timestamp'] = pd.to_datetime(df2['timestamp'], format="%Y-%m-%d %H:%M:%S", errors='coerce')
 
     clean_dfs = [] 
     for df in [df1, df2]:
@@ -90,6 +97,10 @@ def run(first_animal, second_animal, file_rawdata_name):
 
     # 4. Salvar o arquivo já com o prefixo "down_" para padronizar
     #path_out_down = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts', f'down_contact_{first_animal}_{second_animal}.csv')
-    path_out_down = os.path.join(results_dir, 'contacts', f'down_contact_{first_animal}_{second_animal}.csv')
-    
+
+    if interpolation_method:
+        path_out_down = os.path.join(results_dir, 'contacts', f'down_contact_{first_animal}_{second_animal}_interpolation_{interpolation_method}_merged.csv')
+    else:
+        path_out_down = os.path.join(results_dir, 'contacts', f'down_contact_{first_animal}_{second_animal}.csv')
+
     final_df[['id', 'conn', 'for', 'to', 'state']].to_csv(path_out_down, index=False)

@@ -11,13 +11,17 @@ DB_CONFIG = {
     "password": "mypassword"
 }
 
-def run(file_rawdata_name):
+def run(file_rawdata_name, interpolation_method=None):
     print("Gerando arquivo de trace final...")
     
     results_dir = results_folder(file_rawdata_name)
     # Salvar como .txt ou .ops (formato comum para simuladores)
     #output_path = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts', 'jaguar_mamiraua_contacts.txt')
-    output_path = os.path.join(results_dir, 'contacts', 'jaguar_mamiraua_contacts.txt')
+
+    if interpolation_method:
+        output_path = os.path.join(results_dir, 'contacts', f'jaguar_mamiraua_contacts_{interpolation_method}.txt')
+    else:
+        output_path = os.path.join(results_dir, 'contacts', 'jaguar_mamiraua_contacts.txt')
 
     try:
         conn = psycopg2.connect(**DB_CONFIG)

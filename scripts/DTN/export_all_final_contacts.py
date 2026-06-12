@@ -20,7 +20,7 @@ def run(file_rawdata_name, n_centroids, algorithm, interpolation):
     
     results_dir = results_folder(file_rawdata_name)
 
-    print(results_dir)
+    # print(results_dir)
     print("@@@@@@@@@@@@@@@@@ Amazonas @@@@@@@@@@@@@@@@@")
 
     #output_dir = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts')
@@ -43,6 +43,7 @@ def run(file_rawdata_name, n_centroids, algorithm, interpolation):
         # 2. Identificar quais arquivos CSV devem ser incluídos
         #all_files = glob.glob(os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", "contacts", "*.csv"))
         all_files = glob.glob(os.path.join(results_dir, "contacts", "*.csv"))
+        # print(all_files)
 
         files_to_import = []
         for f in all_files:
@@ -60,7 +61,7 @@ def run(file_rawdata_name, n_centroids, algorithm, interpolation):
 
             # Regra C: Contatos com Uakari Lodge
             # (ex: down_contact_93_centroids_8_birch_uakari_lodge.csv)
-            elif f"uakari_lodge.csv" in basename:
+            elif f"uakari_lodge" in basename:
                 files_to_import.append(f)
 
         if not files_to_import:

@@ -17,25 +17,35 @@ DB_CONFIG = {
 def get_db_connection():
     return psycopg2.connect(**DB_CONFIG)
 
-def run(file_target, file_rawdata_name):
-    results_dir = results_folder(file_rawdata_name)
+def run(file_target, file_rawdata_path, interpolation_method=None):
+    results_dir = results_folder(file_rawdata_path)
     
-    print(results_dir)
-    print("######################### brazil ##############################")
+    # print(results_dir)
+    # print("######################### brazil ##############################")
     #exit()
 
     # --- Lógica de Nome de Arquivo ---
-    filename = f"{file_target}.csv"
+    # filename = f"{file_target}.csv"
+
+    if interpolation_method:
+        filename = f'contact_{file_target}_interpolation_{interpolation_method}_merged.csv'
+    else:
+        filename = f'contact_{file_target}.csv'
+
     #path_original = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", filename)
     #path_contact = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts', f"contact_{file_target}.csv")
-    
-    path_original = os.path.join(results_dir, filename)
-    path_contact = os.path.join(results_dir, 'contacts', f"contact_{file_target}.csv")
 
-    input_path = path_original
-    if not os.path.exists(path_original) and os.path.exists(path_contact):
-        input_path = path_contact
-        filename = f"contact_{file_target}.csv"
+    if interpolation_method:
+        path_original = os.path.join(results_dir, 'Interpolation', filename)
+        path_contact = os.path.join(results_dir, 'contacts', f'contact_{file_target}_interpolation_{interpolation_method}_merged.csv')
+    else:
+        path_original = os.path.join(results_dir, filename)
+        path_contact = os.path.join(results_dir, 'contacts', f"contact_{file_target}.csv") 
+
+    input_path = path_contact
+    # if not os.path.exists(path_original) and os.path.exists(path_contact):
+    #     input_path = path_contact
+    #     filename = f"contact_{file_target}.csv"
 
     # --- Verificações de Segurança ---
     if not os.path.exists(input_path):
@@ -43,6 +53,7 @@ def run(file_target, file_rawdata_name):
     if os.path.getsize(input_path) == 0:
         return
 
+    print(input_path)
     try:
         # Lê o CSV original
         df = pd.read_csv(input_path, header=0)
@@ -77,7 +88,13 @@ def run(file_target, file_rawdata_name):
     out_dir = os.path.join(results_dir, 'contacts')
     
     os.makedirs(out_dir, exist_ok=True)
-    output_path = os.path.join(out_dir, f'down_{filename}')
+
+    if interpolation_method:
+        # output_path = os.path.join(out_dir, f'down_{filename}_interpolation_{interpolation_method}_merged.csv')
+        output_path = os.path.join(out_dir, f'down_contact_{file_target}_interpolation_{interpolation_method}_merged.csv')
+    else:
+        output_path = os.path.join(out_dir, f'down_{filename}')
+
     final_df.to_csv(output_path, index=False)
     print(f"Arquivo salvo: {output_path}")
 
