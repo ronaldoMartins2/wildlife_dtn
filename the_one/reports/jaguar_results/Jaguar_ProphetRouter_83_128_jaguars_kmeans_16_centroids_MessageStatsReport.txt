@@ -14,7 +14,7 @@ latency_avg: 1239.7526
 latency_med: 1189.2000
 hopcount_avg: 2.8421
 hopcount_med: 3
-buffertime_avg: 1362.0373
+buffertime_avg: 1362.0391
 buffertime_med: 1257.3000
 rtt_avg: NaN
 rtt_med: NaN
