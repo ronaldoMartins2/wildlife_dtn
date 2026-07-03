@@ -1,0 +1,20 @@
+Message stats for scenario Jaguar_EpidemicRouter_79_256_only_jaguars_bilstm
+sim_time: 16320.0000
+created: 54
+started: 1914
+relayed: 1908
+aborted: 6
+dropped: 1662
+removed: 0
+delivered: 48
+delivery_prob: 0.8889
+response_prob: 0.0000
+overhead_ratio: 38.7500
+latency_avg: 1018.5875
+latency_med: 878.5000
+hopcount_avg: 4.9375
+hopcount_med: 5
+buffertime_avg: 1763.9576
+buffertime_med: 1879.3000
+rtt_avg: NaN
+rtt_med: NaN
