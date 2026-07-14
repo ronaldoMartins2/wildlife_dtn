@@ -1,0 +1,113 @@
+# Comando para rodar -> ./one.bat -b 135
+# default_settings_cenario_3
+
+## Parâmetros Gerais
+Scenario.name = Jaguar_%%Group.router%%_%%MovementModel.rngSeed%%_%%Events2.size%%_jaguars_kmeans_16_centroids
+Scenario.simulateConnections = true
+Scenario.updateInterval = 0.1
+# Tempo total de 14/03/2014 a 23/01/2016 (aprox. 680 dias; 58752000 segundos)
+Scenario.endTime = 16320
+
+# -------------------------------------------------------
+## CONFIGURAÇÃO OBRIGATÓRIA: Tamanho do Mundo
+# Define a área de 10km x 10km mencionada no projeto [cite: 239]
+MovementModel = ExternalMovement
+ExternalMovement.file = data/jaguar_mamiraua_contacts_16_centroids_kmeans_rawdata.txt
+MovementModel.worldSize = 10000, 10000
+
+# -------------------------------------------------------
+# Define que, por padrão, cada grupo tem 1 interface de comunicação
+Group.nrofInterfaces = 1
+
+## Configuração de Interface LoRa
+# A velocidade de 293 bps (0,293 kbps) foi tirada da tese de Brenda Barbosa[2024]
+# O raio de transmissão de 250m foi tirado da tese de Brenda Barbosa[2024]
+loRaInterface.type = SimpleBroadcastInterface
+loRaInterface.transmitSpeed = 293
+loRaInterface.transmitRange = 250
+c:\Users\jccme\Downloads\default_settings_cenario_1.txt
+## Definição dos Grupos de Nós (Conforme sua nova renomeação)
+Scenario.nrofHostGroups = 3
+
+# -----------------------------------------------------
+Group.nrofInterfaces = 1
+Group.interface1 = loRaInterface
+Group.movementModel = ShortestPathMapBasedMovement
+Group.groupID = p
+
+## Map based movement -movement model specific settings
+MapBasedMovement.nrofMapFiles = 4
+
+MapBasedMovement.mapFile1 = data/roads.wkt
+MapBasedMovement.mapFile2 = data/main_roads.wkt
+MapBasedMovement.mapFile3 = data/pedestrian_paths.wkt
+MapBasedMovement.mapFile4 = data/shops.wkt
+
+# -------------------------------------------------------
+## Eventos Externos (Geração de Dados das Onças para o Gateway)
+Events.nrof = 2
+
+Events1.class = ExternalEventsQueue
+Events1.filePath = data/jaguar_mamiraua_contacts_16_centroids_kmeans_rawdata.txt
+
+Events2.class = MessageEventGenerator
+Events2.interval = 300
+# Tamanhos de pacote: 64, 128 ou 256 Bytes
+Events2.size = [64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 64; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 128; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256; 256]
+# ORIGEM: Apenas as onças (0-7) geram as mensagens iniciais
+Events2.hosts = 0, 7
+Events2.prefix = M
+# DESTINO: O gateway (ID 40) é o único destino final
+Events2.toHosts = 40
+
+# -------------------------------------------------------
+## Movement model settings
+# seed for movement models' pseudo random number generator (default = 0)
+# MovementModel.rngSeed = [2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47;]
+MovementModel.rngSeed = [53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113;]
+
+# -------------------------------------------------------
+# Grupo 1: Sensores Móveis (Jaguars)
+Group1.groupID = J
+Group1.nrofHosts = 8
+Group1.interface1 = loRaInterface
+
+# Grupo 2: Sensores Fixos (Centroides BIRCH/K-Means/SOM)
+Group2.groupID = C
+Group2.nrofHosts = 32
+Group2.interface1 = loRaInterface
+
+# Grupo 3: Estação Base (Gateway/Uakari)
+Group3.groupID = U
+Group3.nrofHosts = 1
+Group3.interface1 = loRaInterface
+
+# -------------------------------------------------------
+## Configuração de Roteamento (Principais do seu projeto)
+# Opções: EpidemicRouter, ProphetRouter ou MaxPropRouter
+Group.router = [EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter]
+Group.bufferSize = 5M
+# TTL 48 horas (172800 segundos)
+Group.msgTtl = 48
+
+# Parâmetros Epidemic
+EpidemicRouter.maxCopies = 10
+
+# Parâmetros PRoPHET
+ProphetRouter.secondsInTimeUnit = 30
+ProphetRouter.pInit = 0.75
+ProphetRouter.beta = 0.25
+ProphetRouter.gamma = 0.98
+
+# Parâmetros Spray and Wait
+SprayAndWaitRouter.nrofCopies = 10
+SprayAndWaitRouter.binaryMode = true
+
+Report.reportDir = reports/jaguar_results
+
+## Relatórios de Avaliação
+Report.nrofReports = 2
+Report.report1 = MessageReport
+Report.report2 = MessageStatsReport
+
+LogSettings.logLevel = INFO

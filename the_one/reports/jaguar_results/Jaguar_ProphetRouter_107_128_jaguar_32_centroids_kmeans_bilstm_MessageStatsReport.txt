@@ -1,0 +1,20 @@
+Message stats for scenario Jaguar_ProphetRouter_107_128_jaguar_32_centroids_kmeans_bilstm
+sim_time: 16320.0000
+created: 54
+started: 1054
+relayed: 1052
+aborted: 2
+dropped: 955
+removed: 0
+delivered: 38
+delivery_prob: 0.7037
+response_prob: 0.0000
+overhead_ratio: 26.6842
+latency_avg: 899.7868
+latency_med: 730.6000
+hopcount_avg: 2.3158
+hopcount_med: 2
+buffertime_avg: 1376.8468
+buffertime_med: 1322.1000
+rtt_avg: NaN
+rtt_med: NaN
