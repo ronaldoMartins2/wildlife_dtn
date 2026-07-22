@@ -50,9 +50,9 @@ def read_field_from_json(json_file, field_name):
         print(f"Error decoding the JSON file '{json_file}'.")
         return None
 
-TRAINNING_SET = 0.8
-VALIDATION_SET = 0.1
-TESTING_SET = 0.1
+TRAINNING_SET = 0.80
+VALIDATION_SET = 0.10
+TESTING_SET = 0.10
 CONTACT_DISTANCE = get_contact_distance()
 
 def results_folder( file_rawdata_name ):
@@ -761,11 +761,15 @@ def plot_interpolation_comparisons(file_rawdata, list_methods):
     # Linha horizontal verde no eixo y em y = 0.1
     ax.axhline(y=0.2, color='green', linestyle='--', linewidth=3)
 
-    #ax.set_ylabel('Distance / Error (m)')
-    ax.set_ylabel('Distância / Erro (m)')
+    #INGLÊS
+    ax.set_title('Spatial Performance of Interpolation Models')
+    ax.set_ylabel('Distance / Error (m)')
+    
+    #PORTUGUÊS
+    #ax.set_ylabel('Distância / Erro (m)')
     #ax.set_title('Desempenho Espacial dos Modelos de Interpolação (Quanto Menor, Melhor)')
-    #ax.set_title('Spatial Performance of Interpolation Models')
-    ax.set_title('Desempenho Espacial dos Modelos de Interpolação')
+    #ax.set_title('Desempenho Espacial dos Modelos de Interpolação')
+    
     ax.set_xticks(x)
     ax.set_xticklabels(g1_labels)
     ax.legend()
@@ -781,12 +785,12 @@ def plot_interpolation_comparisons(file_rawdata, list_methods):
     # ----------------------------------------------------
     g2_metrics = ['turning_angles_kl_divergence', 'sinuosity_ratio', 'area_difference_ratio']
     #g2_labels = ['TAKD\nIdeal: ~0', 'Razão de Sinuosidade\nIdeal: ~1.0', 'Diferença de Area de Vida\nIdeal: ~0']
-    g2_labels = ['TAKD\n', 'Razão de Sinuosidade\n', 'Diferença de Area de Vida\n']
-    #g2_labels = ['TAKD\n', 'Sinuosity Ratio\n', 'Area Difference Ratio\n']
+    #g2_labels = ['TAKD\n', 'Razão de Sinuosidade\n', 'Diferença de Area de Vida\n']
+    g2_labels = ['TAKD\n', 'Sinuosity Ratio\n', 'Area Difference Ratio\n']
 
     fig2, axes = plt.subplots(1, 3, figsize=(16, 6))
-    fig2.suptitle('Fidelidade ecológica dos modelos de interpolação.', fontsize=16)
-    #fig2.suptitle('Ecological fidelity of interpolation models.', fontsize=16)
+    #fig2.suptitle('Fidelidade ecológica dos modelos de interpolação.', fontsize=16)
+    fig2.suptitle('Ecological fidelity of interpolation models.', fontsize=16)
     
     for idx, (metric, label) in enumerate(zip(g2_metrics, g2_labels)):
         ax = axes[idx]
@@ -837,3 +841,87 @@ def plot_interpolation_comparisons(file_rawdata, list_methods):
     plt.close()
 
     print(f"Gráficos gerados com sucesso e salvos em:\n- {g1_path}\n- {g2_path}")
+
+def plot_gaps_mean(file_rawdata, list_methods=None):
+    """
+    Calcula o gap médio para três datasets e gera três gráficos com a distribuição
+    dos gaps e a média correspondente.
+
+    Os arquivos usados são:
+    - raw data: map_jaguar_mamiraua_all_animals.csv
+    - interpolação N_BEATS: map_jaguar_mamiraua_interpolation_nbeats_all.csv
+    - interpolação BiLSTM: map_jaguar_mamiraua_interpolation_bilstm_all.csv
+    """
+    if file_rawdata and os.path.exists(file_rawdata):
+        if os.path.basename(file_rawdata).startswith('map_') and 'Results' in file_rawdata:
+            results_dir = os.path.dirname(os.path.abspath(file_rawdata))
+        else:
+            results_dir = results_folder(file_rawdata)
+    else:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        results_dir = os.path.join(script_dir, '..', 'Results', 'jaguar_mamiraua')
+
+    os.makedirs(results_dir, exist_ok=True)
+
+    dataset_definitions = [
+        ('Raw Data', os.path.join(results_dir, 'map_jaguar_mamiraua_all_animals.csv')),
+        ('N_BEATS', os.path.join(results_dir, 'Interpolation', 'map_jaguar_mamiraua_interpolation_nbeats_all.csv')),
+        ('BiLSTM', os.path.join(results_dir, 'Interpolation', 'map_jaguar_mamiraua_interpolation_bilstm_all.csv')),
+    ]
+
+    if list_methods:
+        display_names = [str(method) for method in list_methods[:3]]
+        if len(display_names) < len(dataset_definitions):
+            display_names = display_names + [name for name, _ in dataset_definitions[len(display_names):]]
+    else:
+        display_names = [name for name, _ in dataset_definitions]
+
+    summaries = []
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
+
+    for ax, (default_name, path), display_name in zip(axes, dataset_definitions, display_names):
+        if not os.path.exists(path):
+            print(f"Arquivo não encontrado: {path}")
+            continue
+
+        try:
+            df = pd.read_csv(path, header=None, names=['ID', 'Timestamp', 'Longitude', 'Latitude'])
+            df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
+            df = df.dropna(subset=['Timestamp']).sort_values('Timestamp')
+            df['gap_seconds'] = df['Timestamp'].diff().dt.total_seconds()
+            gaps = df['gap_seconds'].dropna()
+        except Exception as exc:
+            print(f"Erro ao processar {path}: {exc}")
+            continue
+
+        if gaps.empty:
+            print(f"Nenhum gap válido encontrado em {path}")
+            continue
+
+        mean_gap = float(gaps.mean())
+        ax.hist(gaps, bins=40, color='skyblue', edgecolor='black')
+        #ax.axvline(mean_gap, color='red', linestyle='--', linewidth=2, label=f'Média: {mean_gap:.2f}s')
+        ax.axvline(mean_gap, color='red', linestyle='--', linewidth=2, label=f'Average: {mean_gap:.2f}s')
+        #ax.set_title(f'{display_name} - Gap médio = {mean_gap:.2f}s')
+        ax.set_title(f'{display_name} - Average gap = {mean_gap:.2f}s')
+        ax.set_xlabel('Gap (s)')
+        #ax.set_ylabel('Frequência')
+        ax.set_ylabel('Frequency')
+        ax.grid(True, alpha=0.3)
+        ax.legend(loc='upper right')
+        summaries.append({'name': display_name, 'mean_gap': mean_gap, 'path': path})
+
+    if not summaries:
+        print('Nenhum dataset válido encontrado para gerar os gráficos.')
+        return None
+
+    #fig.suptitle('Distribuição dos gaps e média por dataset', fontsize=14)
+    fig.suptitle('Distribution of gaps and average per dataset', fontsize=14)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+
+    output_path = os.path.join(results_dir, 'gaps_mean_comparison.png')
+    fig.savefig(output_path, dpi=300)
+    plt.close(fig)
+
+    print(f'Gráficos salvos em: {output_path}')
+    #return output_path, summaries

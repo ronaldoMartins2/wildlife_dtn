@@ -161,13 +161,22 @@ def plot_quality_metrics_comparison(metrics_csv_path, output_dir=None, prefix=No
     if algorithms is None:
         algorithms = supported_algorithms
 
-    df = df[df['Algorithm'].isin(algorithms)].copy()
+    algorithm_aliases = {
+        'KMeans': 'K-Means',
+        'K-Means': 'K-Means',
+        'SOM': 'SOM',
+        'BIRCH': 'BIRCH'
+    }
+    normalized_algorithms = [algorithm_aliases.get(algorithm, algorithm) for algorithm in algorithms]
+
+    df['Algorithm'] = df['Algorithm'].replace(algorithm_aliases)
+    df = df[df['Algorithm'].isin(normalized_algorithms)].copy()
     if df.empty:
         print(f"Error: no metrics found for algorithms {algorithms} in {metrics_csv_path}.")
         return
 
     # Keep the last row for each algorithm in case the file has multiple entries
-    df = df.groupby('Algorithm', sort=False).last().reindex(algorithms).dropna(axis=0, how='all')
+    df = df.groupby('Algorithm', sort=False).last().reindex(normalized_algorithms).dropna(axis=0, how='all')
 
     metrics = ['Silhouette Score', 'Davies-Bouldin Index', 'Quantization Error']
     x = np.arange(len(metrics))
@@ -190,8 +199,8 @@ def plot_quality_metrics_comparison(metrics_csv_path, output_dir=None, prefix=No
     plt.xticks(x + bar_width * (len(df.index) - 1) / 2, metrics)
     plt.ylabel('Score')
     display_prefix = normalize_title_text(prefix)
-    title = f'Comparativo de Métricas de Qualidade - {display_prefix.title()}'
-    #title = f'Comparison of quality metrics - {display_prefix.title()}'
+    #title = f'Comparativo de Métricas de Qualidade - {display_prefix.title()}'
+    title = f'Comparison of quality metrics - {display_prefix.title()}'
     if n_clusters is not None:
         title += f' - Clusters: {n_clusters}'
     plt.title(title)
@@ -279,7 +288,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix, n_clusters=None):
     # Carrega hiperparâmetros
     data_prep_dir = os.path.join(script_dir, '..', 'Data_preparation')
     hyperparam_path = os.path.join(data_prep_dir, 'hyperparameters.json')
-    sigma = read_field_from_json(hyperparam_path, "sigma_SOM")
+    sigma = read_field_from_json(hyperparam_path, "sigma_SOM")  
     learning_rate = read_field_from_json(hyperparam_path, "learning_rate_SOM")
     ephocs = read_field_from_json(hyperparam_path, "ephocs_SOM")
     #som_x = read_field_from_json(hyperparam_path,"som_x")
@@ -401,7 +410,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix, n_clusters=None):
     final_df.to_csv(metrics_file, index=False)
     print(f"Metrics saved to {metrics_file}")
 
-    plot_quality_metrics_comparison(metrics_csv_path=os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv'), output_dir=cluster_output_dir, prefix=output_prefix, algorithms=['KMeans', 'SOM', 'BIRCH'], n_clusters=N_CLUSTERS_SOM)
+    plot_quality_metrics_comparison(metrics_csv_path=os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv'), output_dir=cluster_output_dir, prefix=output_prefix, algorithms=['K-Means', 'SOM', 'BIRCH'], n_clusters=n_clusters)
 
     #plot_quality_metrics_local(silhouette, dbi, erro_quantizacao, cluster_output_dir, output_prefix, 'som')
     

@@ -194,7 +194,7 @@ def run_all(file_rawdata_name, file_rawdata, output_prefix=None, n_clusters=None
     print(f"Davies-Bouldin Index: {dbi:.4f}")
     print(f"Quantization Error: {quantization_error:.4f}")
     
-    metrics['Algorithm'] = 'KMeans'
+    metrics['Algorithm'] = 'K-Means'
     metrics_file = os.path.join(cluster_output_dir, f'Metricas_de_qualidade_{output_prefix}.csv')
     
     if os.path.exists(metrics_file):

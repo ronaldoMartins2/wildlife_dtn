@@ -27,7 +27,8 @@ from Common.utils import (
     return_maps,
     return_bilstm_list,
     calculate_average_metrics,
-    plot_interpolation_comparisons
+    plot_interpolation_comparisons,
+    plot_gaps_mean
 )
 
 # Data Preparation
@@ -109,6 +110,10 @@ def main():
     #     run_preparation(current_animal, file_rawdata, file_rawdata_columns)
     #     run_average_by_individual(current_animal, file_rawdata, file_rawdata_columns)
     #     run_media_tempos_hist(current_animal, file_rawdata)
+    
+    plot_gaps_mean(file_rawdata)
+
+    sys.exit(0)
 
     # 3. INTERPOLATION (Training & Serving)
     print("\n--- Interpolation Phase ---")
@@ -149,6 +154,28 @@ def main():
 
     clusters = [8, 16, 32]
     all_maps_animals = return_maps(file_rawdata, list_animals)
+    
+    for n_clusters in clusters:
+        if file_interpolated_bilstm:
+            print(f"Running Clustering on BiLSTM Interpolated Data: {file_interpolated_bilstm}")
+            run_all_kmeans(file_interpolated_bilstm, file_rawdata, 'bilstm', n_clusters)
+            run_birch_all(file_interpolated_bilstm, file_rawdata, 'bilstm', n_clusters)
+            run_som_all(file_interpolated_bilstm, file_rawdata, 'bilstm', n_clusters)
+
+        if file_interpolated_nbeats:
+            print(f"Running Clustering on N-BEATS Interpolated Data: {file_interpolated_nbeats}")
+            run_all_kmeans(file_interpolated_nbeats, file_rawdata, 'nbeats', n_clusters)
+            run_birch_all(file_interpolated_nbeats, file_rawdata, 'nbeats', n_clusters)
+            run_som_all(file_interpolated_nbeats, file_rawdata, 'nbeats', n_clusters)
+
+        if file_merged:
+            print(f"Merged raw data file created: {file_merged}")
+            run_all_kmeans(file_merged, file_rawdata, 'Raw data', n_clusters)
+            run_birch_all(file_merged, file_rawdata, 'Raw data', n_clusters)
+            run_som_all(file_merged, file_rawdata, 'Raw data', n_clusters)
+    
+    sys.exit(0)
+
     if all_maps_animals:
         print("\n--- Clusterizando todos os mapas individuais detectados ---")
         for map_name in all_maps_animals:
@@ -159,8 +186,6 @@ def main():
                 run_birch_all(map_path, file_rawdata, animal_id, n_clusters)
                 run_som_all(map_path, file_rawdata, animal_id, n_clusters)
     
-    sys.exit(0)
-
     if file_merged:
         print(f"Merged raw data file created: {file_merged}")
         run_all_kmeans(file_merged, file_rawdata, 'Raw data')
@@ -196,7 +221,6 @@ def main():
     if file_interpolated_nbeats and file_merged:
         file_merged_nbeats = merge_csv(file_merged, file_interpolated_nbeats, file_rawdata, tangara, 'nbeats')
 
-
     if file_merged_bilstm:
         print("Running Clustering on Merged BiLSTM Data...")
 
@@ -205,8 +229,6 @@ def main():
         run_birch_all(file_merged_bilstm, file_rawdata, 'bilstm_merged')
         run_som_all(file_merged_bilstm, file_rawdata, 'bilstm_merged')
 
-    sys.exit(0)
-
     if file_merged_nbeats:
         print("Running Clustering on Merged N-BEATS Data...")
 
@@ -214,6 +236,8 @@ def main():
         run_all_kmeans(file_merged_nbeats, file_rawdata, 'nbeats_merged')   
         run_birch_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
         run_som_all(file_merged_nbeats, file_rawdata, 'nbeats_merged')
+
+    sys.exit(0)
 
     if file_interpolated_nbeats:
         print(f"Running Clustering on N-BEATS Interpolated Data: {file_interpolated_nbeats}")

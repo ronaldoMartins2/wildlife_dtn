@@ -141,8 +141,8 @@ def train(args):
 
     indices = np.random.permutation(total_windows)
     
-    n_train = int(total_windows * 0.70)
-    n_val = int(total_windows * 0.15)
+    n_train = int(total_windows * 0.80)
+    n_val = int(total_windows * 0.10)
     n_test = total_windows - n_train - n_val
     
     train_idx = indices[:n_train]
