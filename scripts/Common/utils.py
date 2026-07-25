@@ -864,9 +864,16 @@ def plot_gaps_mean(file_rawdata, list_methods=None):
     os.makedirs(results_dir, exist_ok=True)
 
     dataset_definitions = [
+        #('Dados brutos', os.path.join(results_dir, 'map_jaguar_mamiraua_all_animals.csv')),
         ('Raw Data', os.path.join(results_dir, 'map_jaguar_mamiraua_all_animals.csv')),
-        ('N_BEATS', os.path.join(results_dir, 'Interpolation', 'map_jaguar_mamiraua_interpolation_nbeats_all.csv')),
-        ('BiLSTM', os.path.join(results_dir, 'Interpolation', 'map_jaguar_mamiraua_interpolation_bilstm_all.csv')),
+        
+        #Dados nao mergeados
+        #('N_BEATS', os.path.join(results_dir, 'Interpolation', 'map_jaguar_mamiraua_interpolation_nbeats_all.csv')),
+        #('BiLSTM', os.path.join(results_dir, 'Interpolation', 'map_jaguar_mamiraua_interpolation_bilstm_all.csv')),
+
+        #Dados mergeados
+        ('N_BEATS', os.path.join(results_dir, 'map_interpolation_merged_jaguar_mamiraua_nbeats.csv')),
+        ('BiLSTM', os.path.join(results_dir, 'map_interpolation_merged_jaguar_mamiraua_bilstm.csv')),
     ]
 
     if list_methods:
@@ -901,10 +908,11 @@ def plot_gaps_mean(file_rawdata, list_methods=None):
         mean_gap = float(gaps.mean())
         ax.hist(gaps, bins=40, color='skyblue', edgecolor='black')
         #ax.axvline(mean_gap, color='red', linestyle='--', linewidth=2, label=f'Média: {mean_gap:.2f}s')
-        ax.axvline(mean_gap, color='red', linestyle='--', linewidth=2, label=f'Average: {mean_gap:.2f}s')
-        #ax.set_title(f'{display_name} - Gap médio = {mean_gap:.2f}s')
-        ax.set_title(f'{display_name} - Average gap = {mean_gap:.2f}s')
-        ax.set_xlabel('Gap (s)')
+        ax.axvline(mean_gap, color='red', linestyle='--', linewidth=2, label=f'Mean: {mean_gap:.2f}s')
+        #ax.set_title(f'Média dos intervalos entre registros — {display_name}')
+        ax.set_title(f'Average interval between records — {display_name}')
+        #ax.set_xlabel('Intervalo')
+        ax.set_xlabel('Interval')
         #ax.set_ylabel('Frequência')
         ax.set_ylabel('Frequency')
         ax.grid(True, alpha=0.3)
@@ -915,8 +923,8 @@ def plot_gaps_mean(file_rawdata, list_methods=None):
         print('Nenhum dataset válido encontrado para gerar os gráficos.')
         return None
 
-    #fig.suptitle('Distribuição dos gaps e média por dataset', fontsize=14)
-    fig.suptitle('Distribution of gaps and average per dataset', fontsize=14)
+    #fig.suptitle('Distribuição dos intervalos entre registros e média por conjunto de dados', fontsize=14)
+    fig.suptitle('Interval distribution and average interval by dataset', fontsize=14)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
 
     output_path = os.path.join(results_dir, 'gaps_mean_comparison.png')
