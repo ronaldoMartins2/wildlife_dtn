@@ -113,7 +113,7 @@ def main():
     
     plot_gaps_mean(file_rawdata)
 
-    sys.exit(0)
+    #sys.exit(0)
 
     # 3. INTERPOLATION (Training & Serving)
     print("\n--- Interpolation Phase ---")
@@ -141,6 +141,7 @@ def main():
     # 3.1. PLOT INTERPOLATION METRICS COMPARISON
     print("\n--- Gerando Gráficos de Comparação de Interpolação ---")
     plot_interpolation_comparisons(file_rawdata, ["bilstm", "nbeats"])
+    sys.exit(0)
 
     # 4. DATA MERGING FOR CLUSTERING
     print("\n--- Preparing Data for Clustering ---")

@@ -734,7 +734,7 @@ def plot_interpolation_comparisons(file_rawdata, list_methods):
     # GRÁFICO 1: Desempenho Espacial
     # ----------------------------------------------------
     g1_metrics = ['rmse_deltas', 'ade_meters', 'fde_meters', 'frechet_distance_meters']
-    g1_labels = ['RMSE Deltas', 'ADE (m)', 'FDE (m)', 'Distância de Fréchet (m)']
+    g1_labels = ['RMSE Deltas', 'ADE (m)', 'FDE (m)', 'Frechet Distance (m)']#'Distância de Fréchet (m)']
     
     x = np.arange(len(g1_metrics))
     width = 0.35
@@ -789,8 +789,8 @@ def plot_interpolation_comparisons(file_rawdata, list_methods):
     g2_labels = ['TAKD\n', 'Sinuosity Ratio\n', 'Area Difference Ratio\n']
 
     fig2, axes = plt.subplots(1, 3, figsize=(16, 6))
-    #fig2.suptitle('Fidelidade ecológica dos modelos de interpolação.', fontsize=16)
-    fig2.suptitle('Ecological fidelity of interpolation models.', fontsize=16)
+    fig2.suptitle('Fidelidade ecológica dos modelos de interpolação.', fontsize=16)
+    #fig2.suptitle('Ecological fidelity of interpolation models.', fontsize=16)
     
     for idx, (metric, label) in enumerate(zip(g2_metrics, g2_labels)):
         ax = axes[idx]
@@ -864,8 +864,8 @@ def plot_gaps_mean(file_rawdata, list_methods=None):
     os.makedirs(results_dir, exist_ok=True)
 
     dataset_definitions = [
-        #('Dados brutos', os.path.join(results_dir, 'map_jaguar_mamiraua_all_animals.csv')),
-        ('Raw Data', os.path.join(results_dir, 'map_jaguar_mamiraua_all_animals.csv')),
+        ('Dados brutos', os.path.join(results_dir, 'map_jaguar_mamiraua_all_animals.csv')),
+        #('Raw Data', os.path.join(results_dir, 'map_jaguar_mamiraua_all_animals.csv')),
         
         #Dados nao mergeados
         #('N_BEATS', os.path.join(results_dir, 'Interpolation', 'map_jaguar_mamiraua_interpolation_nbeats_all.csv')),
@@ -907,14 +907,14 @@ def plot_gaps_mean(file_rawdata, list_methods=None):
 
         mean_gap = float(gaps.mean())
         ax.hist(gaps, bins=40, color='skyblue', edgecolor='black')
-        #ax.axvline(mean_gap, color='red', linestyle='--', linewidth=2, label=f'Média: {mean_gap:.2f}s')
-        ax.axvline(mean_gap, color='red', linestyle='--', linewidth=2, label=f'Mean: {mean_gap:.2f}s')
-        #ax.set_title(f'Média dos intervalos entre registros — {display_name}')
-        ax.set_title(f'Average interval between records — {display_name}')
-        #ax.set_xlabel('Intervalo')
-        ax.set_xlabel('Interval')
-        #ax.set_ylabel('Frequência')
-        ax.set_ylabel('Frequency')
+        ax.axvline(mean_gap, color='red', linestyle='--', linewidth=2, label=f'Média: {mean_gap:.2f} s')
+        #ax.axvline(mean_gap, color='red', linestyle='--', linewidth=2, label=f'Mean: {mean_gap:.2f} s')
+        ax.set_title(f'Média dos intervalos entre registros — {display_name}')
+        #ax.set_title(f'Average interval between records — {display_name}')
+        ax.set_xlabel('Intervalo')
+        #ax.set_xlabel('Interval')
+        ax.set_ylabel('Frequência')
+        #ax.set_ylabel('Frequency')
         ax.grid(True, alpha=0.3)
         ax.legend(loc='upper right')
         summaries.append({'name': display_name, 'mean_gap': mean_gap, 'path': path})
@@ -923,8 +923,8 @@ def plot_gaps_mean(file_rawdata, list_methods=None):
         print('Nenhum dataset válido encontrado para gerar os gráficos.')
         return None
 
-    #fig.suptitle('Distribuição dos intervalos entre registros e média por conjunto de dados', fontsize=14)
-    fig.suptitle('Interval distribution and average interval by dataset', fontsize=14)
+    fig.suptitle('Distribuição dos intervalos entre registros e média por conjunto de dados', fontsize=14)
+    #fig.suptitle('Interval distribution and average interval by dataset', fontsize=14)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
 
     output_path = os.path.join(results_dir, 'gaps_mean_comparison.png')
