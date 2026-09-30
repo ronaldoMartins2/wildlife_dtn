@@ -4,7 +4,7 @@
 # default_settings_cenario_8_rawdata
 
 ## Parâmetros Gerais
-Scenario.name = Jaguar_%%Group.router%%_%%MovementModel.rngSeed%%_%%Events2.size%%_jaguars_kmeans_8_centroids
+Scenario.name = Jaguar_%%Group.router%%_%%MovementModel.rngSeed%%_%%Events2.size%%_jaguars_kmeans_8_centroids_ttl168
 Scenario.simulateConnections = true
 Scenario.updateInterval = 0.1
 # Tempo total de 14/03/2014 a 23/01/2016 (aprox. 680 dias; 58752000 segundos)
@@ -88,8 +88,8 @@ Group3.interface1 = loRaInterface
 # Opções: EpidemicRouter, ProphetRouter ou MaxPropRouter
 Group.router = [EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; EpidemicRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; ProphetRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter; MaxPropRouter]
 Group.bufferSize = 5M
-# TTL 48 horas (172800 segundos)
-Group.msgTtl = 48
+# TTL 168 horas
+Group.msgTtl = 168
 
 # Parâmetros Epidemic
 EpidemicRouter.maxCopies = 10
@@ -107,8 +107,9 @@ SprayAndWaitRouter.binaryMode = true
 Report.reportDir = reports/jaguar_results
 
 ## Relatórios de Avaliação
-Report.nrofReports = 2
+Report.nrofReports = 3
 Report.report1 = MessageReport
 Report.report2 = MessageStatsReport
+Report.report3 = ContactTimesReport
 
 LogSettings.logLevel = INFO
