@@ -1,0 +1,20 @@
+Message stats for scenario Jaguar_MaxPropRouter_17_128_jaguar_16_centroids_kmeans_bilstm
+sim_time: 16320.0000
+created: 54
+started: 2342
+relayed: 2338
+aborted: 4
+dropped: 335
+removed: 1853
+delivered: 49
+delivery_prob: 0.9074
+response_prob: 0.0000
+overhead_ratio: 46.7143
+latency_avg: 931.3102
+latency_med: 954.3000
+hopcount_avg: 4.8980
+hopcount_med: 5
+buffertime_avg: 734.2365
+buffertime_med: 358.9000
+rtt_avg: NaN
+rtt_med: NaN

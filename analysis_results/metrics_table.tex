@@ -1,0 +1,83 @@
+\begin{table}
+\caption{Resultados da Simulação: Comparação de Roteamento por Métrica}
+\label{tab:resultados_roteamento}
+\begin{tabular}{lllrrrrr}
+\toprule
+ &  &  & Probabilidade de Entrega & Taxa de Entrega & Latência Média (s) & Razão de Overhead & Contagem Média de Saltos \\
+Cenário & Tamanho da Mensagem (kB) & Protocolo de Roteamento &  &  &  &  &  \\
+\midrule
+jaguar_16_centroids_kmeans_bilstm & 64 & EpidemicRouter & 0.872 & 0.872 & 991.537 & 39.358 & 4.737 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguars_kmeans_16_centroids & 64 & EpidemicRouter & 0.872 & 0.872 & 991.291 & 39.390 & 4.696 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars & 64 & EpidemicRouter & 0.872 & 0.872 & 991.694 & 39.356 & 4.741 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars_bilstm & 64 & EpidemicRouter & 0.872 & 0.872 & 991.693 & 39.357 & 4.735 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguar_16_centroids_kmeans_bilstm & 128 & EpidemicRouter & 0.872 & 0.872 & 992.655 & 39.334 & 4.733 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguars_kmeans_16_centroids & 128 & EpidemicRouter & 0.872 & 0.872 & 993.010 & 39.337 & 4.729 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars & 128 & EpidemicRouter & 0.872 & 0.872 & 993.967 & 39.337 & 4.729 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars_bilstm & 128 & EpidemicRouter & 0.872 & 0.872 & 992.424 & 39.339 & 4.732 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguar_16_centroids_kmeans_bilstm & 256 & EpidemicRouter & 0.870 & 0.870 & 999.628 & 39.360 & 4.721 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguars_kmeans_16_centroids & 256 & EpidemicRouter & 0.870 & 0.870 & 999.824 & 39.362 & 4.718 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars & 256 & EpidemicRouter & 0.871 & 0.871 & 1000.393 & 39.338 & 4.713 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars_bilstm & 256 & EpidemicRouter & 0.870 & 0.870 & 1000.093 & 39.365 & 4.716 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguar_16_centroids_kmeans_bilstm & 64 & MaxPropRouter & 0.872 & 0.872 & 991.289 & 45.146 & 4.742 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguars_kmeans_16_centroids & 64 & MaxPropRouter & 0.872 & 0.872 & 991.322 & 47.711 & 4.740 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars & 64 & MaxPropRouter & 0.871 & 0.871 & 990.430 & 47.848 & 4.747 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars_bilstm & 64 & MaxPropRouter & 0.872 & 0.872 & 991.338 & 47.848 & 4.734 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguar_16_centroids_kmeans_bilstm & 128 & MaxPropRouter & 0.872 & 0.872 & 992.571 & 45.099 & 4.740 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguars_kmeans_16_centroids & 128 & MaxPropRouter & 0.872 & 0.872 & 992.289 & 47.748 & 4.742 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars & 128 & MaxPropRouter & 0.872 & 0.872 & 992.304 & 47.864 & 4.741 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars_bilstm & 128 & MaxPropRouter & 0.872 & 0.872 & 992.634 & 47.783 & 4.739 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguar_16_centroids_kmeans_bilstm & 256 & MaxPropRouter & 0.871 & 0.871 & 995.694 & 45.180 & 4.739 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguars_kmeans_16_centroids & 256 & MaxPropRouter & 0.871 & 0.871 & 997.042 & 47.531 & 4.727 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars & 256 & MaxPropRouter & 0.871 & 0.871 & 997.453 & 47.774 & 4.721 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars_bilstm & 256 & MaxPropRouter & 0.871 & 0.871 & 997.443 & 47.732 & 4.725 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguar_16_centroids_kmeans_bilstm & 64 & ProphetRouter & 0.669 & 0.669 & 1239.321 & 24.357 & 2.857 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguars_kmeans_16_centroids & 64 & ProphetRouter & 0.721 & 0.721 & 1216.969 & 24.482 & 3.074 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars & 64 & ProphetRouter & 0.737 & 0.737 & 1215.384 & 24.674 & 3.094 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars_bilstm & 64 & ProphetRouter & 0.718 & 0.718 & 1217.669 & 24.280 & 3.055 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguar_16_centroids_kmeans_bilstm & 128 & ProphetRouter & 0.669 & 0.669 & 1239.962 & 24.336 & 2.847 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguars_kmeans_16_centroids & 128 & ProphetRouter & 0.720 & 0.720 & 1218.264 & 24.488 & 3.069 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars & 128 & ProphetRouter & 0.737 & 0.737 & 1217.166 & 24.660 & 3.089 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars_bilstm & 128 & ProphetRouter & 0.718 & 0.718 & 1219.385 & 24.261 & 3.044 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguar_16_centroids_kmeans_bilstm & 256 & ProphetRouter & 0.668 & 0.668 & 1241.946 & 24.262 & 2.833 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+jaguars_kmeans_16_centroids & 256 & ProphetRouter & 0.720 & 0.720 & 1220.444 & 24.465 & 3.051 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars & 256 & ProphetRouter & 0.736 & 0.736 & 1219.557 & 24.650 & 3.069 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+only_jaguars_bilstm & 256 & ProphetRouter & 0.717 & 0.717 & 1220.523 & 24.251 & 3.046 \\
+\cline{1-8} \cline{2-8} \cline{3-8}
+\bottomrule
+\end{tabular}
+\end{table}

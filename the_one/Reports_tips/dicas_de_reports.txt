@@ -1,0 +1,40 @@
+📊 Message Reports
+These are the most used in DTN research — measuring how messages flow through the network.
+MessageStatsReport — the most important report. Outputs:
+
+delivery_prob — ratio of delivered vs created messages
+response_prob — response delivery probability
+overhead_ratio — (relayed - delivered) / delivered
+latency_avg / latency_med — average and median delivery delay
+hopcount_avg / hopcount_med — average hops per delivered message
+buffertime_avg / buffertime_med — time messages spend in buffer
+rtt_avg / rtt_med — round trip time
+
+MessageReport — logs every individual message event (created, relayed, delivered, dropped) with timestamps. Useful for tracing specific messages.
+MessageDeliveryReport — records each delivery event: which message, from which node, to which node, and at what time.
+UniqueMessagesTransmittedReport — counts how many unique messages each node transmitted, useful for overhead analysis.
+
+📡 Contact / Connectivity Reports
+Measuring how nodes encounter each other — key for DTN topology analysis.
+ContactTimesReport — distribution of contact durations between node pairs. Outputs time-hitcount tuples (useful with ccdfPlotter.pl).
+ContactsDuringReport — number of contacts happening during configurable time intervals.
+InterContactTimesReport — distribution of time between contacts (inter-contact time), fundamental for DTN characterization.
+ConnectivityReport — logs every connection up/down event with timestamps and node IDs. Produces a full connectivity trace.
+ConnectivityONEReport — similar to above but in ONE's internal trace format, usable as input for other simulations.
+
+💾 Buffer / Resource Reports
+Measuring what happens inside each node's memory buffer.
+BufferOccupancyReport — snapshots of buffer usage over time per node. Shows how full buffers get during simulation.
+DroppedMessagesReport — logs every message drop event, which node dropped it and why (buffer full, TTL expired).
+
+🚶 Movement / Mobility Reports
+Measuring how nodes move through the simulation space.
+EncountersVSUniqueEncountersReport — total encounters vs unique node encounters per node. Reveals social structure.
+TotalEncountersReport — total number of encounters per node over the simulation.
+UniqueEncountersReport — number of unique different nodes each node met.
+WalktrapCommunityReport — community detection based on node movement patterns.
+DistanceDelayReport — correlation between geographic distance and message delivery delay.
+
+⚡ Energy Reports
+For simulations with energy-constrained nodes.
+EnergyLevelReport — tracks remaining energy level of each node over time.

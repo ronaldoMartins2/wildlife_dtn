@@ -335,6 +335,11 @@ def main():
     #     run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata)
     #     run_add_down_event(f'{pair[0]}_{pair[1]}', file_rawdata)
 
+    # Criar contatos entre onças e o Uakari Lodge (INTERPOLATED)
+    if file_merged_bilstm:
+        for animal_id in list_animals:
+            run_contacts_animal_uakari(animal_id, file_rawdata, 'bilstm')
+
     if file_merged_bilstm:
         for pair in pairs:
             run_find_contacts_between_nodes(pair[0], pair[1], file_rawdata, 'bilstm')
@@ -363,22 +368,17 @@ def main():
     #     run_contacts_animal_uakari(animal_id, file_rawdata)
     
     # Criar contatos entre onças e centroids (INTERPOLATED)
-    if file_merged_bilstm:
-        for animal_id in list_animals:
-            # Agora passamos o ID numérico (ex: '93') e não o nome do arquivo bruto
-            run_contacts_animal_centroids(animal_id, file_rawdata, 'bilstm')
-
-    # Criar contatos entre onças e o Uakari Lodge (INTERPOLATED)
-    if file_merged_bilstm:
-        for animal_id in list_animals:
-            run_contacts_animal_uakari(animal_id, file_rawdata, 'bilstm')
+    # if file_merged_bilstm:
+    #     for animal_id in list_animals:
+    #         # Agora passamos o ID numérico (ex: '93') e não o nome do arquivo bruto
+    #         run_contacts_animal_centroids(animal_id, file_rawdata, 'bilstm')
 
     raw_name = "map_jaguar_mamiraua_all_animals_bilstm"
         
     # Listas para o loop de experimentos
-    centroids_list = [16]
+    centroids_list = [8, 32]
     algorithms_list = ["kmeans"] # Seus 3 algoritmos
-    interpolations_list = ["bilstm"] # Neste primeiro momento apenas o rawdata
+    interpolations_list = ["rawdata"] # Neste primeiro momento apenas o rawdata
 
     # Gerar arquivos para cada combinação
     for n in centroids_list:

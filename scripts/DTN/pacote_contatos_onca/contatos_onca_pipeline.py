@@ -22,22 +22,27 @@ from scipy.stats import lognorm, weibull_min
 import matplotlib.pyplot as plt
 
 CONFIG = {
-    "INPUT_CSV": "dados_telemetria.csv",
-    "OUTPUT_DIR": r"scripts\DTN\pacote_contatos_onca\output_contatos",
-    "COL_ID": "individual.local.identifier (ID)",
-    "COL_TIME": "timestamp",
-    "COL_LAT": "location.lat",
-    "COL_LON": "location.long",
-    "COL_SEX": "sex",
-    "COL_GROUP": "group",
-    "TIMEZONE": "America/Manaus",            # ex.: "America/Manaus"
-    "DELTA_T_MIN": 30,
-    "NEAREST_TOL_MIN": 15,
-    "MIN_FIXES_PER_EVENT": 2,
-    "DIST_THRESHOLD_M": 200.0,
-    "GAP_TOLERANCE_STEPS": 1,
-    "MIN_DURATION_MIN": 10,
-    "WINDOW_FOR_SUMMARY_DAYS": 7,
+    "INPUT_CSV": r"scripts\DTN\pacote_contatos_onca\dados_telemetria2.csv",      # Coloque o nome exato do seu arquivo aqui
+    "OUTPUT_DIR": r"scripts\DTN\pacote_contatos_onca\output_contatos",   # Nome da pasta onde os gráficos serão salvos
+    "COL_ID": "individual.local.identifier (ID)",                     # Como vamos chamar a coluna do ID
+    "COL_TIME": "timestamp",                 # Como vamos chamar a coluna da data/hora
+    "COL_LAT": "location.lat",                   # Como vamos chamar a coluna da latitude
+    "COL_LON": "location.long",                   # Como vamos chamar a coluna da longitude
+    "COL_SEX": "sex",                   # Não tem no seu arquivo, mas o script ignora automaticamente
+    "COL_GROUP": "group",               # Mesma coisa, ele ignora se não existir
+    "TIMEZONE": "America/Manaus",       # Fuso horário correto para a Amazônia
+    
+    # --- PARÂMETROS TEMPORAIS (AJUSTADOS PARA DADOS DE 6 HORAS) ---
+    "DELTA_T_MIN": 120,                 # 360 minutos = 6 horas (o intervalo exato dos seus dados)
+    "NEAREST_TOL_MIN": 30,              # Tolerância: se um colar gravou às 10:02 e o outro às 10:00, o script junta os dois
+    
+    # --- PARÂMETROS DE CONTATO ---
+    "MIN_FIXES_PER_EVENT": 1,           # Como os pontos demoram 6h, apenas 1 ponto próximo já deve contar como um encontro
+    "DIST_THRESHOLD_M": 250.0,         # Distância máxima em metros para ser considerado contato
+    "GAP_TOLERANCE_STEPS": 1,           # Se os colares falharem por 1 passo (6 horas), o script não quebra o evento ao meio
+    "MIN_DURATION_MIN": 1,              # Duração mínima. Qualquer encontro nos seus dados já terá 360 min.
+    "MAX_DURATION_MIN": 1440,           # Duração máxima (ex: 1440 min = 24h). Ignora eventos artificiais muito longos.
+    "WINDOW_FOR_SUMMARY_DAYS": 7,       # Agrupa os resultados por semana (7 dias) nas tabelas
 }
 
 # -----------------------------
@@ -154,7 +159,6 @@ def empirical_survival(x, grid=None):
 def main(cfg):
     ensure_outdir(cfg["OUTPUT_DIR"])
     df = pd.read_csv(cfg["INPUT_CSV"])
-    # cols_keep = [c for c in [cfg["COL_ID"], cfg["COL_TIME"], cfg["COL_LAT"], cfg["COL_LON"], cfg["COL_SEX"], cfg["COL_GROUP"]] if c in df.columns]
     cols_keep = [c for c in [cfg["COL_ID"], cfg["COL_TIME"], cfg["COL_LAT"], cfg["COL_LON"]] if c in df.columns]
     df = df[cols_keep]
 
@@ -194,8 +198,13 @@ def main(cfg):
             t_end = mask.index[mask[::-1].argmax()]
             n_steps = int(mask.sum())
             duration_min = n_steps * cfg["DELTA_T_MIN"]
-            if duration_min < cfg["MIN_DURATION_MIN"] or n_steps < cfg["MIN_FIXES_PER_EVENT"]:
+            
+            # FILTRO ATUALIZADO: Checa a duração mínima e máxima
+            if (duration_min < cfg["MIN_DURATION_MIN"] or 
+                duration_min > cfg["MAX_DURATION_MIN"] or 
+                n_steps < cfg["MIN_FIXES_PER_EVENT"]):
                 continue
+                
             events.append({"id1": id1, "id2": id2, "t_start": t_start, "t_end": t_end, "duration_min": duration_min})
         if not events:
             continue
@@ -316,6 +325,7 @@ if __name__ == "__main__":
     parser.add_argument("--dstar", type=float, default=CONFIG["DIST_THRESHOLD_M"], help="Threshold de contato d* (m).")
     parser.add_argument("--gap", type=int, default=CONFIG["GAP_TOLERANCE_STEPS"], help="Lacuna máxima (passos) para fechar dentro de um evento.")
     parser.add_argument("--mindur", type=int, default=CONFIG["MIN_DURATION_MIN"], help="Duração mínima para aceitar evento (min).")
+    parser.add_argument("--maxdur", type=int, default=CONFIG["MAX_DURATION_MIN"], help="Duração máxima para aceitar evento (min).")
     args = parser.parse_args()
 
     CONFIG["INPUT_CSV"] = args.input
@@ -325,5 +335,6 @@ if __name__ == "__main__":
     CONFIG["DIST_THRESHOLD_M"] = args.dstar
     CONFIG["GAP_TOLERANCE_STEPS"] = args.gap
     CONFIG["MIN_DURATION_MIN"] = args.mindur
+    CONFIG["MAX_DURATION_MIN"] = args.maxdur
 
     main(CONFIG)

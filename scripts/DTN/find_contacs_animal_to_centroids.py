@@ -12,6 +12,7 @@ BASE_DATE = datetime(2014, 3, 14, 4, 0)
 ANIMAL_OFFSET = 93
 CENTROID_START_OFFSET = 7
 
+# Listas de iteração
 CLUSTERING_TYPES = ['som', 'birch', 'kmeans']
 PROCESSING_MODES = ['nbeats', 'bilstm', 'rawdata']
 CLUSTER_COUNTS = [8, 16, 32]
@@ -22,14 +23,11 @@ def run(animal_id_str, file_rawdata_name, interpolation_method=None):
     file_rawdata_name: nome do arquivo original
     """
     results_dir = results_folder(file_rawdata_name)
-    # cluster_dir = os.path.join(results_dir, 'Interpolation')
     
-    # 1. Busca o arquivo de movimentação individual
+    # 1. Busca o arquivo de movimentação individual da onça
     if interpolation_method and interpolation_method != 'rawdata':
-        cluster_dir = os.path.join(results_dir, 'Interpolation')
         animal_path = os.path.join(results_dir, 'Interpolation', f'map_{animal_id_str}_interpolation_{interpolation_method}_merged.csv')
     else:
-        cluster_dir = os.path.join(results_dir, 'Interpolation')
         animal_path = os.path.join(results_dir, f'map_{animal_id_str}.csv')
     
     if not os.path.exists(animal_path):
@@ -55,19 +53,23 @@ def run(animal_id_str, file_rawdata_name, interpolation_method=None):
         print(f"    [!] Erro ao ler coordenadas: {e}")
         return
 
-    # 3. Iteração pelos arquivos de cluster
+    # 3. Iteração pelos arquivos de cluster (Apenas Centroids)
     for clustering_type in CLUSTERING_TYPES:
         for mode in PROCESSING_MODES:
             for count in CLUSTER_COUNTS:
                 
-                # CORREÇÃO: Construção correta do nome do arquivo incluindo o COUNT
-                if interpolation_method and interpolation_method != 'rawdata':
-                    cluster_filename = f'centroids_{clustering_type}_{mode}_{count}_interpolation_{interpolation_method}.csv'
-                else:
-                    cluster_filename = f'centroids_{clustering_type}_{mode}_{count}.csv'
+                # O diretório de clusters deve apontar para as pastas \8, \16 ou \32
+                cluster_dir = os.path.join(results_dir, 'Clusterization', str(count))
                 
+                # Construção do nome do arquivo (agora padronizado para todos os algoritmos)
+                if interpolation_method and interpolation_method != 'rawdata':
+                    cluster_filename = f'centroids_{count}_{clustering_type}_map_{animal_id_str}_interpolation_{mode}_{interpolation_method}.csv'
+                else:
+                    cluster_filename = f'centroids_{count}_{clustering_type}_{animal_id_str}.csv'
+
                 cluster_path = os.path.join(cluster_dir, cluster_filename)
                 
+                # Se o arquivo não existir, pula para a próxima iteração
                 if not os.path.exists(cluster_path):
                     continue
 
@@ -98,7 +100,7 @@ def run(animal_id_str, file_rawdata_name, interpolation_method=None):
                 if not contacts_list:
                     continue
 
-                print(f"\n    [*] Encontrados {len(contacts_list)} contatos geográficos com {cluster_filename}")
+                print(f"\n    [*] Encontrados {len(contacts_list)} contatos com {cluster_filename}")
 
                 # 5. Formatação e Mapeamento
                 df_res = pd.DataFrame(contacts_list)
@@ -122,14 +124,8 @@ def run(animal_id_str, file_rawdata_name, interpolation_method=None):
                 out_dir = os.path.join(results_dir, 'contacts')
                 os.makedirs(out_dir, exist_ok=True)
                 
-                # CORREÇÃO: Construção do nome de saída limpo, sem sobrepor extensões .csv
                 base_out_name = f"down_contact_{animal_id_str}_{os.path.splitext(cluster_filename)[0]}"
-                
-                if interpolation_method and interpolation_method != 'rawdata':
-                    output_name = f"{base_out_name}_interpolation_{interpolation_method}_merged.csv"
-                else:
-                    output_name = f"{base_out_name}.csv"
-                
+                output_name = f"{base_out_name}.csv"
                 output_path = os.path.join(out_dir, output_name)
                 
                 final_df[['id', 'conn', 'for', 'to', 'state']].to_csv(output_path, index=False)

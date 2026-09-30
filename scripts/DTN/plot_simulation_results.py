@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 # ==========================================================
 # USER SETTINGS
 # ==========================================================
-LANGUAGE = "en"          # "en" or "pt"
+LANGUAGE = "pt"          # "en" or "pt"
 USE_HATCHES = True
 USE_COLORS = True
 DPI = 300
@@ -61,8 +61,8 @@ TRANSLATIONS = {
         "delivery_prob": "Probabilidade de Entrega",
         "delivery_ratio": "Taxa de Entrega",
         "latency_avg": "Latência Média (s)",
-        "overhead_ratio": "Razão de Sobrecarga",
-        "hopcount_avg": "Número Médio de Saltos",
+        "overhead_ratio": "Razão de Overhead",
+        "hopcount_avg": "Contagem Média de Saltos",
 
         "message_size": "Tamanho da Mensagem (kB)",
         "routing": "Protocolo de Roteamento",
@@ -314,9 +314,20 @@ def plot_comparison(
         fig, axes = plt.subplots(3, 2, figsize=(18, 12))
         axes = axes.flatten()
 
+        # n_groups = len(x_values)
+        # n_bars = len(compare_values)
+        # bar_width = 0.8 / n_bars
+        # x_positions = list(range(n_groups))
+
         n_groups = len(x_values)
         n_bars = len(compare_values)
-        bar_width = 0.8 / n_bars
+        
+        # Identifica se é o gráfico onde o eixo X e a legenda são iguais
+        is_same_col = (compare_col == x_col)
+        effective_n_bars = 1 if is_same_col else n_bars
+        
+        # 0.6 deixa as barras mais parrudas e com um espaçamento ideal entre elas
+        bar_width = 0.5 / effective_n_bars 
         x_positions = list(range(n_groups))
 
         for i, metric in enumerate(METRICS):
@@ -335,8 +346,13 @@ def plot_comparison(
                     else:
                         y_values.append(row[metric].iloc[0])
 
+                # offsets = [
+                #     x + (j - (n_bars - 1) / 2) * bar_width
+                #     for x in x_positions
+                # ]
+
                 offsets = [
-                    x + (j - (n_bars - 1) / 2) * bar_width
+                    x if is_same_col else x + (j - (effective_n_bars - 1) / 2) * bar_width
                     for x in x_positions
                 ]
 
@@ -409,9 +425,17 @@ def plot_routing_by_metric(data):
             scenario_df["message_size"].dropna().unique()
         )
 
+        # n_groups = len(x_values)
+        # n_bars = len(routing_values)
+        # bar_width = 0.8 / n_bars
+        # x_positions = list(range(n_groups))
+
         n_groups = len(x_values)
         n_bars = len(routing_values)
-        bar_width = 0.8 / n_bars
+        
+        step_width = 0.8 / n_bars       
+        bar_width = step_width * 0.9   
+        
         x_positions = list(range(n_groups))
 
         for metric in METRICS:
@@ -433,8 +457,13 @@ def plot_routing_by_metric(data):
                     else:
                         y_values.append(row[metric].iloc[0])
 
+                # offsets = [
+                #     x + (j - (n_bars - 1) / 2) * bar_width
+                #     for x in x_positions
+                # ]
+
                 offsets = [
-                    x + (j - (n_bars - 1) / 2) * bar_width
+                    x + (j - (n_bars - 1) / 2) * step_width
                     for x in x_positions
                 ]
 
@@ -479,6 +508,69 @@ def plot_routing_by_metric(data):
 
             save_figure(fig, output_dir / filename)
 
+# ==========================================================
+# EXPORT TO LATEX
+# ==========================================================
+def export_latex_table(data):
+    tex_file = OUTPUT_DIR / "metrics_table.tex"
+    
+    # Define o índice hierárquico (Cenário -> Tamanho da Mensagem -> Roteamento)
+    df_latex = data.set_index(["scenario", "message_size", "routing"])[METRICS]
+    
+    # Renomeia as colunas para o idioma selecionado nas configurações
+    col_names = {m: tr(m) for m in METRICS}
+    df_latex = df_latex.rename(columns=col_names)
+    
+    # Ajusta o nome dos índices
+    df_latex.index.names = [tr("scenario"), tr("message_size"), tr("routing")]
+    
+    # Gera o código LaTeX (usando o estilo do pacote booktabs)
+    # Nota: O método to_latex do Pandas 2.0+ usa a API Styler
+    try:
+        latex_str = df_latex.style.format(precision=3).to_latex(
+            caption="Resultados da Simulação: Comparação de Roteamento por Métrica",
+            label="tab:resultados_roteamento",
+            clines="all;data",
+            hrules=True,
+            multirow_align="t"
+        )
+    except AttributeError:
+        # Fallback para versões mais antigas do pandas
+        latex_str = df_latex.to_latex(
+            float_format="%.3f",
+            caption="Resultados da Simulação: Comparação de Roteamento por Métrica",
+            label="tab:resultados_roteamento",
+            multirow=True,
+            multicolumn=True
+        )
+    
+    with open(tex_file, "w", encoding="utf-8") as f:
+        f.write(latex_str)
+        
+    print(f"Tabela LaTeX salva em: {tex_file}")
+
+# ==========================================================
+# EXPORT TO CSV (CONDENSED)
+# ==========================================================
+def export_condensed_csv(data):
+    csv_file = OUTPUT_DIR / "metrics_condensed.csv"
+    
+    # Define a ordem das colunas para manter a hierarquia
+    cols_order = ["scenario", "message_size", "routing"] + METRICS
+    df_csv = data[cols_order].copy()
+    
+    # Ordena as linhas para manter o agrupamento lógico
+    df_csv = df_csv.sort_values(by=["scenario", "message_size", "routing"])
+    
+    # Renomeia as colunas usando o dicionário de traduções do seu script
+    col_names = {col: tr(col) for col in cols_order}
+    df_csv = df_csv.rename(columns=col_names)
+    
+    # Exporta para CSV arredondando os valores numéricos para 3 casas decimais
+    df_csv.to_csv(csv_file, index=False, float_format="%.3f")
+    
+    print(f"CSV condensado salvo em: {csv_file}")
+
 
 # ==========================================================
 # GENERATE PLOTS
@@ -511,6 +603,8 @@ plot_comparison(
 )
 
 plot_routing_by_metric(df_mean)
+export_latex_table(df_mean)
+export_condensed_csv(df_mean)
 
 
 # ==========================================================

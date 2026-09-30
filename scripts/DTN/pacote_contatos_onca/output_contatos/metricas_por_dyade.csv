@@ -1,0 +1,2 @@
+id1,id2,sex1,sex2,group1,group2,n_events,monitoring_days_common,lambda_events_per_day,total_contact_minutes,mean_duration_min,median_duration_min,p95_duration_min,ict_count,ict_median_min
+93,96,,,,,1,147.58333333333334,0.006775832862789384,240,240.0,240.0,240.0,0,

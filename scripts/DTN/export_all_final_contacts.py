@@ -19,50 +19,60 @@ def run(file_rawdata_name, n_centroids, algorithm, interpolation):
     print(f"\n>>> Iniciando: {n_centroids} centroids | {algorithm} | {interpolation}")
     
     results_dir = results_folder(file_rawdata_name)
-
-    # print(results_dir)
     print("@@@@@@@@@@@@@@@@@ Amazonas @@@@@@@@@@@@@@@@@")
 
-    #output_dir = os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", 'contacts')
     output_dir = os.path.join(results_dir, 'contacts')
-    
     os.makedirs(output_dir, exist_ok=True)
     
-    # Nome do arquivo final conforme o padrão solicitado
-    filename = f"{file_rawdata_name}_contacts_{n_centroids}_centroids_{algorithm}_{interpolation}.txt"
+    # CORREÇÃO: Extrai apenas o nome do arquivo (remove "rawdata/") e remove a extensão ".csv"
+    pure_filename = os.path.splitext(os.path.basename(file_rawdata_name))[0]
+    
+    # O nome do arquivo final agora não conterá barras '/' que quebram o caminho
+    filename = f"{pure_filename}_contacts_{n_centroids}_centroids_{algorithm}_{interpolation}.txt"
     output_path = os.path.join(output_dir, filename)
 
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         cursor = conn.cursor()
 
-        # 1. Limpar a tabela temporária no banco para esta rodada
+        # 1. Garantir que a tabela existe (com FLOAT para o simulation_time)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS jaguar_contacts (
+                simulation_time FLOAT,
+                conn VARCHAR(10),
+                for_contact INTEGER,
+                to_contact INTEGER,
+                state VARCHAR(10)
+            )
+        """)
+        
+        # Limpar a tabela para esta rodada
         cursor.execute("TRUNCATE TABLE jaguar_contacts")
         conn.commit()
 
         # 2. Identificar quais arquivos CSV devem ser incluídos
-        #all_files = glob.glob(os.path.join(r"C:\\Users\\jccme\\OneDrive\\Documentos\\MESTRADO\\WILD_LIFE_PROJECT\\wildlife_dtn\\scripts\\Results\\jaguar_mamiraua", "contacts", "*.csv"))
         all_files = glob.glob(os.path.join(results_dir, "contacts", "*.csv"))
-        # print(all_files)
-
         files_to_import = []
+        
         for f in all_files:
             basename = os.path.basename(f)
             
-            # Regra A: Contatos entre onças (ex: down_contact_93_96.csv)
-            # Geralmente não possuem a palavra 'centroids' no nome
-            if "centroids" not in basename and basename.startswith("down_contact_"):
+            # Regra A: Contatos entre onças (não possuem 'centroids' nem 'uakari_lodge')
+            if "centroids" not in basename and "uakari_lodge" not in basename and basename.startswith("down_contact_"):
                 files_to_import.append(f)
                 
-            # Regra B: Contatos com centroides específicos desta configuração
-            # (ex: down_contact_93_centroids_8_birch_rawdata.csv)
-            elif f"centroids_{n_centroids}_{algorithm}_{interpolation}" in basename:
-                files_to_import.append(f)
-
             # Regra C: Contatos com Uakari Lodge
-            # (ex: down_contact_93_centroids_8_birch_uakari_lodge.csv)
-            elif f"uakari_lodge" in basename:
+            elif "uakari_lodge" in basename:
                 files_to_import.append(f)
+                
+            # Regra B: Contatos com centroides desta configuração exata
+            elif f"centroids_{n_centroids}_{algorithm}" in basename:
+                if interpolation == "rawdata":
+                    if "interpolation" not in basename:
+                        files_to_import.append(f)
+                else:
+                    if f"interpolation_{interpolation}" in basename or f"interpolation_nbeats_{interpolation}" in basename:
+                        files_to_import.append(f)
 
         if not files_to_import:
             print(f"AVISO: Nenhum arquivo encontrado para a config {n_centroids}-{algorithm}-{interpolation}")
@@ -70,32 +80,36 @@ def run(file_rawdata_name, n_centroids, algorithm, interpolation):
 
         print(f"Importando {len(files_to_import)} arquivos para o banco...")
 
-        # 3. Carregar dados no banco
+        # 3. Carregar dados no banco em LOTE
         for f in files_to_import:
             df_temp = pd.read_csv(f)
-            # Mapeia colunas do CSV (id, conn, for, to, state) para colunas do banco
-            for _, row in df_temp.iterrows():
-                cursor.execute("""
-                    INSERT INTO jaguar_contacts (simulation_time, conn, for_contact, to_contact, state)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (int(row['id']), row['conn'], int(row['for']), int(row['to']), row['state']))
+            
+            records_to_insert = [
+                (float(row['id']), row['conn'], int(row['for']), int(row['to']), row['state'])
+                for _, row in df_temp.iterrows()
+            ]
+            
+            cursor.executemany("""
+                INSERT INTO jaguar_contacts (simulation_time, conn, for_contact, to_contact, state)
+                VALUES (%s, %s, %s, %s, %s)
+            """, records_to_insert)
         
         conn.commit()
 
         # 4. Exportar o resultado final ordenado
-        query = """
+        cursor.execute("""
             SELECT simulation_time, conn, for_contact, to_contact, state
             FROM jaguar_contacts
             ORDER BY simulation_time ASC, state DESC
-        """
+        """)
+        records = cursor.fetchall()
         
-        df_final = pd.read_sql(query, conn)
+        df_final = pd.DataFrame(records, columns=['simulation_time', 'conn', 'for_contact', 'to_contact', 'state'])
 
-        # Formatação final (Inteiros)
-        df_final['simulation_time'] = df_final['simulation_time'].astype(int)
         df_final['for_contact'] = df_final['for_contact'].astype(int)
         df_final['to_contact'] = df_final['to_contact'].astype(int)
 
+        # Salva formatado para o ONE Simulator (separado por espaço, sem cabeçalho)
         df_final.to_csv(output_path, sep=' ', header=False, index=False)
         
         print(f"SUCESSO! Arquivo gerado: {filename} ({len(df_final)} linhas)")
@@ -103,19 +117,6 @@ def run(file_rawdata_name, n_centroids, algorithm, interpolation):
     except Exception as e:
         print(f"Erro ao processar {filename}: {e}")
     finally:
-        if 'conn' in locals(): conn.close()
-
-# if __name__ == "__main__":
-#     # Parametrização dos experimentos
-#     project = "jaguar_mamiraua"
-    
-#     # Listas conforme sua descrição
-#     centroids = [8, 16, 32]
-#     algorithms = ["birch", "kmeans", "optics"]
-#     interpolations = ["rawdata"] # Primeiro momento apenas rawdata
-
-#     # Loop para gerar todos os arquivos de uma vez
-#     for n in centroids:
-#         for alg in algorithms:
-#             for interp in interpolations:
-#                 run(project, n, alg, interp)
+        if 'conn' in locals() and conn:
+            cursor.close()
+            conn.close()
