@@ -1,0 +1,20 @@
+Message stats for scenario Jaguar_MaxPropRouter_47_256_only_jaguars_ttl168
+sim_time: 16320.0000
+created: 54
+started: 2836
+relayed: 2826
+aborted: 10
+dropped: 0
+removed: 2623
+delivered: 51
+delivery_prob: 0.9444
+response_prob: 0.0000
+overhead_ratio: 54.4118
+latency_avg: 1357.5294
+latency_med: 933.6000
+hopcount_avg: 4.8235
+hopcount_med: 4
+buffertime_avg: 1045.8086
+buffertime_med: 357.1000
+rtt_avg: NaN
+rtt_med: NaN
