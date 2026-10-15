@@ -1,0 +1,88 @@
+# Comando para rodar -> ./one.bat -b 135
+# default_settings_SCEN_3
+
+# ====================================================================
+# CONFIGURACAO VALIDA - CENARIO ONCAS MAMIRAUA (Dados Reais Mapeados)
+# ====================================================================
+
+Scenario.name = Jaguar_%%Group.router%%_%%MovementModel.rngSeed%%_%%Events2.size%%_jaguars_kmeans_16_centroids_ttl168
+#Scenario.name = Jaguar_RealData_Test_EpidemicRouter
+
+# Scenario.simulateConnections = true
+Scenario.simulateConnections = false
+
+Scenario.updateInterval = 1.0
+
+#Scenario.endTime = 35000
+Scenario.endTime = 56312328
+
+Scenario.nrofHostGroups = 1
+Scenario.nrofRuns = 1
+
+MovementModel.worldSize = 10000, 10000
+
+# --------------------------------------------------------------------
+# Configuração de Rede e Interfaces
+# --------------------------------------------------------------------
+Group.nrofInterfaces = 1
+loRaInterface.type = SimpleBroadcastInterface
+loRaInterface.transmitSpeed = 293
+loRaInterface.transmitRange = 250
+
+# -------------------------------------------------------
+## Movement model settings
+# seed for movement models' pseudo random number generator (default = 0)
+# MovementModel.rngSeed = [2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47; 2; 3; 5; 7; 11; 13; 17; 19; 23; 29; 31; 37; 41; 43; 47;]
+MovementModel.rngSeed = [53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113; 53; 59; 61; 67; 71; 73; 79; 83; 89; 97; 101; 103; 107; 109; 113;]
+
+
+# --------------------------------------------------------------------
+# Configuração dos Hosts
+# --------------------------------------------------------------------
+Group1.groupID = J
+Group1.nrofHosts = 41
+Group1.interface1 = loRaInterface
+Group1.movementModel = StationaryMovement
+
+# Group1.nodeLocation = 1000, 1000
+Group1.nodeLocation = 0, 0
+
+# Roteador e Memória dos Nós
+
+Group.router = EpidemicRouter
+
+Group.bufferSize = 5M
+#Group.msgTtl = 24
+Group.msgTtl = 168
+
+# --------------------------------------------------------------------
+# EVENTOS EXTERNOS E GERADORES
+# --------------------------------------------------------------------
+Events.nrof = 2
+
+# Evento 1: Lê o arquivo de contatos reais com timestamps normalizados
+Events1.class = ExternalEventsReader
+Events1.filePath = data/jaguar_mamiraua_contacts_16_centroids_kmeans_rawdata_2.txt
+
+# Evento 2: Ativa a criação de mensagens nos intervalos corretos
+Events2.class = MessageEventGenerator
+Events2.interval = 300, 600
+Events2.size = 1024
+Events2.prefix = M
+
+Events2.time = 0, 56312328
+
+# Permitir que qualquer nó produza e receba mensagens (0 a 7)
+Events2.hosts = 0, 40
+Events2.tohosts = 0, 40
+
+# --------------------------------------------------------------------
+# Relatórios de Saída e Logs
+# --------------------------------------------------------------------
+Report.reportDir = reports/jaguar_results
+Report.nrofReports = 2
+Report.report1 = MessageReport
+Report.report2 = MessageStatsReport
+#Report.report3 = ContactTimesReport
+
+LogSettings.logLevel = DEBUG
